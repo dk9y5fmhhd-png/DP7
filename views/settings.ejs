@@ -1,0 +1,138 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Settings</h1>
+    <div class="sub">Level bands, retention windows aur cohort limits — yahi se poore reports ka hisaab chalta hai.</div>
+  </div>
+  <div class="chips">
+    <a class="chip <%= tab === 'general' ? 'on' : '' %>" href="#general"><%- icon('settings', 13) %> General</a>
+    <a class="chip <%= tab === 'levels' ? 'on' : '' %>" href="#levels"><%- icon('award', 13) %> Level bands</a>
+  </div>
+</div>
+
+<div class="grid-2" id="general">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('settings', 15) %> General</h3></div>
+    <form method="post" action="/settings/general">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Site name</label>
+            <input type="text" name="site_name" value="<%= cfg.site_name || 'DP7' %>" maxlength="40">
+          </div>
+          <div class="form-group">
+            <label>Tagline</label>
+            <input type="text" name="site_tagline" value="<%= cfg.site_tagline || '' %>" maxlength="120">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Active window (days)</label>
+            <input type="number" name="active_window_days" value="<%= cfg.active_window_days %>" min="1" max="365">
+            <span class="muted tiny">Itne din me deposit = Active</span>
+          </div>
+          <div class="form-group">
+            <label>Retention lookback (weeks)</label>
+            <input type="number" name="retention_lookback_weeks" value="<%= cfg.retention_lookback_weeks %>" min="1" max="52">
+            <span class="muted tiny">Habit nikalne ki window</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Delete T-PIN</label>
+          <input type="password" name="delete_pin" value="<%= cfg.delete_pin || '969696' %>" maxlength="20" autocomplete="off">
+          <span class="muted tiny">Data delete karne ke liye ye PIN maangi jaati hai.</span>
+        </div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save general</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Cohort limits (days per week)</h3></div>
+    <form method="post" action="/settings/general">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="hidden" name="site_name" value="<%= cfg.site_name || 'DP7' %>">
+      <input type="hidden" name="site_tagline" value="<%= cfg.site_tagline || '' %>">
+      <input type="hidden" name="active_window_days" value="<%= cfg.active_window_days %>">
+      <input type="hidden" name="retention_lookback_weeks" value="<%= cfg.retention_lookback_weeks %>">
+      <input type="hidden" name="delete_pin" value="<%= cfg.delete_pin || '969696' %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 14px">
+          Regularity = lookback window ke andar kitne din deposit hua ÷ hafte.
+          <strong>Daily 7 par kabhi nahi chalega</strong> — 7 hafte me maximum bhi 7 hi hota hai,
+          isliye 6 rakhiye (hafte me 6 din).
+        </p>
+        <div class="form-group">
+          <label>Daily band — isse upar</label>
+          <input type="number" name="cohort_daily_min" value="<%= cfg.cohort_daily_min %>" min="0.5" max="7" step="0.05">
+        </div>
+        <div class="form-group">
+          <label>By Weekly band — isse upar</label>
+          <input type="number" name="cohort_byweekly_min" value="<%= cfg.cohort_byweekly_min %>" min="0.5" max="7" step="0.05">
+        </div>
+        <div class="form-group">
+          <label>Weekly band — isse upar</label>
+          <input type="number" name="cohort_weekly_min" value="<%= cfg.cohort_weekly_min %>" min="0.05" max="7" step="0.05">
+        </div>
+        <p class="muted tiny" style="margin:0">
+          Isse neeche wale sab <strong>Monthly</strong> band me jaate hain.
+        </p>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save limits</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card" id="levels">
+  <div class="card-header">
+    <h3><%- icon('award', 15) %> Level bands</h3>
+    <span class="muted tiny" style="margin-left:auto">Client ka level uske lifetime total deposits se banta hai</span>
+  </div>
+  <form method="post" action="/settings/levels">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Level name</th><th>Minimum amount</th><th>Maximum amount</th><th class="right">—</th></tr></thead>
+        <tbody id="levelRows">
+          <% levels.forEach(function (l) { %>
+            <tr>
+              <td>
+                <input type="hidden" name="level_id" value="<%= l.id %>">
+                <input type="text" name="level_name" value="<%= l.name %>" maxlength="40" style="width:100%">
+              </td>
+              <td><input type="number" name="level_min" value="<%= l.min %>" min="0" step="1" style="width:100%"></td>
+              <td><input type="number" name="level_max" value="<%= l.max === null ? '' : l.max %>" min="0" step="1" placeholder="blank = and above" style="width:100%"></td>
+              <td class="right"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer" style="display:flex;gap:9px;justify-content:space-between;align-items:center">
+      <button type="button" class="btn btn-sm" onclick="addLevelRow()"><%- icon('plus', 14) %> Add band</button>
+      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save bands</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Kaise check hota hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Level</dt><dd>Lifetime total deposits → jo band me fit ho</dd>
+      <dt>Active</dt><dd>Last deposit pichhle <%= cfg.active_window_days %> din me</dd>
+      <dt>Regularity</dt><dd>Pichhle <%= cfg.retention_lookback_weeks %> hafte me deposit ke din ÷ <%= cfg.retention_lookback_weeks %></dd>
+      <dt>Gone quiet</dt><dd>Apne cohort me hai, lekin chune gaye period me deposit nahi kiya</dd>
+      <dt>Duplicate</dt><dd>Ek hi mobile number do ya zyada clients par</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

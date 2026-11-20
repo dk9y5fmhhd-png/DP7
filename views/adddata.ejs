@@ -1,0 +1,148 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Add Data</h1>
+    <div class="sub">Ek din ka deposit data paste kijiye — ek line me ek client.</div>
+  </div>
+</div>
+
+<% if (result) { %>
+  <div class="flash flash-<%= result.errors && result.errors.length ? 'info' : 'success' %>">
+    <%- icon(result.dryRun ? 'alert' : 'check', 15) %>
+    <span>
+      <% if (result.empty) { %>
+        Koi valid line nahi mili. Format check kijiye: <code>username mobile amount</code>
+      <% } else if (result.dryRun) { %>
+        <strong>Dry run</strong> — <%= result.playDate %> ke liye <%= result.totalRows %> valid rows mile. Abhi kuch save nahi hua.
+      <% } else { %>
+        <strong><%= result.inserted %></strong> rows save ho gaye
+        <%= result.playDate %> ke liye<%= result.skipped ? ', ' + result.skipped + ' pehle se the (skip)' : '' %>.
+      <% } %>
+      <% if (result.errors && result.errors.length) { %>
+        · <strong><%= result.errors.length %></strong> lines skip hui.
+      <% } %>
+    </span>
+  </div>
+
+  <% if (result.errors && result.errors.length) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('alert', 15) %> Skipped lines</h3></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
+          <tbody>
+            <% result.errors.slice(0, 50).forEach(function (e) { %>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td class="badge badge-danger"><%= e.reason %></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <% if (result.errors.length > 50) { %>
+        <div class="card-footer muted tiny">Sirf pehli 50 errors dikh rahi hain.</div>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (result.parsed && result.parsed.length) { %>
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('list', 15) %> Parsed preview</h3>
+        <span class="muted tiny" style="margin-left:auto"><%= result.parsed.length %> of <%= result.totalRows %> rows</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th style="width:70px">Line</th><th>Username</th><th>Mobile</th><th class="right">Amount</th></tr></thead>
+          <tbody>
+            <% result.parsed.forEach(function (r) { %>
+              <tr><td class="num muted"><%= r.line %></td><td><strong><%= r.username %></strong></td><td class="num"><%= r.mobile %></td><td class="money right"><%= helpers.moneyExact(r.amount) %></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+<% } %>
+
+<div class="grid-2" style="grid-template-columns: 1.35fr 1fr">
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('plus', 15) %> New entry</h3>
+    </div>
+    <form method="post" action="/add-data">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <div class="filter-bar" style="padding:0 0 14px;border:0;background:none">
+          <div>
+            <label>Play date</label>
+            <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Rows</label>
+          <textarea name="rows" placeholder="username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200"><%= draft %></textarea>
+          <span class="muted tiny">
+            Format: <code>username mobile amount</code> — comma, tab or space se separated.
+            Amount optional hai (blank = 0). Ek hi username din me ek baar.
+          </span>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
+        <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
+        <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Save entries</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Recent days</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th class="right">Rows</th><th class="right">Clients</th><th class="right">Amount</th></tr></thead>
+        <tbody>
+          <% days.forEach(function (d) { %>
+            <tr>
+              <td class="nowrap"><strong><%= helpers.prettyDate(d.d) %></strong></td>
+              <td class="num right"><%= d.entries %></td>
+              <td class="num right"><%= d.clients %></td>
+              <td class="money right"><%= helpers.money(d.amount) %></td>
+            </tr>
+          <% }); %>
+          <% if (!days.length) { %>
+            <tr><td colspan="4"><div class="empty">Abhi koi data nahi.</div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('alert', 15) %> Danger zone — ek din ka data delete</h3>
+  </div>
+  <form method="post" action="/add-data/delete-day">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label>Date</label>
+          <input type="date" name="play_date" required>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>T-PIN</label>
+          <input type="password" name="pin" placeholder="••••••" required autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <button type="submit" class="btn btn-danger" data-confirm="Is din ka poora data delete ho jayega. Confirm?">
+            <%- icon('x', 15) %> Delete day
+          </button>
+        </div>
+      </div>
+      <p class="muted tiny" style="margin:12px 0 0">Ye action permanent hai. Pehle Backup se CSV export kar lijiye.</p>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/foot') %>
+

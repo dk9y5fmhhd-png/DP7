@@ -1,0 +1,43 @@
+    </div><!-- /.content -->
+  </main>
+</div><!-- /.app -->
+
+<dialog id="followupDialog">
+  <form method="post" action="/followups">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <input type="hidden" name="username" id="fu_username">
+    <div class="dialog-head">
+      <h3><%- icon('phone', 15) %> Add Follow-up</h3>
+      <button type="button" class="close-x" onclick="document.getElementById('followupDialog').close()">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="muted tiny" style="margin:0 0 12px">Client: <strong id="fu_who" style="color:var(--fg)"></strong></p>
+      <div class="form-group">
+        <label>Action Type</label>
+        <select name="action_type" id="fu_action" required>
+          <option value="">Select action…</option>
+          <% ACTION_TYPES.forEach(function (a) { %>
+            <option value="<%= a %>"><%= a %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" name="action_date" value="<%= helpers.today() %>" required>
+      </div>
+      <div class="form-group">
+        <label>Response / Notes</label>
+        <textarea name="response" rows="3" required placeholder="Kya baat hui…" style="min-height:90px"></textarea>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" onclick="document.getElementById('followupDialog').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save follow-up</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/app.js"></script>
+</body>
+</html>
+

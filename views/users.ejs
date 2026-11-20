@@ -1,0 +1,155 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Users</h1>
+    <div class="sub">Staff accounts, roles aur page-level access.</div>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns: 1fr 1.5fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('plus', 15) %> Add new user</h3></div>
+    <form method="post" action="/users/create">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" name="name" required placeholder="e.g. Sarah">
+        </div>
+        <div class="form-group">
+          <label>Login ID</label>
+          <input type="text" name="login_id" required placeholder="e.g. sarah" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required minlength="6" placeholder="min 6 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select name="role" id="new_role" onchange="document.getElementById('new_access').style.display = this.value === 'super_admin' ? 'none' : 'block'">
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div class="form-group" id="new_access">
+          <label>Page access</label>
+          <div class="check-row" data-check-scope>
+            <label class="check-pill"><input type="checkbox" name="page_access" value="all" data-check-all> <span>All pages</span></label>
+            <% grantable.filter(function (p) { return p.key !== 'security'; }).forEach(function (p) { %>
+              <label class="check-pill"><input type="checkbox" name="page_access" value="<%= p.key %>" data-checkable> <span><%= p.label %></span></label>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Create user</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('team', 15) %> Existing users</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= users.length %> account<%= users.length === 1 ? '' : 's' %></span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>User</th><th>Role</th><th>Access</th><th>2FA</th><th>Last login</th><th class="right">Actions</th></tr></thead>
+        <tbody>
+          <% users.forEach(function (u) {
+               const locked = u.locked_until && new Date(u.locked_until) > new Date(); %>
+            <tr>
+              <td class="who">
+                <strong><%= u.name %></strong>
+                <div class="muted tiny"><%= u.login_id %><%= u.id === user.id ? ' · you' : '' %></div>
+              </td>
+              <td>
+                <span class="badge <%= u.role === 'super_admin' ? 'badge-accent' : 'badge-neutral' %>">
+                  <%= u.role === 'super_admin' ? 'Super Admin' : 'Admin' %>
+                </span>
+                <% if (locked) { %><span class="badge badge-danger">Locked</span><% } %>
+              </td>
+              <td class="tiny muted">
+                <%= u.role === 'super_admin' ? 'All pages' : ((u.page_access || []).includes('all') ? 'All pages' : (u.page_access || []).length + ' pages') %>
+              </td>
+              <td>
+                <% if (u.totp_enabled) { %><span class="badge badge-success">On</span><% } else { %><span class="badge badge-neutral">Off</span><% } %>
+              </td>
+              <td class="muted tiny nowrap"><%= u.last_login_at ? helpers.prettyDateTime(u.last_login_at) : 'never' %></td>
+              <td class="right nowrap">
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('editUser<%= u.id %>').showModal()">Edit</button>
+                <% if (locked) { %>
+                  <form method="post" action="/users/<%= u.id %>/unlock" style="display:inline;margin:0">
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button class="btn btn-sm btn-success" type="submit">Unlock</button>
+                  </form>
+                <% } %>
+                <% if (u.id !== user.id) { %>
+                  <form method="post" action="/users/<%= u.id %>/delete" style="display:inline;margin:0">
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button class="btn btn-sm btn-danger" type="submit" data-confirm="User '<%= u.login_id %>' delete karna hai?">×</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<% users.forEach(function (u) { %>
+  <dialog id="editUser<%= u.id %>">
+    <form method="post" action="/users/<%= u.id %>/update">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="dialog-head">
+        <h3>Edit <%= u.name %></h3>
+        <button type="button" class="close-x" onclick="document.getElementById('editUser<%= u.id %>').close()">&times;</button>
+      </div>
+      <div class="dialog-body">
+        <div class="form-group">
+          <label>Full name</label>
+          <input type="text" name="name" value="<%= u.name %>" required>
+        </div>
+        <div class="form-group">
+          <label>Login ID</label>
+          <input type="text" value="<%= u.login_id %>" disabled>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select name="role" onchange="document.getElementById('access<%= u.id %>').style.display = this.value === 'super_admin' ? 'none' : 'block'">
+            <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>
+            <option value="super_admin" <%= u.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
+          </select>
+        </div>
+        <div class="form-group" id="access<%= u.id %>" style="<%= u.role === 'super_admin' ? 'display:none' : '' %>">
+          <label>Page access</label>
+          <div class="check-row" data-check-scope>
+            <label class="check-pill"><input type="checkbox" name="page_access" value="all" data-check-all
+              <%= (u.page_access || []).includes('all') ? 'checked' : '' %>> <span>All pages</span></label>
+            <% grantable.filter(function (p) { return p.key !== 'security'; }).forEach(function (p) { %>
+              <label class="check-pill">
+                <input type="checkbox" name="page_access" value="<%= p.key %>" data-checkable
+                  <%= (u.page_access || []).includes(p.key) ? 'checked' : '' %>>
+                <span><%= p.label %></span>
+              </label>
+            <% }); %>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>New password <span class="muted tiny">(blank = keep)</span></label>
+          <input type="password" name="password" placeholder="••••••" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('editUser<%= u.id %>').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+<% }); %>
+
+<%- include('partials/foot') %>
+
+

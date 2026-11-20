@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> · DP7</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c6cff'/%3E%3Ctext x='16' y='22' font-family='Arial' font-size='14' font-weight='bold' fill='white' text-anchor='middle'%3EDP%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">DP</div>
+      <div class="brand-text">
+        <strong>DP7</strong>
+        <span>Management System</span>
+      </div>
+    </div>
+
+    <%
+      const GROUPS = [
+        { label: 'Main',    keys: ['dashboard', 'adddata'] },
+        { label: 'Reports', keys: ['reports', 'level_report', 'daily_report', 'weekly_report', 'biweekly_report', 'monthly_report', 'followups'] },
+        { label: 'Admin',   keys: ['backup', 'users', 'settings'] },
+        { label: 'Account', keys: ['security'] }
+      ];
+    %>
+
+    <% GROUPS.forEach(function (g) { %>
+      <div class="nav-group">
+        <div class="nav-label"><%= g.label %></div>
+        <% g.keys.forEach(function (key) { %>
+          <% const item = PAGES.find(function (p) { return p.key === key; }); %>
+          <% if (item && can(key)) { %>
+            <a class="nav-item <%= page === key ? 'active' : '' %>" href="<%= item.url %>">
+              <span class="ico"><%- icon(item.icon, 15) %></span>
+              <span><%= item.label %></span>
+            </a>
+          <% } %>
+        <% }); %>
+      </div>
+    <% }); %>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="today"><%- icon('clock', 13) %> <%= helpers.prettyDateLong(helpers.today()) %></div>
+      <div class="spacer"></div>
+      <div class="user-chip">
+        <div class="avatar"><%= (user.name || 'U').slice(0, 1).toUpperCase() %></div>
+        <div class="who">
+          <b><%= user.name %></b>
+          <span><%= user.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span>
+        </div>
+      </div>
+      <form method="post" action="/logout" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-ghost btn-sm" type="submit" title="Sign out"><%- icon('logout', 15) %></button>
+      </form>
+    </header>
+
+    <div class="content">
+      <% if (flash) { %>
+        <div class="flash flash-<%= flash.type || 'info' %>">
+          <%- icon(flash.type === 'error' ? 'alert' : 'check', 15) %> <span><%= flash.message %></span>
+        </div>
+      <% } %>
+
+

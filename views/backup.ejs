@@ -1,0 +1,93 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Backup &amp; Export</h1>
+    <div class="sub">Data apne paas rakhiye — CSV Excel me seedha khulti hai.</div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label">Deposit rows</div>
+    <div class="value"><%= Number(stats.deposits).toLocaleString('en-IN') %></div>
+    <div class="hint">total entries</div>
+  </div>
+  <div class="stat">
+    <div class="label">Clients</div>
+    <div class="value"><%= Number(stats.clients).toLocaleString('en-IN') %></div>
+    <div class="hint">unique usernames</div>
+  </div>
+  <div class="stat">
+    <div class="label">Follow-ups</div>
+    <div class="value"><%= Number(stats.followups).toLocaleString('en-IN') %></div>
+    <div class="hint">logged</div>
+  </div>
+  <div class="stat">
+    <div class="label">Users</div>
+    <div class="value"><%= Number(stats.users).toLocaleString('en-IN') %></div>
+    <div class="hint">staff accounts</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('download', 15) %> Download</h3>
+    <span class="muted tiny" style="margin-left:auto">
+      Data range: <%= stats.first_date ? helpers.prettyDate(stats.first_date) : '—' %> →
+      <%= stats.last_date ? helpers.prettyDate(stats.last_date) : '—' %>
+    </span>
+  </div>
+  <div class="card-body">
+    <div class="chips">
+      <a class="chip" href="/backup/export/deposits"><%- icon('download', 13) %> Deposits (CSV)</a>
+      <a class="chip" href="/backup/export/clients"><%- icon('download', 13) %> Clients + totals (CSV)</a>
+      <a class="chip" href="/backup/export/followups"><%- icon('download', 13) %> Follow-ups (CSV)</a>
+      <a class="chip" href="/backup/export/settings"><%- icon('download', 13) %> Settings + levels (JSON)</a>
+    </div>
+    <p class="muted tiny" style="margin:14px 0 0">
+      Har hafte ek baar "Deposits" CSV download karke apne paas (Drive/pen drive) rakh lijiye.
+    </p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Last 20 days</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th class="right">Rows</th><th class="right">Amount</th></tr></thead>
+        <tbody>
+          <% days.forEach(function (d) { %>
+            <tr><td class="nowrap"><strong><%= d.d %></strong></td><td class="num right"><%= d.entries %></td><td class="money right"><%= helpers.money(d.amount) %></td></tr>
+          <% }); %>
+          <% if (!days.length) { %><tr><td colspan="3"><div class="empty">Koi data nahi.</div></td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert', 15) %> Delete a day</h3></div>
+    <form method="post" action="/backup/delete-day">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="play_date" required>
+        </div>
+        <div class="form-group">
+          <label>T-PIN</label>
+          <input type="password" name="pin" required autocomplete="off" placeholder="••••••">
+        </div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button type="submit" class="btn btn-danger" data-confirm="Us din ka poora data delete ho jayega. Confirm?">
+          <%- icon('x', 15) %> Delete day
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

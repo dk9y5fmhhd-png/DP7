@@ -1,0 +1,139 @@
+'use strict';
+
+const crypto = require('crypto');
+const db = require('./db');
+
+const PAGES = [
+  { key: 'dashboard', label: 'Dashboard', url: '/', icon: 'grid', group: 'main' },
+  { key: 'adddata', label: 'Add Data', url: '/add-data', icon: 'plus', group: 'main' },
+  { key: 'reports', label: 'Client Reports', url: '/reports', icon: 'list', group: 'reports' },
+  { key: 'level_report', label: 'Level Report', url: '/reports/level', icon: 'award', group: 'reports' },
+  { key: 'daily_report', label: 'Daily Report', url: '/reports/daily', icon: 'day', group: 'reports' },
+  { key: 'weekly_report', label: 'Weekly Report', url: '/reports/weekly', icon: 'week', group: 'reports' },
+  { key: 'biweekly_report', label: 'By Weekly Report', url: '/reports/biweekly', icon: 'weeks', group: 'reports' },
+  { key: 'monthly_report', label: 'Monthly Report', url: '/reports/monthly', icon: 'month', group: 'reports' },
+  { key: 'followups', label: 'Follow-ups', url: '/followups', icon: 'phone', group: 'reports' },
+  { key: 'backup', label: 'Backup & Export', url: '/backup', icon: 'download', group: 'admin', superOnly: true },
+  { key: 'users', label: 'Users', url: '/users', icon: 'team', group: 'admin', superOnly: true },
+  { key: 'settings', label: 'Settings', url: '/settings', icon: 'settings', group: 'admin', superOnly: true },
+  { key: 'security', label: 'Security', url: '/security', icon: 'shield', group: 'account' },
+];
+
+const PAGE_KEYS = PAGES.map((p) => p.key);
+
+// Login ke baad user ko uske pehle allowed page par bhejo — warna dashboard
+// access na hone par seedha 403 milta hai.
+function landingPage(user) {
+  if (!user) return '/login';
+  if (can(user, 'dashboard')) return '/';
+  const first = PAGES.find((p) => p.key !== 'dashboard' && can(user, p.key));
+  return first ? first.url : '/security';
+}
+
+function can(user, page) {
+  if (!user) return false;
+  if (user.role === 'super_admin') return true;
+  if (!PAGE_KEYS.includes(page)) return false;
+  const grant = user.page_access || [];
+  return grant.includes('all') || grant.includes(page);
+}
+
+function attachUser(req, res, next) {
+  res.locals.user = req.session.user || null;
+  res.locals.can = (page) => can(req.session.user, page);
+  res.locals.PAGES = PAGES;
+  res.locals.page = null;
+  res.locals.path = req.path;
+  next();
+}
+
+function requireLogin(req, res, next) {
+  if (!req.session.user) {
+    req.session.returnTo = req.originalUrl;
+    return res.redirect('/login');
+  }
+  next();
+}
+
+function requirePage(page) {
+  return function (req, res, next) {
+    if (!req.session.user) {
+      req.session.returnTo = req.originalUrl;
+      return res.redirect('/login');
+    }
+    if (!can(req.session.user, page)) {
+      return res.status(403).render('error', {
+        title: 'Access denied',
+        heading: 'Access denied',
+        message: `Aapke account ko "${page}" page ka access nahi hai. Super Admin se kehiye.`,
+      });
+    }
+    next();
+  };
+}
+
+function requireSuperAdmin(req, res, next) {
+  if (!req.session.user) return res.redirect('/login');
+  if (req.session.user.role !== 'super_admin') {
+    return res.status(403).render('error', {
+      title: 'Access denied',
+      heading: 'Super Admin only',
+      message: 'Ye page sirf Super Admin ke liye hai.',
+    });
+  }
+  next();
+}
+
+function csrfToken(req) {
+  if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex');
+  return req.session.csrf;
+}
+
+function checkCsrf(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const sent = req.body && (req.body.csrf_token || req.get('x-csrf-token'));
+  if (!req.session.csrf || sent !== req.session.csrf) {
+    return res.status(403).render('error', {
+      title: 'Session expired',
+      heading: 'Form expired',
+      message: 'Page purana ho gaya tha. Refresh karke dobara try kijiye.',
+    });
+  }
+  next();
+}
+
+async function audit(req, action, detail) {
+  try {
+    const u = req.session.user;
+    await db.query(
+      'INSERT INTO audit_log (user_id, login_id, action, detail, ip) VALUES ($1,$2,$3,$4,$5)',
+      [u ? u.id : null, u ? u.login_id : null, action, detail || null, clientIp(req)]
+    );
+  } catch (err) {
+    console.error('[audit]', err.message);
+  }
+}
+
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (typeof fwd === 'string' && fwd.length) return fwd.split(',')[0].trim();
+  return req.socket ? req.socket.remoteAddress : '';
+}
+
+module.exports = {
+  PAGES,
+  PAGE_KEYS,
+  landingPage,
+  can,
+  attachUser,
+  requireLogin,
+  requirePage,
+  requireSuperAdmin,
+  csrfToken,
+  checkCsrf,
+  audit,
+  clientIp,
+};
+
+
+

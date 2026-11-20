@@ -1,0 +1,85 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Follow-ups</h1>
+    <div class="sub">Sab calls ka log — kaun, kab, kya hua.</div>
+  </div>
+  <div class="chips">
+    <button class="chip" type="button" onclick="openFollowup('')"><%- icon('plus', 13) %> Naya follow-up</button>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <% byType.slice(0, 5).forEach(function (t) { %>
+    <div class="stat">
+      <div class="label"><%= t.action_type %></div>
+      <div class="value"><%= t.c.toLocaleString('en-IN') %></div>
+      <div class="hint">total logged</div>
+    </div>
+  <% }); %>
+  <% if (!byType.length) { %>
+    <div class="stat"><div class="label">Follow-ups</div><div class="value">0</div><div class="hint">abhi tak koi nahi</div></div>
+  <% } %>
+</div>
+
+<div class="card">
+  <form method="get" action="/followups" class="filter-bar">
+    <div style="flex:1 1 240px">
+      <label>Search</label>
+      <input type="search" name="q" value="<%= q %>" placeholder="username ya notes…" style="width:100%">
+    </div>
+    <div>
+      <label>Action</label>
+      <select name="action" data-autosubmit>
+        <option value="">All actions</option>
+        <% actionTypes.forEach(function (a) { %>
+          <option value="<%= a %>" <%= action === a ? 'selected' : '' %>><%= a %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div><button type="submit" class="btn btn-primary"><%- icon('search', 15) %> Search</button></div>
+    <div><a href="/followups" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
+  </form>
+
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Date</th><th>Username</th><th>Action</th><th>Response / Notes</th><th>Logged by</th><th class="right">—</th></tr></thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="6"><div class="empty"><span class="big">—</span>Koi follow-up nahi mila.</div></td></tr>
+        <% } %>
+        <% rows.forEach(function (f) { %>
+          <tr>
+            <td class="nowrap"><strong><%= f.action_date %></strong></td>
+            <td class="who"><strong><%= f.username %></strong></td>
+            <td><span class="badge badge-accent"><%= f.action_type %></span></td>
+            <td><%= f.response || '—' %></td>
+            <td class="muted tiny"><%= f.by_name || '—' %></td>
+            <td class="right">
+              <% if (user.role === 'super_admin') { %>
+                <form method="post" action="/followups/<%= f.id %>/delete" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <button class="btn btn-danger btn-sm" data-confirm="Ye follow-up delete karna hai?" title="Delete"><%- icon('x', 13) %></button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer pagination">
+    <span class="page-info">Page <%= page %> of <%= pages %> · <%= total.toLocaleString('en-IN') %> entries</span>
+    <% if (page > 1) { %>
+      <a class="btn btn-sm" href="/followups?q=<%= encodeURIComponent(q) %>&action=<%= encodeURIComponent(action) %>&page=<%= page - 1 %>"><%- icon('left', 14) %> Prev</a>
+    <% } %>
+    <% if (page < pages) { %>
+      <a class="btn btn-sm" href="/followups?q=<%= encodeURIComponent(q) %>&action=<%= encodeURIComponent(action) %>&page=<%= page + 1 %>">Next <%- icon('right', 14) %></a>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+
