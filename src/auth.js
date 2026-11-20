@@ -89,8 +89,15 @@ function csrfToken(req) {
   return req.session.csrf;
 }
 
+function isMultipart(req) {
+  return String(req.get('content-type') || '').toLowerCase().startsWith('multipart/form-data');
+}
+
+// multipart body multer ke andar parse hota hai, isliye CSRF check route ke
+// andar hota hai (verifyCsrf) — yahan sirf aage jaane dete hain.
 function checkCsrf(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  if (isMultipart(req)) return next();
   const sent = req.body && (req.body.csrf_token || req.get('x-csrf-token'));
   if (!req.session.csrf || sent !== req.session.csrf) {
     return res.status(403).render('error', {
@@ -100,6 +107,21 @@ function checkCsrf(req, res, next) {
     });
   }
   next();
+}
+
+// multipart route ke andar, parsing ke baad.
+function verifyCsrf(req) {
+  if (!req.session.csrf) return false;
+  const sent = (req.body && req.body.csrf_token) || req.get('x-csrf-token');
+  return sent === req.session.csrf;
+}
+
+function rejectCsrf(res) {
+  return res.status(403).render('error', {
+    title: 'Session expired',
+    heading: 'Form expired',
+    message: 'Page purana ho gaya tha. Refresh karke dobara try kijiye.',
+  });
 }
 
 async function audit(req, action, detail) {
@@ -131,9 +153,14 @@ module.exports = {
   requireSuperAdmin,
   csrfToken,
   checkCsrf,
+  verifyCsrf,
+  rejectCsrf,
+  isMultipart,
   audit,
   clientIp,
 };
+
+
 
 
 

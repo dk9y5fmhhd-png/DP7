@@ -1,6 +1,6 @@
 {
   "name": "dp7",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "DP7 — client deposit tracking & retention reports",
   "main": "src/server.js",
@@ -20,8 +20,10 @@
     "connect-pg-simple": "^9.0.1",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
+    "multer": "^1.4.5-lts.1",
     "otplib": "^12.0.1",
     "pg": "^8.12.0",
     "qrcode": "^1.5.4"
@@ -30,6 +32,3 @@
     "puppeteer-core": "^24.0.0"
   }
 }
-
-
-

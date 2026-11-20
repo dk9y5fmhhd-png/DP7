@@ -3,7 +3,10 @@
 <div class="page-head">
   <div class="titles">
     <h1>Add Data</h1>
-    <div class="sub">Ek din ka deposit data paste kijiye — ek line me ek client.</div>
+    <div class="sub">Excel / CSV file upload karein — ya seedha paste kar dein. Ek file me kai dates bhi chal sakti hain.</div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/add-data/template"><%- icon('download', 13) %> Excel template</a>
   </div>
 </div>
 
@@ -12,17 +15,66 @@
     <%- icon(result.dryRun ? 'alert' : 'check', 15) %>
     <span>
       <% if (result.empty) { %>
-        Koi valid line nahi mili. Format check kijiye: <code>username mobile amount</code>
+        <strong>Koi valid line nahi mili.</strong>
+        <% if (result.mode === 'file') { %>
+          File me data samajh nahi aaya. Template download karke usi format me daalein
+          (columns: <code>date, username, mobile, amount</code>).
+        <% } else { %>
+          Format check kijiye: <code>username mobile amount</code>
+        <% } %>
       <% } else if (result.dryRun) { %>
-        <strong>Dry run</strong> — <%= result.playDate %> ke liye <%= result.totalRows %> valid rows mile. Abhi kuch save nahi hua.
+        <strong>Preview</strong> — <%= result.totalRows %> valid row<%= result.totalRows === 1 ? '' : 's' %> mil<%= result.totalRows === 1 ? 'a' : 'e' %><%= result.dates && result.dates.length > 1 ? ', ' + result.dates.length + ' alag dates ke' : '' %>.
+        Abhi kuch save nahi hua. Neeche check karke <strong>Save</strong> dabayein.
       <% } else { %>
-        <strong><%= result.inserted %></strong> rows save ho gaye
-        <%= result.playDate %> ke liye<%= result.skipped ? ', ' + result.skipped + ' pehle se the (skip)' : '' %>.
+        <strong><%= result.inserted %></strong> row<%= result.inserted === 1 ? '' : 's' %> save ho ga<%= result.inserted === 1 ? 'ya' : 'ye' %>
+        <%= result.dates && result.dates.length > 1 ? '(' + result.dates.length + ' dates)' : '— ' + result.playDate %><%= result.skipped ? ', ' + result.skipped + ' skip hue (pehle se the)' : '' %>.
       <% } %>
       <% if (result.errors && result.errors.length) { %>
-        · <strong><%= result.errors.length %></strong> lines skip hui.
+        · <strong><%= result.errors.length %></strong> line<%= result.errors.length === 1 ? '' : 's' %> skip hui.
       <% } %>
     </span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('file', 15) %> File samajh me aayi</h3>
+      <span class="muted tiny" style="margin-left:auto">
+        <% if (result.fileName) { %><%= result.fileName %><% } %>
+        <% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %>
+      </span>
+    </div>
+    <div class="card-body">
+      <dl class="kv">
+        <dt>Valid rows</dt><dd><%= result.totalRows || 0 %></dd>
+        <dt>Date</dt>
+        <dd>
+          <% if (result.usedDateColumn) { %>
+            File ke date column se (<%= (result.dates || []).length %> alag din)
+          <% } else { %>
+            Form ki date — <%= result.playDate %>
+          <% } %>
+        </dd>
+        <% if (result.headerMap) { %>
+          <dt>Columns</dt>
+          <dd>
+            <% const names = { date: 'Date', username: 'Username', mobile: 'Mobile', amount: 'Amount' };
+               Object.keys(result.headerMap).forEach(function (k, i) { %>
+              <span class="badge badge-neutral"><%= names[k] || k %> → column <%= result.headerMap[k] + 1 %></span>
+            <% }); %>
+          </dd>
+        <% } else if (result.mode === 'file') { %>
+          <dt>Columns</dt><dd class="muted">Header nahi mila — pehla column username, doosra mobile, teesra amount maana gaya.</dd>
+        <% } %>
+        <% if (result.perDate && result.perDate.length) { %>
+          <dt>Saved</dt>
+          <dd>
+            <% result.perDate.forEach(function (p) { %>
+              <span class="badge badge-success"><%= p.date %> · <%= p.inserted %><%= p.skipped ? ' (+' + p.skipped + ' skip)' : '' %></span>
+            <% }); %>
+          </dd>
+        <% } %>
+      </dl>
+    </div>
   </div>
 
   <% if (result.errors && result.errors.length) { %>
@@ -33,7 +85,7 @@
           <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
           <tbody>
             <% result.errors.slice(0, 50).forEach(function (e) { %>
-              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td class="badge badge-danger"><%= e.reason %></td></tr>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= e.reason %></span></td></tr>
             <% }); %>
           </tbody>
         </table>
@@ -52,10 +104,16 @@
       </div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th style="width:70px">Line</th><th>Username</th><th>Mobile</th><th class="right">Amount</th></tr></thead>
+          <thead><tr><th style="width:70px">Line</th><th>Date</th><th>Username</th><th>Mobile</th><th class="right">Amount</th></tr></thead>
           <tbody>
             <% result.parsed.forEach(function (r) { %>
-              <tr><td class="num muted"><%= r.line %></td><td><strong><%= r.username %></strong></td><td class="num"><%= r.mobile %></td><td class="money right"><%= helpers.moneyExact(r.amount) %></td></tr>
+              <tr>
+                <td class="num muted"><%= r.line %></td>
+                <td class="nowrap muted"><%= r.date %></td>
+                <td><strong><%= r.username %></strong></td>
+                <td class="num"><%= r.mobile %></td>
+                <td class="money right"><%= helpers.moneyExact(r.amount) %></td>
+              </tr>
             <% }); %>
           </tbody>
         </table>
@@ -64,38 +122,46 @@
   <% } %>
 <% } %>
 
-<div class="grid-2" style="grid-template-columns: 1.35fr 1fr">
+<div class="grid-2" style="grid-template-columns: 1.2fr 1fr">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('plus', 15) %> New entry</h3>
+      <h3><%- icon('download', 15) %> Excel / CSV upload</h3>
+      <span class="muted tiny" style="margin-left:auto">.xlsx · .csv</span>
     </div>
-    <form method="post" action="/add-data">
+    <form method="post" action="/add-data" enctype="multipart/form-data" id="uploadForm">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
-        <div class="filter-bar" style="padding:0 0 14px;border:0;background:none">
+        <label class="dropzone" id="dropzone">
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" id="fileInput" required>
+          <span class="dz-icon"><%- icon('file', 26) %></span>
+          <span class="dz-title" id="dzTitle">Excel file yahan chhod dein</span>
+          <span class="dz-sub">ya click karke chunein · .xlsx ya .csv · max 20 MB</span>
+        </label>
+
+        <div class="filter-bar" style="padding:16px 0 0;border:0;background:none">
           <div>
-            <label>Play date</label>
-            <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>" required>
+            <label>Play date <span class="muted tiny">(sirf tab use hogi jab file me date column na ho)</span></label>
+            <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>">
           </div>
         </div>
-        <div class="form-group">
-          <label>Rows</label>
-          <textarea name="rows" placeholder="username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200"><%= draft %></textarea>
-          <span class="muted tiny">
-            Format: <code>username mobile amount</code> — comma, tab or space se separated.
-            Amount optional hai (blank = 0). Ek hi username din me ek baar.
-          </span>
-        </div>
+
+        <p class="muted tiny" style="margin:12px 0 0">
+          Column ke naam <code>date</code>, <code>username</code>, <code>mobile</code>, <code>amount</code> ho to sabse aasan.
+          Order badal bhi dein to chalega — header padh liya jaata hai.
+          Template chahiye to upar <strong>Excel template</strong> dabayein.
+        </p>
       </div>
       <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
         <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
-        <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Save entries</button>
+        <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Upload &amp; save</button>
       </div>
     </form>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %> Recent days</h3></div>
+    <div class="card-header">
+      <h3><%- icon('clock', 15) %> Recent days</h3>
+    </div>
     <div class="table-wrapper">
       <table>
         <thead><tr><th>Date</th><th class="right">Rows</th><th class="right">Clients</th><th class="right">Amount</th></tr></thead>
@@ -116,6 +182,35 @@
     </div>
   </div>
 </div>
+
+<details class="card" style="padding:0">
+  <summary class="card-header" style="cursor:pointer;list-style:none">
+    <h3 style="display:inline-flex"><%- icon('plus', 15) %> Ya seedha paste karein</h3>
+    <span class="muted tiny" style="margin-left:auto">chhoti list ke liye</span>
+  </summary>
+  <form method="post" action="/add-data" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <div class="filter-bar" style="padding:0 0 14px;border:0;background:none">
+        <div>
+          <label>Play date</label>
+          <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Rows</label>
+        <textarea name="rows" placeholder="username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200"><%= draft %></textarea>
+        <span class="muted tiny">
+          Format: <code>username mobile amount</code> — comma, tab ya space se separated. Amount optional (blank = 0).
+        </span>
+      </div>
+    </div>
+    <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
+      <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
+      <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Save entries</button>
+    </div>
+  </form>
+</details>
 
 <div class="card">
   <div class="card-header">
@@ -145,4 +240,6 @@
 </div>
 
 <%- include('partials/foot') %>
+
+
 

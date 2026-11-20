@@ -57,6 +57,11 @@ async function main() {
   require('../src/server');
   await new Promise((r) => setTimeout(r, 1200));
 
+  // pichhle run ka residue hatao
+  const dbClean = require('../src/db');
+  await dbClean.query("DELETE FROM deposits WHERE username LIKE 'smoketest%'");
+  await dbClean.query("DELETE FROM followups WHERE username LIKE 'smoketest%'");
+
   const health = await req('/health');
   check('GET /health', health.status === 200);
 
@@ -119,7 +124,7 @@ async function main() {
   const today = new Date().toISOString().slice(0, 10);
   const sample = `smoketest_a 9000000001 1500\nsmoketest_b 9000000002 250\nbadline\n`;
   const dry = await post('/add-data', { play_date: today, rows: sample, dry: '1' }, token2);
-  check('POST /add-data dry run', dry.status === 200 && /Dry run/i.test(dry.text));
+  check('POST /add-data dry run', dry.status === 200 && /(Dry run|Preview)/i.test(dry.text));
 
   const save = await post('/add-data', { play_date: today, rows: sample, dry: '0' }, token2);
   check('POST /add-data save', save.status === 200 && /save ho gaye/i.test(save.text));
@@ -208,5 +213,7 @@ main().catch(async (err) => {
   console.error('✗ smoke test crashed:', err);
   process.exit(2);
 });
+
+
 
 

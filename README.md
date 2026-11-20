@@ -11,7 +11,7 @@ Client deposits, retention reports aur follow-ups ka poora admin system — pura
 | Page | Kaam |
 |---|---|
 | **Dashboard** | Total/active/inactive clients, habit-group cards, 14-din activity trend, follow-up breakdown |
-| **Add Data** | Ek din ka bulk data paste (preview first), recent days, T-PIN se din delete |
+| **Add Data** | Excel/CSV upload (multi-date), ya seedha paste; recent days; T-PIN se din delete |
 | **Client Reports** | Kis client ne us din deposit nahi kiya — level, duplicate number, remark, follow-up ke saath |
 | **Level Report** | Lifetime deposits se ranking, 9 tarah ki sorting, active/inactive |
 | **Daily / Weekly / By Weekly / Monthly** | Habit ke hisaab se cohort — kaun "gone quiet" hua |
@@ -77,9 +77,35 @@ Agar deploy ke baad "Database tayyar nahi hai" dikhe, to Railway ke
 
 ---
 
-## 4. Data import format (Add Data)
+## 4. Data import (Add Data)
 
-Ek line me ek client:
+### A) Excel / CSV upload (recommended)
+
+1. **Add Data** → **Excel template** dabayein → `dp7-upload-template.xlsx` download hoga
+2. Us file me apna data daalein (ya apni purani Excel usi format me le aayein)
+3. File ko box me drag karein (ya click karke chunein) → **Preview only** → check karein → **Upload & save**
+
+Columns (order koi bhi ho, header padh liya jaata hai):
+
+| Column | Alternate naam jo chal jaate hain |
+|---|---|
+| `date` | play date, day, din *(optional)* |
+| `username` | user, client, name, player, id |
+| `mobile` | phone, contact, number, whatsapp |
+| `amount` | deposit, amt, value, rs, total |
+
+- **`date` column optional hai.** Na ho to form me chuni hui "Play date" lagegi.
+  Ho to **ek hi file me kai dates** aa sakti hain — poora purana history ek baar me import ho jayega.
+- Dates `2026-11-20`, `20/11/2026`, `20 Nov 2026` — teeno chalte hain.
+- Mobile me `+91`, space, dash — sab saaf ho jaata hai.
+- Amount me `₹1,500` ya `1,500` — dono theek.
+- **Ek username ek date par sirf ek baar.** Dobara upload karne par woh rows skip ho jaati hain (purana data overwrite nahi hota) — isliye galti se do baar upload karne se kuch kharab nahi hota.
+- Har upload ke baad dikhta hai: kitni rows save hui, kaunsi skip hui **aur kyun**, aur kaunse columns pehchane gaye.
+- Limit: 20 MB tak ki file.
+
+### B) Seedha paste
+
+Chhoti list ke liye — "Ya seedha paste karein" section:
 
 ```
 username mobile amount
@@ -90,8 +116,16 @@ amit99    9988776655          ← amount blank = 0
 
 - Comma, tab ya space — teeno chalenge.
 - `#` se shuru hone wali lines ignore hoti hain.
-- **Ek username din me sirf ek baar.** Dobara upload karne par woh rows skip ho jaati hain (purana data overwrite nahi hota).
-- Pehle **Preview only** dabayein — valid rows aur error lines dikh jayengi, phir **Save entries**.
+
+### Purana data laana (PHP site se)
+
+Agar purane server se CSV/Excel export mil jaye, sabse aasan tareeka:
+
+1. Us file me columns ke naam `date, username, mobile, amount` kar dein
+2. Template download karke apna data usme paste kar dein
+3. Ek hi baar me upload — 4000+ clients ka history bhi chala jayega
+
+Export ka format alag ho to mujhe bhej dein, main usko convert karke dunga.
 
 ---
 
@@ -130,6 +164,7 @@ scripts/migrate.js    tables + pehla admin
 views/                sab pages (EJS)
 public/style.css      theme
 ```
+
 
 
 

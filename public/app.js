@@ -67,3 +67,68 @@ document.addEventListener('click', function (e) {
   if (navigator.clipboard) navigator.clipboard.writeText(text);
 });
 
+/* ---------------------- Excel / CSV drop zone ---------------------- */
+
+function humanSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function showPickedFile(dz, file) {
+  if (!dz || !file) return;
+  var title = dz.querySelector('.dz-title');
+  var sub = dz.querySelector('.dz-sub');
+  if (title) title.textContent = file.name;
+  if (sub) sub.textContent = humanSize(file.size) + ' · save karne ke liye neeche button dabayein';
+  dz.classList.add('has-file');
+}
+
+document.addEventListener('change', function (e) {
+  var input = e.target;
+  if (input.type !== 'file') return;
+  var dz = input.closest('.dropzone');
+  if (dz && input.files && input.files[0]) showPickedFile(dz, input.files[0]);
+});
+
+// drag & drop (file input ke upar opacity 0 hai, lekin drop bhi kaam kare)
+document.addEventListener('dragover', function (e) {
+  var dz = e.target.closest && e.target.closest('.dropzone');
+  if (!dz) return;
+  e.preventDefault();
+  dz.classList.add('dragover');
+});
+document.addEventListener('dragleave', function (e) {
+  var dz = e.target.closest && e.target.closest('.dropzone');
+  if (!dz) return;
+  dz.classList.remove('dragover');
+});
+document.addEventListener('drop', function (e) {
+  var dz = e.target.closest && e.target.closest('.dropzone');
+  if (!dz) return;
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  var input = dz.querySelector('input[type="file"]');
+  if (!input || !e.dataTransfer || !e.dataTransfer.files.length) return;
+  input.files = e.dataTransfer.files;
+  showPickedFile(dz, e.dataTransfer.files[0]);
+});
+
+// file chuni bina submit karne par batao
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  if (form.id !== 'uploadForm') return;
+  var input = form.querySelector('input[type="file"]');
+  if (input && input.required && (!input.files || !input.files.length)) {
+    e.preventDefault();
+    alert('Pehle Excel ya CSV file chunein.');
+    return;
+  }
+  var btn = form.querySelector('button[type="submit"]:focus');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Upload ho raha hai…';
+  }
+});
+
+
