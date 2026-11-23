@@ -127,14 +127,30 @@ async function main() {
   const c5 = await db.row("SELECT * FROM customers WHERE username='SumTest05'");
   check('failed summary row ginа nahi', !c5 || c5.deposit_count === 0, c5 ? String(c5.deposit_count) : 'no record');
 
-  /* ---- 7. duplicate: wahi summary row dobara → skip ---- */
-  const dup = await uploadRows(token, [
-    ['username', 'transaction id', 'deposit date', 'amount', 'status', 'deposit count'],
-    ['SumTest01', '', '2026-04-30', 30000, 'successful', 25],
+  /* ---- 7. same amount wali rows sab gine (amount dedupe nahi) ---- */
+  await uploadRows(token, [
+    ['username', 'transaction id', 'deposit date', 'amount', 'status'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
   ], false);
-  check('wahi summary row duplicate → skip', /pehle se hai|skip/i.test(dup.text));
-  const cntAfter = await db.value("SELECT COUNT(*)::int FROM deposits WHERE username='SumTest01'");
-  check('rows 1 hi rahi', cntAfter === 1, String(cntAfter));
+  const c6 = await db.row("SELECT deposit_count, deposit_amount FROM customers WHERE username='SumTest06'");
+  check('char baar 25,000 → count 4 aur total 1,00,000',
+    c6 && c6.deposit_count === 4 && Number(c6.deposit_amount) === 100000,
+    c6 ? `${c6.deposit_count}/${c6.deposit_amount}` : 'none');
+
+  // wahi file dobara → poori block (count double nahi)
+  const same2 = await uploadRows(token, [
+    ['username', 'transaction id', 'deposit date', 'amount', 'status'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+    ['SumTest06', '', '2026-04-30', 25000, 'successful'],
+  ], false);
+  const c6b = await db.row("SELECT deposit_count FROM customers WHERE username='SumTest06'");
+  check('wahi file dobara → block, count 4 hi', c6b && c6b.deposit_count === 4,
+    c6b ? String(c6b.deposit_count) : 'none');
 
   /* ---- cleanup ---- */
   await db.query("DELETE FROM deposits WHERE username LIKE 'SumTest%'");

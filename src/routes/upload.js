@@ -6,6 +6,7 @@
 //
 // Duplicate transaction ID → reject. Ek username ke kai genuine deposits → allowed.
 
+const crypto = require('crypto');
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
@@ -38,6 +39,9 @@ router.get('/', auth.requirePage('upload'), async (req, res, next) => {
       page: 'upload',
       result: null,
       recent,
+      perUser: null,
+      perUserTotal: null,
+      hasDateCol: true,
       today: D.todayISO(),
     });
   } catch (err) {
@@ -111,12 +115,43 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       const dryRun = req.body.dry === '1';
       const fallbackDate = D.isDate(req.body.play_date) ? req.body.play_date : D.todayISO();
 
+      // File ka hash — wahi file dobara upload ho to poora block
+      const batch = crypto.createHash('sha256').update(req.file.buffer).digest('hex').slice(0, 40);
+      const batchInfo = await db.row(
+        `SELECT COUNT(*)::int AS rows, MIN(created_at) AS first_at
+           FROM deposits WHERE batch = $1`,
+        [batch]
+      );
+
       const opts = kind === 'customers'
         ? { required: ['username'], positional: ['username', 'mobile', 'date'] }
         : { required: ['username', 'qty'], positional: ['username', 'txn_id', 'date', 'qty', 'status'] };
 
+      if (kind === 'deposits' && !dryRun && batchInfo && batchInfo.rows > 0) {
+        return res.status(409).render('upload', {
+          title: 'Daily Upload', page: 'upload', today: D.todayISO(),
+          recent: await db.rows(
+            `SELECT source, COUNT(*)::int AS rows, MAX(created_at) AS last_at
+               FROM deposits GROUP BY source ORDER BY last_at DESC NULLS LAST`
+          ),
+          perUser: null,
+          perUserTotal: null,
+          hasDateCol: true,
+          result: {
+            kind, dryRun: false, blocked: true,
+            fileName: req.file.originalname,
+            batchRows: batchInfo.rows,
+            errors: [], preview: [], count: 0, inserted: 0, skipped: 0,
+          },
+        });
+      }
+
       const parsed = await sheet.parseSheet(req.file.buffer, req.file.originalname, opts);
-      const errors = [...parsed.errors];
+      const errors = [];
+
+      // Date column na ho to saaf batao (ye error nahi, warning hai)
+      const hasDateCol = Boolean(parsed.headerMap && parsed.headerMap.date !== undefined);
+      errors.push(...parsed.errors);
       const preview = [];
 
       let inserted = 0;
@@ -129,7 +164,9 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             errors.push({ line: rec.line, text: '', reason: 'Username khaali' });
             continue;
           }
-          const mobile = String(rec.mobile || rec.meters || '').replace(/[^\d]/g, '');
+          let mobile = String(rec.mobile || rec.meters || '').replace(/[^\d]/g, '');
+          // masked number (+919****0880) ya adhoora number store na karo
+          if (mobile.length < 10) mobile = '';
           const regDate = rec.date || null;
 
           preview.push({
@@ -202,28 +239,14 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             }
           }
 
-          // Har row ek alag transaction hai — usi din do deposit aaye to dono save honge.
-          if (!txn) {
-            // txn ID nahi hai to same entry dobara upload hone par skip karo
-            const same = await db.value(
-              `SELECT 1 FROM deposits
-                WHERE LOWER(username) = LOWER($1) AND play_date = $2 AND amount = $3
-                  AND status = $4 AND txn_count = $5 AND txn_id IS NULL
-                LIMIT 1`,
-              [username, date, qty, status, txnCount]
-            );
-            if (same) {
-              skipped++;
-              errors.push({ line: rec.line, text: `${username} ${date}`, reason: 'Ye entry pehle se hai (skip)' });
-              continue;
-            }
-          }
-
+          // Har row ek alag deposit hai. Same amount dobara aaye to bhi rakho —
+          // warna 25,000 char baar karne wale ka count 1 ho jaata hai.
+          // Duplicate ka pehchan sirf transaction ID aur file-hash se hota hai.
           try {
             await db.query(
-              `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, txn_count, source, created_by)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,'excel',$8)`,
-              [date, username, '', qty, txn || null, status, txnCount, req.session.user.id]
+              `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, txn_count, batch, source, created_by)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'excel',$9)`,
+              [date, username, '', qty, txn || null, status, txnCount, batch, req.session.user.id]
             );
             inserted++;
           } catch (err) {
@@ -243,10 +266,27 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       if (!preview.length) {
         return res.status(400).render('upload', {
           title: 'Daily Upload', page: 'upload', today: D.todayISO(),
+          perUser: null, perUserTotal: null, hasDateCol,
           recent: [],
           result: { kind, dryRun, empty: true, fileName: req.file.originalname, sheet: parsed.sheet, headerMap: parsed.headerMap, errors, preview },
         });
       }
+
+      // Kis customer ke kitni rows aur kitna total — turant dikhe
+      const perUserMap = new Map();
+      for (const r of parsed.rows) {
+        const k = r.username.toLowerCase();
+        const cur = perUserMap.get(k) || { username: r.username, rows: 0, amount: 0 };
+        cur.rows += 1;
+        cur.amount += Number(r.qty) || 0;
+        perUserMap.set(k, cur);
+      }
+      const perUser = [...perUserMap.values()].sort((a, b) => b.rows - a.rows).slice(0, 25);
+      const perUserTotal = {
+        users: perUserMap.size,
+        rows: parsed.rows.length,
+        amount: [...perUserMap.values()].reduce((a, b) => a + b.amount, 0),
+      };
 
       res.render('upload', {
         title: 'Daily Upload',
@@ -256,8 +296,10 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
           `SELECT source, COUNT(*)::int AS rows, MAX(created_at) AS last_at
              FROM deposits GROUP BY source ORDER BY last_at DESC NULLS LAST`
         ),
+        perUser, perUserTotal, hasDateCol,
         result: {
           kind, dryRun,
+          playDate: fallbackDate,
           fileName: req.file.originalname,
           sheet: parsed.sheet,
           headerMap: parsed.headerMap,

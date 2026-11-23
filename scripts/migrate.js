@@ -43,6 +43,7 @@ async function main() {
   for (const [file, label] of [
     ['schema-v3.sql', 'schema v3 (customers, calls, txn status)'],
     ['schema-v3.2.sql', 'schema v3.2 (deposit count support)'],
+    ['schema-v3.4.sql', 'schema v3.4 (upload batch protection)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);
     if (!fs.existsSync(p2)) continue;

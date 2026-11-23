@@ -264,3 +264,25 @@ Confirm box me `DELETE` likhna zaroori hai — galti se delete na ho.
 
 Delete karne ke baad jinka deposit nahi bacha, unki `last_deposit` / `first_deposit` khud NULL ho jaati hain
 (pehle purani dates chipki reh jaati thin — wo bhi v3.3 me theek).
+
+---
+
+## 13. Upload batch protection (v3.4)
+
+Pehle same username + same date + same amount wali rows ko "duplicate" maan ke skip kiya jaata tha.
+Isse `25,000` char baar deposit karne wale ka count 1 ho jaata tha aur total bhi kam aata tha.
+
+Ab:
+
+- **Har row ek alag deposit hai** — same amount dobara aaye to bhi count hota hai.
+- **Duplicate ka pehchan sirf do cheezon se:**
+  1. **transaction id** — wahi ID dobara aayi to line reject.
+  2. **file ka hash (batch)** — wahi file dobara upload ho to **poora upload block** ho jata hai,
+     count double nahi hota. Pehle "Galat upload hatayein" se hata ke dobara upload karein.
+- Upload ke baad **customer-wise hisaab** card dikhta hai — har customer ke kitni rows aur kitna total.
+- **Date column na ho to warning** dikhti hai: sab rows form ki date par jayengi.
+
+### Mobile fallback
+
+Excel deposits me mobile khaali hota hai (mobile customers file se aata hai).
+Ab `client_stats` customer master se mobile le leta hai — Level Report me number khaali nahi dikhta.
