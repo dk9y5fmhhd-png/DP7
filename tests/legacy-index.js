@@ -92,10 +92,12 @@ async function main() {
   });
   const up = await req('/upload');
   const token = csrf(up.text);
-  check('upload page + version tag', up.status === 200 && /v3\.5/.test(up.text), 'v3.5 tag');
+  const pkg = require('../package.json');
+  check('upload page + version tag', up.status === 200 && up.text.includes('v' + pkg.version), 'v' + pkg.version);
 
   const health = await req('/health');
-  check('health me version', health.status === 200 && /"version":"3\.5\.0"/.test(health.text), health.text.slice(0, 60));
+  check('health me version', health.status === 200 && health.text.includes(`"version":"${pkg.version}"`),
+    health.text.slice(0, 70));
 
   // ---- saaf shuruaat ----
   await db.query("DELETE FROM deposits WHERE source='excel'");

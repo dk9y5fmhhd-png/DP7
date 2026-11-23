@@ -307,3 +307,27 @@ Kisi bhi database me `(play_date + username)` par bana UNIQUE index — chahe us
 ek din me ek hi row aane deta hai. Isse upload me har customer ki sirf **pehli row** bachti thi
 (count 1, total kam). Ab `schema-v3.5.sql` startup par aise har index ko dhoondh ke drop karta hai
 (naam ka bharosa nahi karta — index definition padhta hai).
+
+
+---
+
+## 15. v3.6 — Dailyplay7 branding
+
+CRM ab Dailyplay7 logo ke hisaab se black + gold me hai.
+
+| Jagah | Kya |
+|---|---|
+| Sidebar | Logo ek gold plate/badge me (top par), nav active item gold |
+| Login | Logo card ke top par hero banner ki tarah, "RETENTION CRM" gold tagline |
+| Buttons | Primary button solid gold, dark text |
+| Tables | Header par halka gold tint, hover warm |
+| Charts | Gold bars |
+| Favicon | Gold "7" mark |
+
+Brand files: `public/brand/wordmark.png` (sidebar), `public/brand/logo-full.png` (login),
+`public/brand/mark.png` (icon), `public/favicon.png`.
+
+Naya logo lagana ho to bas `public/brand/wordmark.png` replace kar dein — CSS same rahega.
+
+Icons/status colours (red/green/teal) jaan-boojh ke alag rakhe hain — status padhne me
+confusion na ho (VIP badge gold hai, "New" halka teal, danger laal).

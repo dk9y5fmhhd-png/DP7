@@ -4,18 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Sign in · DP7</title>
+  <title>Sign in · Dailyplay7 CRM</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/brand/mark.png">
 </head>
 <body>
 <div class="auth-wrap">
-  <div class="auth-card">
-    <div class="brand">
-      <div class="brand-mark">DP</div>
-      <div class="brand-text" style="display:none"></div>
-    </div>
-    <h1>Welcome back</h1>
-    <p class="sub">Sign in to continue to DP7</p>
+  <div class="auth-card has-logo">
+    <img src="/brand/logo-full.png" alt="Dailyplay7" class="auth-logo">
+    <div class="auth-title">Retention CRM</div>
 
     <% if (error) { %>
       <div class="flash flash-error"><%- icon('alert', 15) %> <span><%= error %></span></div>
@@ -34,7 +32,7 @@
       <button type="submit" class="btn btn-primary" style="margin-top:6px">Sign in</button>
     </form>
 
-    <div class="auth-foot">DP7 · v<%= appVersion %> · internal use only</div>
+    <div class="auth-foot">Dailyplay7 · v<%= appVersion %> · internal use only</div>
   </div>
 </div>
 </body>
