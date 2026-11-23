@@ -43,6 +43,11 @@
         <% }); %>
       </div>
     <% }); %>
+
+    <div style="margin-top:auto;padding:10px 10px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">
+      <span class="muted tiny" style="font-variant-numeric:tabular-nums">v<%= appVersion %></span>
+      <a href="/health" target="_blank" class="muted tiny" style="margin-left:auto;text-decoration:none" title="Health check">health</a>
+    </div>
   </aside>
 
   <main class="main">

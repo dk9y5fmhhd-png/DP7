@@ -286,3 +286,24 @@ Ab:
 
 Excel deposits me mobile khaali hota hai (mobile customers file se aata hai).
 Ab `client_stats` customer master se mobile le leta hai — Level Report me number khaali nahi dikhta.
+
+
+---
+
+## 14. v3.5 — version check + purana index cleanup
+
+Do cheezein jodi gayi:
+
+**1. Version ab screen par dikhta hai**
+- Sidebar ke sabse neeche `v3.5.0`
+- Login page ke footer me bhi
+- `/health` par: `{"ok":true,"version":"3.5.0",...}`
+
+Deploy hua ya nahi, iske bina pata lagana mushkil tha — ab ek nazar me dikh jayega.
+
+**2. Purana daily-unique index zabardasti hata diya**
+
+Kisi bhi database me `(play_date + username)` par bana UNIQUE index — chahe uska naam kuch bhi ho —
+ek din me ek hi row aane deta hai. Isse upload me har customer ki sirf **pehli row** bachti thi
+(count 1, total kam). Ab `schema-v3.5.sql` startup par aise har index ko dhoondh ke drop karta hai
+(naam ka bharosa nahi karta — index definition padhta hai).

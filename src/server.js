@@ -13,6 +13,7 @@ const D = require('./lib/dates');
 const auth = require('./auth');
 const settings = require('./settings');
 const { icon } = require('./lib/icons');
+const pkg = require('../package.json');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -61,6 +62,7 @@ app.use((req, res, next) => {
     today: D.todayISO,
   };
   res.locals.title = 'DP7';
+  res.locals.appVersion = pkg.version;
   res.locals.icon = icon;
   res.locals.ACTION_TYPES = require('./lib/actions').ACTION_TYPES;
   next();
@@ -87,7 +89,7 @@ app.use('/backup', require('./routes/backup'));
 app.get('/health', async (req, res) => {
   try {
     await db.query('SELECT 1');
-    res.json({ ok: true, time: new Date().toISOString() });
+    res.json({ ok: true, version: pkg.version, time: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -114,7 +116,7 @@ app.use((err, req, res, _next) => {
 });
 
 app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`✓ DP7 listening on :${PORT}`);
+  console.log(`✓ DP7 v${pkg.version} listening on :${PORT}`);
   try {
     await db.query('SELECT 1');
     // har deploy par schema/settings khud check ho jaayein
