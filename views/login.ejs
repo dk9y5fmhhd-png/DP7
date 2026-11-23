@@ -5,15 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Sign in · Dailyplay7 CRM</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
   <link rel="icon" href="/favicon.png">
   <link rel="apple-touch-icon" href="/brand/mark.png">
 </head>
 <body>
 <div class="auth-wrap">
   <div class="auth-card has-logo">
-    <img src="/brand/logo-full.png" alt="Dailyplay7" class="auth-logo">
-    <div class="auth-title">Retention CRM</div>
+    <div class="auth-brand">
+      <span class="wordmark wordmark--lg">Dailyplay<span class="wordmark-7">7</span></span>
+      <hr class="brand-rule">
+      <div class="auth-title">Retention CRM</div>
+    </div>
 
     <% if (error) { %>
       <div class="flash flash-error"><%- icon('alert', 15) %> <span><%= error %></span></div>

@@ -331,3 +331,27 @@ Naya logo lagana ho to bas `public/brand/wordmark.png` replace kar dein — CSS 
 
 Icons/status colours (red/green/teal) jaan-boojh ke alag rakhe hain — status padhne me
 confusion na ho (VIP badge gold hai, "New" halka teal, danger laal).
+
+
+---
+
+## 16. v3.7 — gold text wordmark (koi logo image nahi)
+
+Logo image sidebar/login par "ajeeb" lag raha tha — hata diya. Ab **Dailyplay7** sirf
+**gold text** hai (serif italic, gradient fill), original script logo ka feel rakhta hai
+par crisp rehta hai.
+
+| Jagah | Kya |
+|---|---|
+| Sidebar | Gold "Dailyplay7" + patli gold underline (koi box/border nahi) |
+| Login | Bada gold wordmark + gold rule + "RETENTION CRM" |
+| Favicon | Wahi gold "7" mark (browser tab) |
+
+**Browser cache fix:** CSS `?v=<version>` ke saath load hota hai. Pehle theme badalne par
+browser purana purple CSS dikha raha tha (1 ghante ka cache) — ab har version bump par
+naya CSS khud aa jayega.
+
+**Icon fix:** `trash`, `upload`, `users` teen icons missing the — fallback grid (4 chhote
+box) dikh raha tha. Ab proper trash bin, upload arrow aur do log dikhte hain.
+
+**Label fix:** "VIP clan" → "VIP customers".

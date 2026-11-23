@@ -83,50 +83,77 @@ h3 { font-size: 15px; }
 }
 
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 10px; }
-.brand-mark {
-  width: 34px; height: 34px; border-radius: 10px;
-  background: linear-gradient(150deg, #ffe89a 0%, #f5c542 42%, #b8860b 100%);
-  display: grid; place-items: center;
-  font-weight: 800; font-size: 15px; color: #2a1c02;
-  box-shadow: 0 8px 20px -8px rgba(245, 197, 66, 0.55);
-}
 .brand-text strong { display: block; font-size: 15px; letter-spacing: 0.02em; }
-.brand-logo {
-  display: block;
-  width: 100%;
-  max-width: none;
-  height: auto;
-}
 
-/* Logo apne kaale background ke saath — isliye ek gold plate me, taaki
-   sidebar se alag "badge" lage aur hard rectangle na dikhe. */
+/* Wordmark — koi image nahi, sirf gold text (logo image "ajeeb" lag raha tha).
+   Serif italic se original script logo ka feel aata hai, par crisp rehta hai. */
 .brand-plate {
   display: block;
   flex: 0 0 auto;
-  padding: 0;
-  overflow: hidden;
-  border-radius: 12px;
-  background:
-    radial-gradient(120% 140% at 50% 0%, rgba(245, 197, 66, 0.14), transparent 65%),
-    linear-gradient(180deg, #14100c, #0a0806);
-  border: 1px solid rgba(245, 197, 66, 0.28);
-  box-shadow: 0 12px 26px -18px rgba(245, 197, 66, 0.55);
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.brand-plate:hover {
+  position: relative;
+  padding: 4px 6px 14px;
   text-decoration: none;
-  border-color: rgba(245, 197, 66, 0.5);
-  box-shadow: 0 14px 30px -16px rgba(245, 197, 66, 0.7), inset 0 0 26px rgba(245, 197, 66, 0.08);
+  border: 0;
+  background: none;
+  transition: filter 0.15s;
 }
-.brand-mark img { width: 100%; height: 100%; border-radius: 9px; object-fit: cover; }
-.auth-logo {
-  display: block;
-  width: 100%;
-  max-width: 380px;
-  margin: 0 auto 6px;
-  height: auto;
-  filter: drop-shadow(0 14px 34px rgba(245, 197, 66, 0.22));
+.brand-plate:hover { text-decoration: none; filter: brightness(1.12); }
+/* logo jaisi patli gold underline */
+.brand-plate::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 24%;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(245, 197, 66, 0.85), rgba(245, 197, 66, 0.12));
 }
+
+.wordmark {
+  display: inline-block;
+  font-family: Georgia, "Times New Roman", "Noto Serif", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #fff8dd 0%, #ffe083 28%, #f5c542 55%, #d9a520 79%, #b8860b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 7px rgba(245, 197, 66, 0.32));
+}
+.wordmark-7 {
+  font-size: 1.14em;
+  letter-spacing: -0.03em;
+}
+.wordmark--lg {
+  font-size: 44px;
+  filter: drop-shadow(0 4px 16px rgba(245, 197, 66, 0.4));
+}
+
+/* Login ke top ka wordmark block */
+.auth-brand {
+  text-align: center;
+  padding: 26px 0 4px;
+}
+.auth-brand .wordmark {
+  margin: 0 auto;
+}
+.brand-rule {
+  height: 1px;
+  border: 0;
+  width: 62%;
+  margin: 14px auto 12px;
+  background: linear-gradient(90deg, transparent, rgba(245, 197, 66, 0.55), transparent);
+}
+.auth-brand .auth-title {
+  margin: 0 0 18px;
+}
+
 .auth-title {
   text-align: center;
   font-size: 12px;
@@ -398,6 +425,18 @@ select { cursor: pointer; }
 .btn-danger:hover { background: rgba(255, 90, 118, 0.24); }
 .btn-outline { background: transparent; }
 .btn-sm { padding: 5px 10px; font-size: 12px; min-height: 30px; border-radius: 7px; }
+/* Sirf icon wala chhota button (delete) */
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
 .btn-ghost { background: transparent; border-color: transparent; color: var(--fg-soft); }
 .btn-ghost:hover { background: rgba(255,255,255,0.06); }
 .btn[disabled], .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -478,13 +517,6 @@ dialog .close-x:hover { color: var(--fg); }
 }
 .auth-card .brand { justify-content: center; padding-bottom: 18px; }
 .auth-card h1 { text-align: center; font-size: 19px; margin-bottom: 4px; }
-.auth-card.has-logo { padding-top: 0; overflow: hidden; }
-.auth-card.has-logo .auth-logo {
-  width: calc(100% + 56px);
-  max-width: none;
-  margin: 0 -28px 14px;
-  border-radius: 0;
-}
 .auth-card .sub { text-align: center; color: var(--fg-muted); font-size: 12.5px; margin-bottom: 22px; }
 .auth-card .btn { width: 100%; }
 .auth-foot { text-align: center; font-size: 11.5px; color: var(--fg-muted); margin-top: 16px; }
@@ -535,8 +567,9 @@ details[open] > summary { border-bottom: 1px solid var(--border); }
     overflow-x: auto; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--border);
   }
   .brand { display: none; }
-  .brand-plate { flex: 0 0 auto; width: 104px; }
-  .brand-logo { width: 104px; }
+  .brand-plate { flex: 0 0 auto; padding: 2px 6px 9px; }
+  .brand-plate::after { bottom: 3px; }
+  .wordmark { font-size: 18px; }
   .nav-group { flex-direction: row; gap: 6px; }
   .nav-label { display: none; }
   .nav-item { white-space: nowrap; font-size: 12.5px; padding: 6px 11px; }

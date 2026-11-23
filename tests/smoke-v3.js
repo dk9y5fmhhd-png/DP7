@@ -122,7 +122,7 @@ async function main() {
   const token = csrf(home.text);
   check('dashboard khulta hai', home.status === 200);
   check('dashboard par calling queue', /Aaj ki calling queue/i.test(home.text));
-  check('dashboard par VIP clan', /VIP clan/i.test(home.text));
+  check('dashboard par VIP customers', /VIP customers/i.test(home.text));
 
   const pages = [
     ['/customers', /Customer master|Customers/i],
