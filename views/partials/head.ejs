@@ -21,10 +21,11 @@
 
     <%
       const GROUPS = [
-        { label: 'Main',    keys: ['dashboard', 'adddata'] },
-        { label: 'Reports', keys: ['reports', 'level_report', 'daily_report', 'weekly_report', 'biweekly_report', 'monthly_report', 'followups'] },
-        { label: 'Admin',   keys: ['backup', 'users', 'settings'] },
-        { label: 'Account', keys: ['security'] }
+        { label: 'Retention', keys: ['dashboard', 'customers', 'priority', 'mycalls', 'calls', 'upload'] },
+        { label: 'Data',      keys: ['adddata'] },
+        { label: 'Reports',   keys: ['reports', 'level_report', 'daily_report', 'weekly_report', 'biweekly_report', 'monthly_report', 'followups'] },
+        { label: 'Admin',     keys: ['backup', 'users', 'settings'] },
+        { label: 'Account',   keys: ['security'] }
       ];
     %>
 
@@ -67,5 +68,6 @@
           <%- icon(flash.type === 'error' ? 'alert' : 'check', 15) %> <span><%= flash.message %></span>
         </div>
       <% } %>
+
 
 

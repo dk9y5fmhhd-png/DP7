@@ -76,13 +76,18 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
       return res.redirect(req.get('referer') || '/reports');
     }
 
+    const R = require('../lib/remarks');
     await db.query(
-      `INSERT INTO followups (username, action_type, action_date, response, created_by)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [username, actionType, actionDate, response, req.session.user.id]
+      `INSERT INTO followups (username, action_type, action_date, response, next_action, caller_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [username, actionType, actionDate, response, R.nextActionFor(actionType),
+        req.session.user.id, req.session.user.id]
     );
+    if (R.SUPPRESS.has(actionType)) {
+      await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
+    }
     await auth.audit(req, 'add_followup', `${username} → ${actionType}`);
-    req.session.flash = { type: 'success', message: `${username} ka follow-up save ho gaya.` };
+    req.session.flash = { type: 'success', message: `${username} ka remark save ho gaya.` };
     res.redirect(req.get('referer') || '/followups');
   } catch (err) {
     next(err);

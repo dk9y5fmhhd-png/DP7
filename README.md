@@ -4,6 +4,61 @@ Client deposits, retention reports aur follow-ups ka poora admin system — pura
 
 > **Ek line me:** `npm run migrate` → `npm start` → login → data daalna shuru.
 
+
+---
+
+## 0. v3 — Retention CRM (spec ke hisaab se)
+
+Ye version aapke ChatGPT spec par bana hai: 7-day rule, VIP by count, P1/P2/P3 priority,
+caller assignment, remark system, do-tarah ka daily Excel upload aur TeleCMI click-to-call.
+
+### Niyam jo code me lage hue hain
+
+| Cheez | Kaise chalta hai |
+|---|---|
+| **Status** | Pehla deposit → **New** · 7 din ke andar dobara → **Active** · 7 din tak koi deposit nahi → **Inactive** · Inactive ne dobara kiya → **Reactivated** |
+| **Countdown** | Har successful deposit par 7 din ka count phir se shuru |
+| **VIP** | Sirf **successful deposit ke COUNT** se — 25+ VIP · 51+ Premium VIP · 101+ High Value VIP. Amount se nahi. Ek baar VIP bana to permanent (inactive hone par bhi VIP rahega) |
+| **Priority** | **P1** VIP inactive + recently inactive (≤14 din) · **P2** normal inactive + naya customer · **P3** callback pending · **P4** active (call ki zaroorat nahi) |
+| **Assignment** | Ek customer sirf **ek** caller ke paas. Bulk assign bilkul filter par bhi ho sakta hai |
+| **Mobile** | Caller ko masked (`••••0914`) — sirf admin ko poora number. Call button se dial |
+| **Do Not Contact** | Aage kisi calling list me nahi aayega |
+
+### Naye pages
+
+| Page | Kaam |
+|---|---|
+| **Customers** | Customer master — status, VIP, priority, caller, last remark. Filter + bulk assign |
+| **Calling List** | P1/P2/P3 ke hisaab se aaj kisko call karna hai (admin view) |
+| **My Calls** | Caller ka apna dashboard — sirf assigned customers, masked number, call + remark |
+| **Call Log** | Kaun, kab, kisko call kiya — TeleCMI ya manual |
+| **Daily Upload** | A. naye customers (username + mobile) · B. deposit transactions (txn id, amount, status) |
+
+### Remarks aur unka next action
+
+| Remark | System aage kya karta hai |
+|---|---|
+| Interested | Follow-up schedule |
+| Will Deposit | Follow-up priority |
+| Not Interested | Low priority / review |
+| No Answer | Retry queue |
+| Number Not Reachable | Retry later |
+| Already Active | Activity verification |
+| Wrong Number | Data correction |
+| Do Not Contact | Customer suppress (DNC) |
+
+### TeleCMI click-to-call
+
+**Settings → TeleCMI** me App ID, Secret aur Agent number daal dein.
+Uske baad **Call** button seedha agent ke phone par call laga dega — customer ka number caller ko dikhega nahi.
+Keys nahi hain to Call button sirf call log karta hai (manual dial) — system band nahi hota.
+
+### Auto-migrate (ye dhyan dein)
+
+Ab **server start hote hi** schema, settings aur customer sync khud ho jaate hain.
+Matlab naye deployment par Console me `npm run migrate` chalane ki zaroorat nahi —
+`✓ bootstrap complete` log me dikh jayega.
+
 ---
 
 ## 1. Kya-kya andar hai

@@ -356,6 +356,13 @@ select { cursor: pointer; }
 .kv dd { margin: 0; font-weight: 600; }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+
+/* Do cards barabar height ke — footer neeche chipka rahe */
+.grid-equal { align-items: stretch; }
+.grid-equal > .card { display: flex; flex-direction: column; }
+.grid-equal > .card > form { display: flex; flex-direction: column; flex: 1; }
+.grid-equal > .card > form > .card-footer { margin-top: auto; }
+
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
 
 .trend { display: flex; align-items: flex-end; gap: 5px; height: 130px; padding: 8px 0 0; }

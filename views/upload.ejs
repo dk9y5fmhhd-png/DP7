@@ -1,0 +1,201 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Daily Upload</h1>
+    <div class="sub">Roz ka do data — naye customers ki list, aur deposit transactions. Upload ke baad customer master khud update ho jaata hai.</div>
+  </div>
+</div>
+
+<% if (result) { %>
+  <div class="flash flash-<%= result.errors && result.errors.length ? 'info' : 'success' %>">
+    <span>
+      <% if (result.empty) { %>
+        <strong>Koi valid row nahi mili.</strong> Template download karke usi format me daalein.
+      <% } else if (result.dryRun) { %>
+        <strong>Preview</strong> — <%= result.count %> rows valid hain. Kuch save nahi hua; neeche dekh ke <strong>Save</strong> dabayein.
+      <% } else { %>
+        <strong><%= result.inserted %></strong> rows save<%= result.skipped ? ', ' + result.skipped + ' skip' : '' %>.
+        <% if (result.sync) { %> Customer master sync: <strong><%= result.sync.total %></strong> total, <%= result.sync.created %> naye, <%= result.sync.updated %> update.<% } %>
+      <% } %>
+      <% if (result.errors && result.errors.length) { %> · <strong><%= result.errors.length %></strong> lines skip hui.<% } %>
+    </span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('file', 15) %> File</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= result.fileName %><% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %></span>
+    </div>
+    <div class="card-body">
+      <dl class="kv">
+        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers (username + mobile)' : 'Deposit transactions' %></dd>
+        <dt>Valid rows</dt><dd><%= result.count %></dd>
+        <dt>Saved</dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
+        <% if (result.headerMap) { %>
+          <dt>Columns</dt>
+          <dd>
+            <% Object.keys(result.headerMap).forEach(function (k) { %>
+              <span class="badge badge-neutral"><%= k %> → col <%= result.headerMap[k] + 1 %></span>
+            <% }); %>
+          </dd>
+        <% } %>
+      </dl>
+    </div>
+  </div>
+
+  <% if (result.errors && result.errors.length) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('alert', 15) %> Skipped lines</h3></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
+          <tbody>
+            <% result.errors.slice(0, 60).forEach(function (e) { %>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= e.reason %></span></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('list', 15) %> Preview</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Line</th>
+            <% if (result.kind === 'customers') { %>
+              <th>Username</th><th>Mobile</th><th>Reg date</th><th></th>
+            <% } else { %>
+              <th>Username</th><th>Date</th><th class="right">Amount</th><th>Txn ID</th><th>Status</th>
+            <% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% result.preview.slice(0, 100).forEach(function (p) { %>
+            <tr>
+              <td class="num muted"><%= p.line %></td>
+              <% if (result.kind === 'customers') { %>
+                <td><strong><%= p.username %></strong></td>
+                <td class="num"><%= p.mobile || '—' %></td>
+                <td class="muted"><%= p.date %></td>
+                <td class="muted tiny"><%= p.note %></td>
+              <% } else { %>
+                <td><strong><%= p.username %></strong></td>
+                <td class="muted nowrap"><%= p.date %></td>
+                <td class="money right"><%= helpers.money(p.amount) %></td>
+                <td class="muted tiny"><%= p.txn || '—' %></td>
+                <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= p.status %></span></td>
+              <% } %>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<div class="grid-2 grid-equal">
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('team', 15) %> A. Naye customers</h3>
+      <span class="muted tiny" style="margin-left:auto">username · mobile · reg date</span>
+    </div>
+    <form method="post" action="/upload/customers" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          Power BI me mobile numbers nahi hote — wahan se username nikalein, aur yahan se mobile match kar dein.
+          Username unique hai: dobara aaya to sirf mobile/date update hoga, naya record nahi banega.
+        </p>
+        <label class="dropzone">
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
+          <span class="dz-icon"><%- icon('upload', 22) %></span>
+          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
+        </label>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <a class="tiny" href="/upload/template/customers">Template ↓</a>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('money', 15) %> B. Deposit transactions</h3>
+      <span class="muted tiny" style="margin-left:auto">username · txn id · date · amount · status</span>
+    </div>
+    <form method="post" action="/upload/deposits" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          <strong>Sirf successful</strong> deposits customer ke count me jaate hain. Duplicate transaction ID reject hoti hai.
+          Ek username ke kai genuine deposits allowed hain.
+        </p>
+        <label class="dropzone">
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
+          <span class="dz-icon"><%- icon('upload', 22) %></span>
+          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
+        </label>
+        <div class="form-group" style="margin-top:10px">
+          <label>Date <span class="muted tiny">(file me date na ho to)</span></label>
+          <input type="date" name="play_date" value="<%= today %>">
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <a class="tiny" href="/upload/template/deposits">Template ↓</a>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Kis source se data aaya</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Source</th><th class="right">Rows</th><th class="right">Last upload</th></tr></thead>
+        <tbody>
+          <% (recent || []).forEach(function (r) { %>
+            <tr>
+              <td><span class="badge badge-neutral"><%= r.source %></span></td>
+              <td class="right num"><%= r.rows %></td>
+              <td class="right muted tiny"><%= r.last_at ? helpers.prettyDateTime(r.last_at) : '—' %></td>
+            </tr>
+          <% }); %>
+          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty">Abhi koi data nahi.</div></td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert', 15) %> Upload ke rules</h3></div>
+    <div class="card-body">
+      <dl class="kv">
+        <dt>Column order</dt><dd>Koi bhi — header padh liya jaata hai</dd>
+        <dt>Dates</dt><dd><code>2026-11-20</code>, <code>20/11/2026</code>, <code>20 Nov 2026</code></dd>
+        <dt>Duplicate txn</dt><dd>Wahi transaction ID dobara → line reject</dd>
+        <dt>Same username</dt><dd>Kai deposits allowed (genuine hai to)</dd>
+        <dt>Status</dt><dd>successful / failed / pending / reversed — khaali = successful</dd>
+        <dt>Upload ke baad</dt><dd>Customer master khud sync ho jaata hai</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

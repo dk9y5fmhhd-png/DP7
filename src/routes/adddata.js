@@ -200,6 +200,8 @@ router.post('/', auth.requirePage('adddata'), (req, res, next) => {
       let saved = { inserted: 0, skipped: 0, perDate: [] };
       if (!dryRun) {
         saved = await insertRows(parsed.rows, req.session.user.id);
+        // customer master ko naye deposits se sync karo
+        try { await require('../lib/customers').syncCustomers(); } catch (e) { console.error('[sync]', e.message); }
         await auth.audit(
           req,
           'add_data',

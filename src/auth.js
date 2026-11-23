@@ -5,6 +5,11 @@ const db = require('./db');
 
 const PAGES = [
   { key: 'dashboard', label: 'Dashboard', url: '/', icon: 'grid', group: 'main' },
+  { key: 'customers', label: 'Customers', url: '/customers', icon: 'team', group: 'main' },
+  { key: 'priority', label: 'Calling List', url: '/calling', icon: 'alert', group: 'main' },
+  { key: 'mycalls', label: 'My Calls', url: '/calling/my', icon: 'phone', group: 'main' },
+  { key: 'calls', label: 'Call Log', url: '/calls', icon: 'clock', group: 'main' },
+  { key: 'upload', label: 'Daily Upload', url: '/upload', icon: 'upload', group: 'main' },
   { key: 'adddata', label: 'Add Data', url: '/add-data', icon: 'plus', group: 'main' },
   { key: 'reports', label: 'Client Reports', url: '/reports', icon: 'list', group: 'reports' },
   { key: 'level_report', label: 'Level Report', url: '/reports/level', icon: 'award', group: 'reports' },
@@ -159,6 +164,7 @@ module.exports = {
   audit,
   clientIp,
 };
+
 
 
 

@@ -1,0 +1,132 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>My Calls</h1>
+    <div class="sub"><%= helpers.prettyDateLong(today) %> · sirf aapke assigned customers. Number masked hai — call button dabayein.</div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/calling"><%- icon('list', 13) %> Poori calling list</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Aaj ka target</div><div class="value"><%= stats.pending.toLocaleString('en-IN') %></div><div class="hint">P1 + P2 + P3</div></div>
+  <div class="stat bad"><div class="label">P1 — pehle</div><div class="value"><%= stats.p1 %></div><div class="hint">VIP / recently inactive</div></div>
+  <div class="stat warn"><div class="label">P2 — regular</div><div class="value"><%= stats.p2 %></div><div class="hint">normal inactive + new</div></div>
+  <div class="stat"><div class="label">P3 — callback</div><div class="value"><%= stats.p3 %></div><div class="hint">retry queue</div></div>
+  <div class="stat ok"><div class="label">Aaj ki call</div><div class="value"><%= doneToday.calls %></div><div class="hint"><%= doneToday.customers %> customers</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('phone', 15) %> Aapki list</h3>
+    <span class="muted tiny" style="margin-left:auto"><%= rows.length %> customers</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Mobile</th>
+          <th>VIP</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th class="right">Deposits</th>
+          <th class="right">Inactive</th>
+          <th>Last remark</th>
+          <th class="right">Call</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="9"><div class="empty">
+            <span class="big"><%- icon('check', 26) %></span>
+            <% if (user.role === 'super_admin' || user.role === 'admin') { %>
+              Aapke naam par koi customer assign nahi hai — admin ke liye ye normal hai.
+              <a href="/customers">Customers page</a> se callers ko list assign karein.
+            <% } else { %>
+              Aaj ke liye koi customer assign nahi hua. Admin se kehiye.
+            <% } %>
+          </div></td></tr>
+        <% } %>
+        <% rows.forEach(function (r) { %>
+          <tr>
+            <td class="who">
+              <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
+              <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= r.calls_today %> call</span><% } %>
+            </td>
+            <td class="num nowrap"><%= r.mobile_shown %></td>
+            <td>
+              <% if (r.vip_category !== 'normal') { %>
+                <span class="badge <%= r.vip_category === 'high_value_vip' ? 'badge-accent' : (r.vip_category === 'premium_vip' ? 'badge-warn' : 'badge-success') %>">
+                  <%= labels.VIP_LABEL[r.vip_category] %>
+                </span>
+              <% } else { %><span class="muted">—</span><% } %>
+            </td>
+            <td><span class="badge <%= r.status === 'inactive' ? 'badge-danger' : (r.status === 'new' ? 'badge-info' : 'badge-success') %>"><%= labels.STATUS_LABEL[r.status] %></span></td>
+            <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : (r.priority === 'P2' ? 'badge-warn' : 'badge-neutral') %>"><%= r.priority %></span></td>
+            <td class="right num"><strong><%= r.deposit_count %></strong></td>
+            <td class="right num"><%= r.days_inactive < 9999 ? r.days_inactive + 'd' : '—' %></td>
+            <td class="muted tiny">
+              <%= r.last_remark || '—' %>
+              <% if (r.last_remark_date) { %><div class="muted tiny"><%= r.last_remark_date %></div><% } %>
+            </td>
+            <td class="right nowrap">
+              <form method="post" action="/calls/call" style="display:inline;margin:0">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <input type="hidden" name="username" value="<%= r.username %>">
+                <button class="btn btn-sm btn-primary" type="submit"><%- icon('phone', 13) %> Call</button>
+              </form>
+              <button class="btn btn-sm" type="button" onclick="openRemark('<%= r.username.replace(/'/g, "\\'") %>')">Remark</button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<dialog id="remarkDialog">
+  <form method="post" action="/calling/remark">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <input type="hidden" name="username" id="rm_username">
+    <div class="dialog-head">
+      <h3><%- icon('phone', 15) %> Remark</h3>
+      <button type="button" class="close-x" onclick="document.getElementById('remarkDialog').close()">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="muted tiny" style="margin:0 0 12px">Customer: <strong id="rm_who" style="color:var(--fg)"></strong></p>
+      <div class="form-group">
+        <label>Remark</label>
+        <select name="action_type" id="rm_action" required>
+          <option value="">— chunein —</option>
+          <% remarks.forEach(function (r) { %>
+            <option value="<%= r.key %>"><%= r.key %> → <%= r.next %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group"><label>Date</label><input type="date" name="action_date" value="<%= today %>" required></div>
+      <div class="form-group">
+        <label>Note</label>
+        <textarea name="response" rows="3" style="min-height:80px" placeholder="call par kya baat hui…"></textarea>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" onclick="document.getElementById('remarkDialog').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  function openRemark(username) {
+    document.getElementById('rm_username').value = username;
+    document.getElementById('rm_who').textContent = username;
+    document.getElementById('rm_action').value = '';
+    document.getElementById('remarkDialog').showModal();
+  }
+</script>
+
+<%- include('partials/foot') %>
+

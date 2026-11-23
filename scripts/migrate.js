@@ -24,12 +24,27 @@ const DEFAULT_SETTINGS = {
   delete_pin: '969696',
   site_name: 'DP7',
   site_tagline: 'Client deposit tracking & retention',
+  // retention CRM (spec) — 7-din rule, VIP by count, priority
+  inactive_days: 7,
+  recent_inactive_days: 14,
+  vip_min_count: 25,
+  vip_premium_count: 51,
+  vip_high_count: 101,
+  telecmi_app_id: '',
+  telecmi_secret: '',
+  telecmi_agent: '',
 };
 
 async function main() {
   const schema = fs.readFileSync(path.join(__dirname, '..', 'db', 'schema.sql'), 'utf8');
   console.log('→ applying schema…');
   await pool.query(schema);
+
+  const v3Path = path.join(__dirname, '..', 'db', 'schema-v3.sql');
+  if (fs.existsSync(v3Path)) {
+    console.log('→ applying schema v3 (customers, calls, txn status)…');
+    await pool.query(fs.readFileSync(v3Path, 'utf8'));
+  }
 
   // Level bands (only seed when the table is empty, so edits are never overwritten)
   const levelCount = Number((await pool.query('SELECT COUNT(*)::int AS c FROM levels')).rows[0].c);
@@ -68,6 +83,15 @@ async function main() {
     console.log(`→ created super admin "${loginId}" (password: ${password}) — change it after login`);
   } else {
     console.log(`→ super admin "${loginId}" already exists, password left unchanged`);
+  }
+
+  // customers master ko deposits se sync karo (idempotent)
+  try {
+    const C = require('../src/lib/customers');
+    const r = await C.syncCustomers();
+    console.log(`→ customers synced: ${r.total} total, ${r.created} new, ${r.updated} updated`);
+  } catch (err) {
+    console.log('→ customer sync skip:', err.message);
   }
 
   console.log('✓ migrate complete');

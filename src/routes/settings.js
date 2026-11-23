@@ -25,6 +25,56 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.post('/retention', async (req, res, next) => {
+  try {
+    const num = (v, fallback, min, max) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.min(Math.max(n, min), max);
+    };
+
+    const cfg = {
+      inactive_days: Math.round(num(req.body.inactive_days, 7, 1, 90)),
+      recent_inactive_days: Math.round(num(req.body.recent_inactive_days, 14, 1, 180)),
+      vip_min_count: Math.round(num(req.body.vip_min_count, 25, 1, 1000)),
+      vip_premium_count: Math.round(num(req.body.vip_premium_count, 51, 2, 2000)),
+      vip_high_count: Math.round(num(req.body.vip_high_count, 101, 3, 5000)),
+    };
+
+    if (!(cfg.vip_high_count > cfg.vip_premium_count && cfg.vip_premium_count > cfg.vip_min_count)) {
+      req.session.flash = { type: 'error', message: 'VIP counts badhte kram me hone chahiye: VIP < Premium < High Value.' };
+      return res.redirect('/settings?tab=retention');
+    }
+
+    await settings.setMany(cfg);
+    // naye thresholds se master dobara sync
+    const r = await require('../lib/customers').syncCustomers();
+    await auth.audit(req, 'settings_retention', JSON.stringify(cfg));
+    req.session.flash = {
+      type: 'success',
+      message: `Retention settings save — ${r.total} customers dobara check hue.`,
+    };
+    res.redirect('/settings?tab=retention');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/telecmi', async (req, res, next) => {
+  try {
+    await settings.setMany({
+      telecmi_app_id: String(req.body.telecmi_app_id || '').trim().slice(0, 120),
+      telecmi_secret: String(req.body.telecmi_secret || '').trim().slice(0, 200),
+      telecmi_agent: String(req.body.telecmi_agent || '').replace(/[^\d+]/g, '').slice(0, 20),
+    });
+    await auth.audit(req, 'settings_telecmi', 'updated');
+    req.session.flash = { type: 'success', message: 'TeleCMI settings save ho gaye.' };
+    res.redirect('/settings?tab=telecmi');
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/general', async (req, res, next) => {
   try {
     const num = (v, fallback, min, max) => {
@@ -91,4 +141,5 @@ router.post('/levels', async (req, res, next) => {
 });
 
 module.exports = router;
+
 

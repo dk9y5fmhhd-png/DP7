@@ -15,6 +15,61 @@
   </div>
 </div>
 
+
+<% if (data.crm && data.crm.total) { %>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('alert', 15) %> Aaj ki calling queue</h3>
+        <a href="/calling" class="tiny" style="margin-left:auto">Calling list →</a>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat bad">
+            <div class="label">P1</div><div class="value"><%= data.crm.p1 %></div>
+            <div class="hint">VIP / recently inactive</div>
+          </div>
+          <div class="stat warn">
+            <div class="label">P2</div><div class="value"><%= data.crm.p2 %></div>
+            <div class="hint">normal inactive + new</div>
+          </div>
+          <div class="stat">
+            <div class="label">P3</div><div class="value"><%= data.crm.p3 %></div>
+            <div class="hint">callback pending</div>
+          </div>
+          <div class="stat ok">
+            <div class="label">Aaj call</div><div class="value"><%= data.crm.callsToday %></div>
+            <div class="hint"><%= data.crm.remarksToday %> remark<%= data.crm.remarksToday === 1 ? '' : 's' %></div>
+          </div>
+        </div>
+        <p class="muted tiny" style="margin:12px 0 0">
+          <strong><%= data.crm.free %></strong> customers bina caller ke hain — Customers page se assign karein.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('award', 15) %> VIP clan (count se)</h3>
+        <a href="/customers?vip=vip" class="tiny" style="margin-left:auto">Customers →</a>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat ok"><div class="label">VIP</div><div class="value"><%= data.crm.vip %></div><div class="hint">25+ deposits</div></div>
+          <div class="stat warn"><div class="label">Premium VIP</div><div class="value"><%= data.crm.premium %></div><div class="hint">51+ deposits</div></div>
+          <div class="stat"><div class="label">High Value</div><div class="value"><%= data.crm.high %></div><div class="hint">101+ deposits</div></div>
+        </div>
+        <div class="chips" style="margin-top:14px">
+          <span class="chip">New <%= data.crm.new %></span>
+          <span class="chip">Active <%= data.crm.active %></span>
+          <span class="chip">Inactive <%= data.crm.inactive %></span>
+          <span class="chip">Reactivated <%= data.crm.reactivated %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
 <div class="stat-grid">
   <div class="stat">
     <div class="label">Total clients</div>

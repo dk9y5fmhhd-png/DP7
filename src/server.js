@@ -72,6 +72,10 @@ app.use(auth.checkCsrf);
 // Routes
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
+app.use('/customers', require('./routes/customers'));
+app.use('/calling', require('./routes/priority'));
+app.use('/calls', require('./routes/calls'));
+app.use('/upload', require('./routes/upload'));
 app.use('/add-data', require('./routes/adddata'));
 app.use('/reports', require('./routes/reports'));
 app.use('/followups', require('./routes/followups'));
@@ -113,6 +117,8 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`✓ DP7 listening on :${PORT}`);
   try {
     await db.query('SELECT 1');
+    // har deploy par schema/settings khud check ho jaayein
+    await require('./lib/bootstrap').start();
     const cfg = await settings.all();
     console.log(`✓ db connected · active window ${cfg.active_window_days}d · TZ ${D.APP_TZ}`);
   } catch (err) {
@@ -121,6 +127,8 @@ app.listen(PORT, '0.0.0.0', async () => {
 });
 
 module.exports = app;
+
+
 
 
 

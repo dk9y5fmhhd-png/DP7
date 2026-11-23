@@ -455,10 +455,48 @@ async function dashboardData() {
     )
   );
 
+  // ---- retention CRM (spec) ----
+  let crm = {
+    total: 0, new: 0, active: 0, inactive: 0, reactivated: 0,
+    vip: 0, premium: 0, high: 0,
+    p1: 0, p2: 0, p3: 0, free: 0,
+    callsToday: 0, remarksToday: 0,
+  };
+  try {
+    const row = await db.row(
+      `SELECT
+         COUNT(*)::int AS total,
+         COUNT(*) FILTER (WHERE status = 'new')::int AS new_c,
+         COUNT(*) FILTER (WHERE status = 'active')::int AS active_c,
+         COUNT(*) FILTER (WHERE status = 'inactive')::int AS inactive_c,
+         COUNT(*) FILTER (WHERE status = 'reactivated')::int AS reactivated_c,
+         COUNT(*) FILTER (WHERE vip_category = 'vip')::int AS vip_c,
+         COUNT(*) FILTER (WHERE vip_category = 'premium_vip')::int AS premium_c,
+         COUNT(*) FILTER (WHERE vip_category = 'high_value_vip')::int AS high_c,
+         COUNT(*) FILTER (WHERE priority = 'P1')::int AS p1,
+         COUNT(*) FILTER (WHERE priority = 'P2')::int AS p2,
+         COUNT(*) FILTER (WHERE priority = 'P3')::int AS p3,
+         COUNT(*) FILTER (WHERE assigned_to IS NULL)::int AS free
+       FROM customer_board`
+    );
+    const calls = await db.value('SELECT COUNT(*)::int FROM calls WHERE called_at::date = $1', [today]);
+    const remarks = await db.value('SELECT COUNT(*)::int FROM followups WHERE action_date = $1', [today]);
+    crm = {
+      total: row.total, new: row.new_c, active: row.active_c, inactive: row.inactive_c,
+      reactivated: row.reactivated_c,
+      vip: row.vip_c, premium: row.premium_c, high: row.high_c,
+      p1: row.p1, p2: row.p2, p3: row.p3, free: row.free,
+      callsToday: Number(calls), remarksToday: Number(remarks),
+    };
+  } catch (err) {
+    console.error('[dashboard] crm stats skip:', err.message);
+  }
+
   return {
     today,
     windowDays,
     cutoff,
+    crm,
     totals: {
       total: totals.total,
       active: totals.active,
@@ -493,5 +531,6 @@ module.exports = {
   levelName,
   levelClass,
 };
+
 
 
