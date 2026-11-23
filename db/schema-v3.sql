@@ -26,6 +26,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS deposits_txn_uniq
 
 CREATE INDEX IF NOT EXISTS deposits_status_idx ON deposits (status);
 
+-- ---------- ek din me ek client ki KAI deposits ho sakti hain ----------
+-- Purana index (play_date, username) daily-report ke zamane ka tha. Retention CRM me
+-- har deposit ek alag transaction hai — usi din do deposit aaye to dono ginne chahiye.
+DROP INDEX IF EXISTS deposits_day_client_uniq;
+
+-- Manual bulk entry (Add Data) me phir bhi ek din me ek hi entry rahe
+CREATE UNIQUE INDEX IF NOT EXISTS deposits_manual_day_uniq
+  ON deposits (play_date, LOWER(username)) WHERE source = 'manual';
+
 -- ---------- customer master ----------
 CREATE TABLE IF NOT EXISTS customers (
   id              SERIAL PRIMARY KEY,
@@ -97,4 +106,5 @@ SELECT
   END AS priority
 FROM customers c
 LEFT JOIN users u ON u.id = c.assigned_to;
+
 

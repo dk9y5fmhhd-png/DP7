@@ -40,10 +40,14 @@ async function main() {
   console.log('→ applying schema…');
   await pool.query(schema);
 
-  const v3Path = path.join(__dirname, '..', 'db', 'schema-v3.sql');
-  if (fs.existsSync(v3Path)) {
-    console.log('→ applying schema v3 (customers, calls, txn status)…');
-    await pool.query(fs.readFileSync(v3Path, 'utf8'));
+  for (const [file, label] of [
+    ['schema-v3.sql', 'schema v3 (customers, calls, txn status)'],
+    ['schema-v3.2.sql', 'schema v3.2 (deposit count support)'],
+  ]) {
+    const p2 = path.join(__dirname, '..', 'db', file);
+    if (!fs.existsSync(p2)) continue;
+    console.log(`→ applying ${label}…`);
+    await pool.query(fs.readFileSync(p2, 'utf8'));
   }
 
   // Level bands (only seed when the table is empty, so edits are never overwritten)

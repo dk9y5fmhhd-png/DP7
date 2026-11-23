@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS = {
 
 async function run() {
   const root = path.join(__dirname, '..', '..', 'db');
-  for (const f of ['schema.sql', 'schema-v3.sql']) {
+  for (const f of ['schema.sql', 'schema-v3.sql', 'schema-v3.2.sql']) {
     const file = path.join(root, f);
     if (!fs.existsSync(file)) continue;
     await db.query(fs.readFileSync(file, 'utf8'));

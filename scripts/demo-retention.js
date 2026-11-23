@@ -80,8 +80,7 @@ async function main() {
       const status = i === 3 && p.deposits > 10 ? 'failed' : 'successful';
       await pool.query(
         `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, source, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,'demo',$7)
-         ON CONFLICT (play_date, LOWER(username)) DO NOTHING`,
+         VALUES ($1,$2,$3,$4,$5,$6,'demo',$7)`,
         [date, p.username, p.mobile, p.amount + rand(-100, 400), 'TXN' + (txnSeq++), status, adminId]
       );
       rows++;

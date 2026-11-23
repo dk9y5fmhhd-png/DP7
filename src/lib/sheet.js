@@ -11,6 +11,8 @@ const FIELDS = {
   mobile: ['mobile', 'mobile number', 'mob', 'phone', 'contact', 'number', 'whatsapp', 'no'],
   date: ['date', 'deposit date', 'registration date', 'reg date', 'play date', 'date of deposit', 'tarikh', 'day'],
   txn_id: ['transaction id', 'txn id', 'txnid', 'transaction', 'utr', 'reference', 'ref no', 'order id', 'id'],
+  count: ['count', 'deposit count', 'deposits', 'no of deposits', 'number of deposits',
+          'total deposits', 'txn count', 'times', 'deposit times', 'no of txn', 'transactions'],
   amount: ['amount', 'amt', 'deposit', 'value', 'rs', 'inr', 'sum', 'total'],
   status: ['status', 'state', 'result', 'txn status', 'transaction status'],
 };
@@ -183,6 +185,7 @@ async function parseSheet(buffer, filename, opts) {
       mobile: String(cellText(get('mobile')) || '').replace(/[^\d]/g, ''),
       date: normaliseDate(get('date')),
       txn_id: str(get('txn_id')),
+      count: normaliseNumber(get('count')),
       qty: normaliseNumber(get('amount')),
       status: str(get('status')),
     };
@@ -238,17 +241,22 @@ async function buildTemplate(kind) {
       { header: 'deposit date', width: 16 },
       { header: 'amount', width: 12 },
       { header: 'status', width: 12 },
+      { header: 'deposit count', width: 15 },
     ];
     const head = ws.getRow(1);
     head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D5EFC' } };
-    ws.addRow(['rahul123', 'TXN10001', '2026-11-20', 500, 'successful']);
-    ws.addRow(['rahul123', 'TXN10002', '2026-11-22', 300, 'successful']);
-    ws.addRow(['priya_s', 'TXN10003', '2026-11-21', 1200, 'successful']);
-    ws.addRow(['amit99', 'TXN10004', '2026-11-21', 200, 'failed']);
+    // transaction-wise (count khaali = 1)
+    ws.addRow(['rahul123', 'TXN10001', '2026-11-20', 500, 'successful', '']);
+    ws.addRow(['rahul123', 'TXN10002', '2026-11-22', 300, 'successful', '']);
+    ws.addRow(['priya_s', 'TXN10003', '2026-11-21', 1200, 'successful', '']);
+    ws.addRow(['amit99', 'TXN10004', '2026-11-21', 200, 'failed', '']);
+    // summary row — ek row me 25 deposits
+    ws.addRow(['vijayst1', '', '2026-04-30', 30000, 'successful', 25]);
     ws.addRow([]);
     ws.addRow(['Note:']).font = { bold: true };
     [
+      'Deposit count khaali = 1 (transaction-wise row). Summary row me kitni deposits hain wo likhein.',
       'Sirf status = successful wale deposits customer ke count me jaate hain.',
       'Ek transaction id dobara aaya to woh line reject ho jayegi.',
       'Ek username ke kai genuine deposits allowed hain.',

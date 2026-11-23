@@ -39,9 +39,7 @@ CREATE TABLE IF NOT EXISTS deposits (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- One entry per client per day. Re-uploading the same day is a no-op for that client.
-CREATE UNIQUE INDEX IF NOT EXISTS deposits_day_client_uniq
-  ON deposits (play_date, LOWER(username));
+-- Per-day uniqueness sirf manual entry ke liye hai — dekho schema-v3.sql (deposits_manual_day_uniq).
 
 CREATE INDEX IF NOT EXISTS deposits_play_date_idx ON deposits (play_date);
 CREATE INDEX IF NOT EXISTS deposits_username_idx  ON deposits (LOWER(username));
@@ -71,18 +69,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS audit_log_created_idx ON audit_log (created_at DESC);
 
--- Per-client totals: deposits never change once written, so a view is enough.
-CREATE OR REPLACE VIEW client_stats AS
-SELECT
-  d.username,
-  MIN(d.play_date)                              AS first_deposit,
-  MAX(d.play_date)                              AS last_deposit,
-  SUM(d.amount)                                 AS total_deposited,
-  COUNT(*)                                      AS deposit_count,
-  COUNT(DISTINCT d.play_date)                   AS active_days,
-  (ARRAY_AGG(d.mobile ORDER BY d.play_date DESC, d.id DESC))[1] AS mobile
-FROM deposits d
-GROUP BY d.username;
+-- client_stats view ab schema-v3.2.sql me hai (txn_count + successful filter ke saath).
 
 -- Which level does a given lifetime total fall into? NULL = no band matched.
 CREATE OR REPLACE FUNCTION client_level(p_total NUMERIC)

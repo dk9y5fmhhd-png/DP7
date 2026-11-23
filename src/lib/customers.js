@@ -66,7 +66,8 @@ async function syncCustomers() {
             MIN(play_date) AS first_deposit,
             MAX(play_date) AS last_deposit,
             COUNT(*)::int AS cnt,
-            COALESCE(SUM(amount), 0)::float8 AS amt
+            COALESCE(SUM(amount), 0)::float8 AS amt,
+            COALESCE(SUM(txn_count), 0)::int AS txn_cnt
        FROM deposits
       WHERE status = 'successful'
       GROUP BY LOWER(username)`
@@ -85,13 +86,13 @@ async function syncCustomers() {
     const daysSinceLast = daysBetween(r.last_deposit);
 
     let status;
-    if (r.cnt <= 1 && daysSinceLast <= cfg.inactive_days) status = 'new';
+    if (r.txn_cnt <= 1 && daysSinceLast <= cfg.inactive_days) status = 'new';
     else if (daysSinceLast > cfg.inactive_days) status = 'inactive';
     else if (prev && (prev.status === 'inactive' || prev.status === 'reactivated')) status = 'reactivated';
     else status = 'active';
 
     // VIP kabhi neeche nahi jaata
-    const computed = vipForCount(r.cnt, cfg);
+    const computed = vipForCount(r.txn_cnt, cfg);
     const vip = prev && rank(prev.vip_category) > rank(computed) ? prev.vip_category : computed;
 
     const reactivatedAt =
@@ -108,7 +109,7 @@ async function syncCustomers() {
             status, vip_category, reactivated_at, last_synced_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())`,
         [r.username, r.mobile || '', r.first_deposit, r.first_deposit, r.last_deposit,
-          r.cnt, r.amt, status, vip, reactivatedAt]
+          r.txn_cnt, r.amt, status, vip, reactivatedAt]
       );
       created++;
     } else {
@@ -119,7 +120,7 @@ async function syncCustomers() {
                 reactivated_at = $10, last_synced_at = NOW()
           WHERE id = $1`,
         [prev.id, r.username, r.mobile || prev.mobile || '', r.first_deposit, r.last_deposit,
-          r.cnt, r.amt, status, vip, reactivatedAt]
+          r.txn_cnt, r.amt, status, vip, reactivatedAt]
       );
       updated++;
     }
@@ -198,4 +199,5 @@ module.exports = {
   VIP_ORDER, VIP_LABEL, STATUS_LABEL, PRIORITY_LABEL,
   vipForCount, syncCustomers, thresholds, priorityFor, maskMobile, daysBetween, rank,
 };
+
 

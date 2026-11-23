@@ -70,7 +70,7 @@
             <% if (result.kind === 'customers') { %>
               <th>Username</th><th>Mobile</th><th>Reg date</th><th></th>
             <% } else { %>
-              <th>Username</th><th>Date</th><th class="right">Amount</th><th>Txn ID</th><th>Status</th>
+              <th>Username</th><th>Date</th><th class="right">Amount</th><th>Txn ID</th><th>Status</th><th class="right">Count</th>
             <% } %>
           </tr>
         </thead>
@@ -89,6 +89,7 @@
                 <td class="money right"><%= helpers.money(p.amount) %></td>
                 <td class="muted tiny"><%= p.txn || '—' %></td>
                 <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= p.status %></span></td>
+                <td class="right num"><%= p.count || 1 %></td>
               <% } %>
             </tr>
           <% }); %>
@@ -162,6 +163,63 @@
   </div>
 </div>
 
+<div class="grid-2 grid-equal">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert', 15) %> Deposit count kaise banta hai</h3></div>
+    <div class="card-body">
+      <p class="soft" style="margin-top:0">
+        <strong>Deposits</strong> column = us customer ki kitni <strong>rows</strong> hain. Ek row = ek deposit.
+        Isliye <strong>total amount</strong> alag cheez hai aur <strong>count</strong> alag.
+      </p>
+      <dl class="kv">
+        <dt>Galat file</dt>
+        <dd>Ek customer ki ek hi row, jisme lifetime total likha ho <strong>aur count column na ho</strong> →
+          count <strong>1</strong>, level total se banega (jaise ₹30,000 → Level 4)</dd>
+        <dt>Summary + count</dt>
+        <dd>Wahi summary file, par ek extra column <code>deposit count</code> = 25 →
+          level total se, VIP count se. Dono sahi</dd>
+        <dt>Sahi file</dt>
+        <dd>Har deposit ki alag row (₹500, ₹700, ₹900…) → <strong>count 3</strong>,
+          aur 25+ hone par VIP</dd>
+      </dl>
+      <p class="muted tiny" style="margin:12px 0 0">
+        <strong>Same din ki do deposits bhi alag rows hongi</strong> — system ab dono ginata hai (pehle ek merge ho jati thi).
+        VIP count sirf <strong>successful</strong> rows se banta hai.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('trash', 15) %> Galat upload hatayein</h3></div>
+    <form method="post" action="/upload/clear">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          Summary file galti se chali gayi ho to pehle use hataayein, phir transaction-wise file upload karein.
+          Ye delete karne ke baad customer master khud dobara ban jayega.
+        </p>
+        <div class="form-group">
+          <label>Kya delete karein</label>
+          <select name="scope">
+            <option value="excel">Sirf Excel upload wala data</option>
+            <option value="all">Sab deposits (manual + demo bhi)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Confirm karne ke liye <code>DELETE</code> likhein</label>
+          <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
+        </div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button class="btn btn-danger" type="submit"
+                data-confirm="Deposits delete ho jayenge aur customer master dobara banega. Pakka?">
+          <%- icon('trash', 15) %> Delete aur re-sync
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="grid-2">
   <div class="card">
     <div class="card-header"><h3><%- icon('clock', 15) %> Kis source se data aaya</h3></div>
@@ -191,6 +249,8 @@
         <dt>Duplicate txn</dt><dd>Wahi transaction ID dobara → line reject</dd>
         <dt>Same username</dt><dd>Kai deposits allowed (genuine hai to)</dd>
         <dt>Status</dt><dd>successful / failed / pending / reversed — khaali = successful</dd>
+        <dt>Deposit count</dt><dd><strong>Optional.</strong> Transaction-wise rows me khaali chhod dein (=1).
+          Summary row me (ek row = lifetime total) us row me kitni deposits hain wo likhein — VIP isi se banega</dd>
         <dt>Upload ke baad</dt><dd>Customer master khud sync ho jaata hai</dd>
       </dl>
     </div>

@@ -60,6 +60,36 @@ router.get('/template/:kind', auth.requirePage('upload'), async (req, res, next)
   }
 });
 
+/* ------------------------------ clear uploaded data ------------------------------ */
+// Galat file upload ho jaye (jaise summary ki jagah transaction) to pehle saaf karein.
+router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
+  try {
+    if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
+      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      return res.redirect('/upload');
+    }
+
+    const scope = req.body.scope === 'all' ? 'all' : 'excel';
+    let removed = 0;
+
+    if (scope === 'all') {
+      removed = (await db.query('DELETE FROM deposits')).rowCount;
+    } else {
+      removed = (await db.query("DELETE FROM deposits WHERE source = 'excel'")).rowCount;
+    }
+
+    const sync = await C.syncCustomers();
+    await auth.audit(req, 'clear_deposits', `scope=${scope} removed=${removed}`);
+    req.session.flash = {
+      type: 'success',
+      message: `${removed} deposit rows delete — customer master dobara sync (${sync.total} customers). Ab sahi file upload karein.`,
+    };
+    res.redirect('/upload');
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* ------------------------------ upload ------------------------------ */
 
 router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
@@ -137,6 +167,9 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
           const txn = String(rec.txn_id || '').trim();
           const status = normaliseStatus(rec.status);
           const date = rec.date || fallbackDate;
+          // summary file me ek row me kai deposits ho sakti hain
+          const txnCount = Number.isFinite(Number(rec.count)) && Number(rec.count) >= 1
+            ? Math.round(Number(rec.count)) : 1;
 
           if (!username) {
             errors.push({ line: rec.line, text: '', reason: 'Username khaali' });
@@ -149,7 +182,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
 
           preview.push({
             line: rec.line, username, mobile: '',
-            date, amount: qty, txn, status,
+            date, amount: qty, txn, status, count: txnCount,
           });
 
           if (dryRun) {
@@ -169,17 +202,28 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             }
           }
 
-          // ek din me ek entry (unique index) — status ke saath
+          // Har row ek alag transaction hai — usi din do deposit aaye to dono save honge.
+          if (!txn) {
+            // txn ID nahi hai to same entry dobara upload hone par skip karo
+            const same = await db.value(
+              `SELECT 1 FROM deposits
+                WHERE LOWER(username) = LOWER($1) AND play_date = $2 AND amount = $3
+                  AND status = $4 AND txn_count = $5 AND txn_id IS NULL
+                LIMIT 1`,
+              [username, date, qty, status, txnCount]
+            );
+            if (same) {
+              skipped++;
+              errors.push({ line: rec.line, text: `${username} ${date}`, reason: 'Ye entry pehle se hai (skip)' });
+              continue;
+            }
+          }
+
           try {
             await db.query(
-              `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, source, created_by)
-               VALUES ($1,$2,$3,$4,$5,$6,'excel',$7)
-               ON CONFLICT (play_date, LOWER(username)) DO UPDATE
-                 SET amount = EXCLUDED.amount,
-                     txn_id = COALESCE(EXCLUDED.txn_id, deposits.txn_id),
-                     status = EXCLUDED.status,
-                     source = 'excel'`,
-              [date, username, '', qty, txn || null, status, req.session.user.id]
+              `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, txn_count, source, created_by)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,'excel',$8)`,
+              [date, username, '', qty, txn || null, status, txnCount, req.session.user.id]
             );
             inserted++;
           } catch (err) {
@@ -244,4 +288,8 @@ function normaliseStatus(raw) {
 }
 
 module.exports = router;
+
+
+
+
 

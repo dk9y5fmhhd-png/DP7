@@ -68,8 +68,12 @@ async function xlsx(rows) {
 
 /* ---------- fixtures (fresh DB par bhi test chale) ---------- */
 async function seedFixtures(db) {
-  const existing = Number(await db.value('SELECT COUNT(*)::int FROM customers'));
-  if (existing > 0) return;
+  const NAMES = ['KKK74DP','SaurabhDP17','DP339RAJA','RohitVip01','AadilP79','AarushS52','NewGuy01','ActiveOne'];
+  const have = Number(await db.value(
+    'SELECT COUNT(*)::int FROM customers WHERE username = ANY($1::text[])', [NAMES]
+  ));
+  if (have === NAMES.length) return;
+  await db.query('DELETE FROM deposits WHERE username = ANY($1::text[])', [NAMES]);
 
   const today = new Date();
   const iso = (n) => {
@@ -94,8 +98,7 @@ async function seedFixtures(db) {
       const status = i === 2 && count > 10 ? 'failed' : 'successful';
       await db.query(
         `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, source)
-         VALUES ($1,$2,$3,500,$4,$5,'test')
-         ON CONFLICT (play_date, LOWER(username)) DO NOTHING`,
+         VALUES ($1,$2,$3,500,$4,$5,'test')`,
         [iso(Math.min(lastAgo + i, 800)), username, mobile, 'FTX' + username + i, status]
       );
     }

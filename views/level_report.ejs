@@ -3,7 +3,10 @@
 <div class="page-head">
   <div class="titles">
     <h1>Level Report</h1>
-    <div class="sub">Lifetime deposits ke hisaab se ranking. Active = <%= helpers.prettyDate(data.cutoff) %> ke baad deposit.</div>
+    <div class="sub">
+      Lifetime deposits ke hisaab se ranking. Active = <%= helpers.prettyDate(data.cutoff) %> ke baad deposit.
+      · <strong>Deposits</strong> = kitni rows, <strong>Level</strong> = total amount se
+    </div>
   </div>
   <div class="chips">
     <a class="chip" href="/reports/export?type=level<%= filters.level ? '&level=' + filters.level : '' %>"><%- icon('download', 13) %> CSV</a>

@@ -24,6 +24,24 @@ caller assignment, remark system, do-tarah ka daily Excel upload aur TeleCMI cli
 | **Mobile** | Caller ko masked (`••••0914`) — sirf admin ko poora number. Call button se dial |
 | **Do Not Contact** | Aage kisi calling list me nahi aayega |
 
+
+### Deposit count ka matlab (zaroori)
+
+`Deposits` column = us customer ki **kitni deposit rows** hain. Ek row = ek deposit.
+
+| File | Kya hota hai |
+|---|---|
+| Ek customer ki **ek hi row**, jisme lifetime total (₹30,000) | count = **1**, Level = total se (₹30,000 → Level 4) |
+| Har deposit ki **alag row** (₹500, ₹700, ₹900…) | count = **3**, aur 25+ par VIP |
+
+Summary (total) file se VIP kabhi nahi banega — VIP ke liye transaction-wise rows chahiye.
+
+**Same din ki do deposits** bhi alag rows hoti hain (v3.1 se) — pehle ek merge ho jati thi.
+Duplicate protection sirf **transaction ID** par hai.
+
+Galat file chali jaye to **Daily Upload → Galat upload hatayein** se pehle saaf karein
+(`DELETE` likhna padta hai), phir sahi file upload karein — customer master khud dobara ban jayega.
+
 ### Naye pages
 
 | Page | Kaam |
