@@ -166,6 +166,26 @@
   </div>
 </div>
 
+<div class="card" style="border-color:rgba(255,90,118,0.35)">
+  <div class="card-header" style="background:rgba(255,90,118,0.07)">
+    <h3><%- icon('trash', 15) %> Ye customer delete karein</h3>
+  </div>
+  <form method="post" action="/customers/<%= c.id %>/delete">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <input type="hidden" name="back" value="detail">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <p class="muted tiny" style="margin:0;flex:1 1 260px">
+        <strong><%= c.username %></strong> ka master record, uske saare remarks aur call log delete ho jayenge.
+        Deposits rows alag rehti hain — chahiye to pehle <a href="/upload">Daily Upload</a> se wo bhi hata lein.
+      </p>
+      <button class="btn btn-danger" type="submit"
+              data-confirm="<%= c.username %> permanently delete karein?">
+        <%- icon('trash', 15) %> Customer delete
+      </button>
+    </div>
+  </form>
+</div>
+
 <%- include('partials/foot') %>
 
 

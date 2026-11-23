@@ -241,3 +241,26 @@ public/style.css      theme
 
 
 
+
+---
+
+## 12. Customer delete (v3.3)
+
+Teen jagah se delete kar sakte hain (sirf Super Admin):
+
+| Kahan | Kya hota hai |
+|---|---|
+| **Customers** → har row ke aakhir me trash icon | Woh ek customer + uske remarks aur calls |
+| **Customers** → checkbox tick → **Delete** button (bulk bar me) | Chune hue saare customers |
+| **Customers** → sabse neeche **Customer data delete** card | Sab kuch, scope ke saath |
+
+**Card me do scope hain:**
+
+- **Sirf customer master** — customers, remarks, calls delete. Deposits rows bachi rehti hain,
+  isliye **Sync from deposits** dabane par customers wapas ban jayenge.
+- **Sab kuch** — customers + deposits + remarks + calls, sab saaf. Phir nayi file upload karein.
+
+Confirm box me `DELETE` likhna zaroori hai — galti se delete na ho.
+
+Delete karne ke baad jinka deposit nahi bacha, unki `last_deposit` / `first_deposit` khud NULL ho jaati hain
+(pehle purani dates chipki reh jaati thin — wo bhi v3.3 me theek).

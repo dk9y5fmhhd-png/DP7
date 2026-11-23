@@ -95,7 +95,7 @@
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="right num"><%= r.days_inactive < 9999 ? r.days_inactive + 'd' : '—' %></td>
               <td class="muted tiny"><%= r.last_remark || '—' %></td>
-              <td class="tiny"><%= r.caller_name || '<span class="muted">free</span>' %></td>
+              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">free</span><% } %></td>
               <td class="right nowrap">
                 <form method="post" action="/calls/call" style="display:inline;margin:0">
                   <input type="hidden" name="csrf_token" value="<%= csrfToken %>">

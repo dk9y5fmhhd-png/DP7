@@ -211,6 +211,92 @@ router.post('/:id/flags', auth.requirePage('customers'), async (req, res, next) 
 
 /* ------------------------------ sync ------------------------------ */
 
+/* ------------------------------ delete ------------------------------ */
+
+// Ek customer delete (uske remarks aur calls bhi saath jaate hain)
+router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
+  try {
+    const c = await db.row('SELECT id, username FROM customers WHERE id = $1', [req.params.id]);
+    if (!c) {
+      req.session.flash = { type: 'error', message: 'Customer nahi mila.' };
+      return res.redirect('/customers');
+    }
+    await db.query('DELETE FROM customers WHERE id = $1', [c.id]);
+    await db.query('DELETE FROM followups WHERE LOWER(username) = LOWER($1)', [c.username]);
+    await auth.audit(req, 'customer_delete', c.username);
+    req.session.flash = { type: 'success', message: `Customer "${c.username}" delete ho gaya (remarks aur calls bhi).` };
+    res.redirect(req.body.back === 'detail' ? '/customers' : (req.get('referer') || '/customers'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Chune hue customers delete
+router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) => {
+  try {
+    if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
+      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      return res.redirect(req.get('referer') || '/customers');
+    }
+
+    const usernames = [].concat(req.body.username || []).filter(Boolean);
+    if (!usernames.length) {
+      req.session.flash = { type: 'error', message: 'Pehle customers ke checkbox tick karein.' };
+      return res.redirect(req.get('referer') || '/customers');
+    }
+
+    const list = usernames.map((u) => String(u).toLowerCase());
+    const out = await db.query('DELETE FROM customers WHERE LOWER(username) = ANY($1::text[])', [list]);
+    await db.query('DELETE FROM followups WHERE LOWER(username) = ANY($1::text[])', [list]);
+    await auth.audit(req, 'customer_delete_selected', `${out.rowCount} rows`);
+    req.session.flash = {
+      type: 'success',
+      message: `${out.rowCount} customers delete ho gaye (remarks saath).`,
+    };
+    res.redirect('/customers');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Poora customer master khaali — deposits bhi (kyunki sync dobara bana dega)
+router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
+  try {
+    if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
+      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      return res.redirect('/customers');
+    }
+
+    const scope = req.body.scope === 'all' ? 'all' : 'customers';
+    let customers = 0;
+    let deposits = 0;
+
+    if (scope === 'all') {
+      // Sab kuch: deposits, customers, remarks, calls
+      deposits = (await db.query('DELETE FROM deposits')).rowCount;
+      await db.query('DELETE FROM followups');
+      await db.query('DELETE FROM calls');
+      customers = (await db.query('DELETE FROM customers')).rowCount;
+    } else {
+      // Sirf customer master (deposits ko chheda nahi — par sync dobara bana dega)
+      await db.query('DELETE FROM followups');
+      await db.query('DELETE FROM calls');
+      customers = (await db.query('DELETE FROM customers')).rowCount;
+    }
+
+    await auth.audit(req, 'customer_clear', `scope=${scope} customers=${customers} deposits=${deposits}`);
+    req.session.flash = {
+      type: 'success',
+      message: scope === 'all'
+        ? `Sab saaf — ${customers} customers aur ${deposits} deposits delete.`
+        : `${customers} customers delete. (Deposits bache hue hain — "Sync from deposits" dabane par wapas ban jayenge.)`,
+    };
+    res.redirect('/customers');
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/sync', auth.requirePage('customers'), async (req, res, next) => {
   try {
     const r = await C.syncCustomers();
@@ -226,5 +312,6 @@ router.post('/sync', auth.requirePage('customers'), async (req, res, next) => {
 });
 
 module.exports = router;
+
 
 

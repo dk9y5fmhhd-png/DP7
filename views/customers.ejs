@@ -72,7 +72,12 @@
     <div><a href="/customers" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
   </form>
 
-  <form method="post" action="/customers/assign">
+  <form method="post" action="/customers/delete-selected" id="delOne" style="display:none">
+  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+  <input type="hidden" name="confirm" value="DELETE">
+</form>
+
+<form method="post" action="/customers/assign">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <span class="muted tiny"><strong><%= count.toLocaleString('en-IN') %></strong> customers filter me</span>
@@ -88,6 +93,12 @@
           Poora filter assign karein
         </button>
         <button class="btn btn-sm btn-primary" type="submit">Chune hue assign karein</button>
+        <span style="width:1px;height:22px;background:var(--border)"></span>
+        <button class="btn btn-sm btn-danger" type="submit"
+                formaction="/customers/delete-selected" name="confirm" value="DELETE"
+                data-confirm="Chune hue customers delete ho jayenge (remarks bhi). Pakka?">
+          <%- icon('trash', 13) %> Delete
+        </button>
       </div>
     </div>
 
@@ -106,11 +117,12 @@
             <th>Caller</th>
             <th>Last deposit</th>
             <th>Last remark</th>
+            <th style="width:44px"></th>
           </tr>
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="11"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
+            <tr><td colspan="12"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>
@@ -140,9 +152,16 @@
                 </span>
                 <% if (r.days_inactive < 9999) { %><span class="muted tiny"><%= r.days_inactive %>d</span><% } %>
               </td>
-              <td class="tiny"><%= r.caller_name || '<span class="muted">—</span>' %></td>
+              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">—</span><% } %></td>
               <td class="muted tiny nowrap"><%= r.last_deposit || '—' %></td>
               <td class="muted tiny"><%= r.last_remark || '—' %></td>
+              <td class="right">
+                <button class="btn btn-sm btn-danger" type="submit" form="delOne"
+                        name="username" value="<%= r.username %>"
+                        data-confirm="<%= r.username %> ko delete karein? Iske remarks aur calls bhi hat jayenge.">
+                  <%- icon('trash', 12) %>
+                </button>
+              </td>
             </tr>
           <% }); %>
         </tbody>
@@ -156,6 +175,42 @@
     <% if (page > 1) { %><a class="btn btn-sm" href="/customers?<%= qs %>&page=<%= page - 1 %>"><%- icon('left', 14) %> Prev</a><% } %>
     <% if (page < pages) { %><a class="btn btn-sm" href="/customers?<%= qs %>&page=<%= page + 1 %>">Next <%- icon('right', 14) %></a><% } %>
   </div>
+</div>
+
+<div class="card" style="border-color:rgba(255,90,118,0.35)">
+  <div class="card-header" style="background:rgba(255,90,118,0.07)">
+    <h3><%- icon('trash', 15) %> Customer data delete</h3>
+    <span class="badge badge-danger" style="margin-left:auto"><%= totals.total.toLocaleString('en-IN') %> records</span>
+  </div>
+  <form method="post" action="/customers/clear">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label>Kya delete karein</label>
+          <select name="scope">
+            <option value="customers">Sirf customer master (deposits bache rahenge)</option>
+            <option value="all">Sab kuch — customers + deposits + remarks + calls</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Confirm ke liye <code>DELETE</code> likhein</label>
+          <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <button class="btn btn-danger" type="submit"
+                  data-confirm="Ye action permanent hai. Aage badhein?">
+            <%- icon('trash', 15) %> Delete karein
+          </button>
+        </div>
+      </div>
+      <p class="muted tiny" style="margin:12px 0 0">
+        <strong>Sirf customer master</strong> delete karne par deposits bache rehte hain —
+        <strong>Sync from deposits</strong> dabane par customers wapas ban jayenge.
+        Poora saaf karna ho to <strong>Sab kuch</strong> chunein, phir nayi file upload karein.
+      </p>
+    </div>
+  </form>
 </div>
 
 <div class="card">

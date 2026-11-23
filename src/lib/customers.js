@@ -130,14 +130,31 @@ async function syncCustomers() {
   const active = new Set(rows.map((r) => r.u));
   let cleared = 0;
   for (const [key, c] of existing) {
-    if (!active.has(key) && c.status !== 'no_deposit') {
-      await db.query(
-        `UPDATE customers SET status = 'no_deposit', deposit_count = 0, deposit_amount = 0,
-                last_synced_at = NOW() WHERE id = $1`,
-        [c.id]
-      );
-      cleared++;
+    if (active.has(key)) continue;
+
+    // Pehle se no_deposit hai par purani dates chipki hui hain (delete ke baad ka case)
+    if (c.status === 'no_deposit') {
+      if (c.last_deposit !== null || c.first_deposit !== null) {
+        await db.query(
+          `UPDATE customers SET first_deposit = NULL, last_deposit = NULL,
+                  deposit_count = 0, deposit_amount = 0, last_synced_at = NOW()
+            WHERE id = $1`,
+          [c.id]
+        );
+        cleared++;
+      }
+      continue;
     }
+
+    await db.query(
+      `UPDATE customers
+          SET status = 'no_deposit', deposit_count = 0, deposit_amount = 0,
+              first_deposit = NULL, last_deposit = NULL, reactivated_at = NULL,
+              last_synced_at = NOW()
+        WHERE id = $1`,
+      [c.id]
+    );
+    cleared++;
   }
 
   return { total: rows.length, created, updated, cleared };
@@ -199,5 +216,8 @@ module.exports = {
   VIP_ORDER, VIP_LABEL, STATUS_LABEL, PRIORITY_LABEL,
   vipForCount, syncCustomers, thresholds, priorityFor, maskMobile, daysBetween, rank,
 };
+
+
+
 
 
