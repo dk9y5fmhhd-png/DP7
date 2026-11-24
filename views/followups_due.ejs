@@ -1,0 +1,123 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Follow-ups Due</h1>
+    <div class="sub">Kis caller ka kitna pending hai, aur kaun overdue ho gaya — ek nazar me.</div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/calls"><%- icon('clock', 13) %> Call Log</a>
+    <a class="chip" href="/calling"><%- icon('list', 13) %> Calling List</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
+    <div class="label">Overdue</div>
+    <div class="value"><%= totals.overdue %></div>
+    <div class="hint">date nikal gayi — sabse zaroori</div>
+  </div>
+  <div class="stat"><div class="label">Aaj due</div><div class="value"><%= totals.due %></div><div class="hint">aaj ki date wale</div></div>
+  <div class="stat"><div class="label">Total pending</div><div class="value"><%= totals.pending %></div><div class="hint">overdue + aaj</div></div>
+  <div class="stat ok"><div class="label">Aaj ho gaya</div><div class="value"><%= totals.done %></div><div class="hint">remarks</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('users', 15) %> Caller-wise</h3></div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Caller</th><th class="right">Overdue</th><th class="right">Aaj due</th><th class="right">Total pending</th><th class="right">Aage rakhe</th><th class="right">Total assigned</th><th class="right">Aaj kiya</th></tr>
+      </thead>
+      <tbody>
+        <% if (!perCaller.length) { %>
+          <tr><td colspan="7"><div class="empty">Koi caller ko customer assign nahi hua.</div></td></tr>
+        <% } %>
+        <% perCaller.forEach(function (c) {
+             const done = doneToday.find(function (d) { return d.caller_name === c.caller_name; }); %>
+          <tr>
+            <td><strong><%= c.caller_name %></strong></td>
+            <td class="right num">
+              <% if (c.overdue) { %><span class="badge badge-danger"><%= c.overdue %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num"><%= c.due %></td>
+            <td class="right num"><strong><%= c.pending %></strong></td>
+            <td class="right num muted"><%= c.snoozed %></td>
+            <td class="right num"><%= c.total %></td>
+            <td class="right num"><%= done ? done.remarks : 0 %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(245,197,66,0.05)">
+          <td><strong>Total</strong></td>
+          <td class="right num"><strong><%= totals.overdue %></strong></td>
+          <td class="right num"><strong><%= totals.due %></strong></td>
+          <td class="right num"><strong><%= totals.pending %></strong></td>
+          <td class="right num muted">—</td>
+          <td class="right num">—</td>
+          <td class="right num"><strong><%= totals.done %></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="<%= totals.overdue ? 'border-color:rgba(255,107,116,0.35)' : '' %>">
+  <div class="card-header">
+    <h3><%- icon('alert', 15) %> Overdue customers</h3>
+    <span class="muted tiny" style="margin-left:auto">sabse zyada late sabse upar</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Customer</th><th>Mobile</th><th>Caller</th><th>Priority</th><th>Last remark</th><th>Follow-up tha</th><th class="right">Late</th><th class="right">Deposits</th></tr>
+      </thead>
+      <tbody>
+        <% if (!overdueRows.length) { %>
+          <tr><td colspan="8"><div class="empty">
+            <span class="big"><%- icon('check', 26) %></span>
+            Koi follow-up overdue nahi hai. Sab time par chal raha hai. 🎉
+          </div></td></tr>
+        <% } %>
+        <% overdueRows.forEach(function (r) { %>
+          <tr>
+            <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
+            <td class="num nowrap"><%= r.mobile %></td>
+            <td class="tiny"><%= r.caller_name %></td>
+            <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : 'badge-neutral' %>"><%= r.priority %></span></td>
+            <td class="muted tiny"><%= r.action_type %></td>
+            <td class="nowrap muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></td>
+            <td class="right num"><span class="badge badge-danger"><%= r.days_late %> din</span></td>
+            <td class="right num"><%= r.deposit_count %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% if (overdueRows.length >= 100) { %>
+    <div class="card-footer muted tiny">Sirf pehle 100 dikha rahe hain.</div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('check', 15) %> Aaj kiska kaam hua</h3></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Caller</th><th class="right">Remarks</th><th class="right">Customers</th></tr></thead>
+      <tbody>
+        <% doneToday.forEach(function (d) { %>
+          <tr>
+            <td><strong><%= d.caller_name %></strong></td>
+            <td class="right num"><%= d.remarks %></td>
+            <td class="right num"><%= d.customers %></td>
+          </tr>
+        <% }); %>
+        <% if (!doneToday.length) { %><tr><td colspan="3"><div class="empty">Aaj koi remark nahi hua.</div></td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

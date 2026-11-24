@@ -355,3 +355,58 @@ naya CSS khud aa jayega.
 box) dikh raha tha. Ab proper trash bin, upload arrow aur do log dikhte hain.
 
 **Label fix:** "VIP clan" → "VIP customers".
+
+
+---
+
+## 17. v3.8 — follow-up scheduling (caller queue)
+
+Pehle remark save hone ke baad koi **agla follow-up date** nahi hoti thi. Caller note me
+"after 2days" likhta tha aur yaad rakhna padta tha. List kabhi chhoti nahi hoti thi —
+kal wahi 168 naam phir se.
+
+Ab har remark ke saath **follow_up_on** (date) save hoti hai, aur caller ki list sirf
+**aaj due** wale dikhati hai.
+
+### Remarks → agla follow-up (default)
+
+| Remark | Agla follow-up |
+|---|---|
+| No Answer | **kal** |
+| Number Not Reachable | kal |
+| Will Deposit | **2 din** |
+| Interested | 3 din |
+| Already Active | 7 din |
+| Not Interested | 15 din |
+| Wrong Number | 30 din |
+| Do Not Contact | **koi nahi** (list se hamesha ke liye hat) |
+
+Caller dialog me **quick buttons** (Kal / 2 din / 3 din / 1 hafta) se badal sakta hai,
+ya date picker se koi bhi date de sakta hai.
+
+### My Calls ab kya dikhata hai
+
+- Sirf **aaj due + overdue** customers (jinka follow-up aage hai wo tab tak chhupa)
+- **Overdue sabse upar**, laal row me, "X din late" badge ke saath
+- 4 counters: **Aaj ka kaam · Overdue · Aaj ho gaya · Aage ke liye rakhe**
+- Neeche "Aage ke follow-ups" card — kaun kis din wapas aayega
+- "Poori list" toggle — sab kuch dekhne ke liye
+
+### Admin: Follow-ups Due (`/calling/due`)
+
+- Caller-wise: overdue / aaj due / **total pending** / aage rakhe / total assigned / aaj kiya
+- **Overdue customers** table — sabse zyada late sabse upar, caller ke naam ke saath
+- Aaj kiska kaam hua
+- Dashboard par bhi Overdue / Aaj due / Total pending chips
+
+### Do bug fix
+
+- `P3` ka label "callback pending" galat tha — asal me P3 = **reactivated**. Ab sahi.
+- "Aaj due" aur "Overdue" dono ek hi number dikha rahe the (overdue due me count ho raha tha).
+  Ab alag: **Aaj due** = sirf aaj ki date, **Overdue** = date nikal gayi.
+
+### Purane remarks ka migration
+
+Upgrade par purane remarks ka `follow_up_on` = `action_date + 1` set ho jata hai.
+Isliye jin customers ko call ho chuki thi par follow-up nahi hua, wo **overdue** me
+dikhne lagenge — yahi sach hai, unhe dobara call karna chahiye.

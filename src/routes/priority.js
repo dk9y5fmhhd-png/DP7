@@ -11,13 +11,22 @@ const router = express.Router();
 
 const PRIORITIES = ['P1', 'P2', 'P3'];
 
-/* --------------------------- calling lists --------------------------- */
+async function callerList() {
+  return db.rows(
+    `SELECT id, name FROM users
+      WHERE role IN ('super_admin','admin') OR page_access && ARRAY['mycalls','all']
+      ORDER BY name`
+  );
+}
+
+/* --------------------------- calling lists (admin) --------------------------- */
 
 router.get('/', auth.requirePage('priority'), async (req, res, next) => {
   try {
     const priority = PRIORITIES.includes(req.query.p) ? req.query.p : 'P1';
     const caller = req.query.caller ? Number(req.query.caller) : null;
     const onlyFree = req.query.free === '1';
+    const today = D.todayISO();
 
     const params = [priority];
     let extra = '';
@@ -26,11 +35,14 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
 
     const rows = await db.rows(
       `SELECT b.*, u.name AS caller_name,
-              (SELECT action_type FROM followups f WHERE LOWER(f.username) = LOWER(b.username)
-                ORDER BY f.action_date DESC, f.id DESC LIMIT 1) AS last_remark
-         FROM customer_board b LEFT JOIN users u ON u.id = b.assigned_to
+              lf.action_type AS last_remark, lf.follow_up_on, lf.outcome AS last_outcome
+         FROM customer_board b
+         LEFT JOIN users u ON u.id = b.assigned_to
+         LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
         WHERE b.priority = $1 ${extra}
-        ORDER BY b.deposit_count DESC, b.days_inactive ASC`,
+        ORDER BY
+          CASE WHEN lf.follow_up_on IS NOT NULL AND lf.follow_up_on < CURRENT_DATE THEN 0 ELSE 1 END,
+          b.deposit_count DESC, b.days_inactive ASC`,
       params
     );
 
@@ -46,9 +58,14 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
       priority, counts: new Map(counts.map((c) => [c.priority, c])),
       filters: { caller: caller || '', free: onlyFree },
-      callers: await db.rows("SELECT id, name FROM users WHERE role IN ('super_admin','admin') OR page_access && ARRAY['mycalls','all'] ORDER BY name"),
+      callers: await callerList(),
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
-      roleWeights: { P1: 'VIP inactive + recently inactive', P2: 'Normal inactive + new customer', P3: 'Callback pending' },
+      today,
+      roleWeights: {
+        P1: 'VIP inactive + recently inactive (14 din)',
+        P2: 'Normal inactive + naya customer',
+        P3: 'Reactivated — dobara active hua',
+      },
     });
   } catch (err) {
     next(err);
@@ -57,43 +74,76 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
 
 /* --------------------------- my calls (caller) --------------------------- */
 
+// Caller ki list = sirf WAHI customers jinka follow-up aaj ya pehle due hai.
+// Jiska agla follow-up aage hai wo tab tak chhupa rehta hai.
+function mineCte() {
+  return `
+    WITH mine AS (
+      SELECT b.*,
+             u.name AS caller_name,
+             lf.action_type   AS last_remark,
+             lf.action_date   AS last_remark_date,
+             lf.follow_up_on  AS follow_up_on,
+             lf.outcome       AS last_outcome,
+             (SELECT COUNT(*)::int FROM calls k
+               WHERE k.customer_id = b.id AND k.called_at::date = $2::date) AS calls_today
+        FROM customer_board b
+        LEFT JOIN users u ON u.id = b.assigned_to
+        LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
+       WHERE b.assigned_to = $1 AND b.do_not_contact = FALSE
+    )`;
+}
+
 router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
   try {
     const me = req.session.user.id;
     const today = D.todayISO();
+    const showAll = req.query.all === '1';
+
+    const base = mineCte();
 
     const rows = await db.rows(
-      `SELECT b.*,
-              (SELECT action_type FROM followups f WHERE LOWER(f.username) = LOWER(b.username)
-                ORDER BY f.action_date DESC, f.id DESC LIMIT 1) AS last_remark,
-              (SELECT action_date::text FROM followups f WHERE LOWER(f.username) = LOWER(b.username)
-                ORDER BY f.action_date DESC, f.id DESC LIMIT 1) AS last_remark_date,
-              (SELECT COUNT(*)::int FROM calls k
-                WHERE k.customer_id = b.id AND k.called_at::date = $2) AS calls_today
-         FROM customer_board b
-        WHERE b.assigned_to = $1 AND b.do_not_contact = FALSE
+      `${base}
+       SELECT *,
+              (follow_up_on IS NOT NULL AND follow_up_on < $2::date) AS is_overdue,
+              ($2::date - follow_up_on) AS days_late
+         FROM mine
+        WHERE $3::boolean OR follow_up_on IS NULL OR follow_up_on <= $2::date
         ORDER BY
-          CASE b.priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 ELSE 4 END,
-          b.deposit_count DESC, b.days_inactive ASC`,
-      [me, today]
+          CASE WHEN follow_up_on IS NOT NULL AND follow_up_on < $2::date THEN 0 ELSE 1 END,
+          follow_up_on ASC NULLS FIRST,
+          CASE priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 ELSE 4 END,
+          deposit_count DESC, days_inactive ASC`,
+      [me, today, showAll]
     );
 
     const stats = await db.row(
-      `SELECT
-         COUNT(*) FILTER (WHERE b.priority IN ('P1','P2','P3'))::int AS pending,
-         COUNT(*) FILTER (WHERE b.priority = 'P1')::int AS p1,
-         COUNT(*) FILTER (WHERE b.priority = 'P2')::int AS p2,
-         COUNT(*) FILTER (WHERE b.priority = 'P3')::int AS p3,
+      `${base}
+       SELECT
+         COUNT(*) FILTER (WHERE follow_up_on IS NULL
+                            OR follow_up_on = $2::date)::int   AS due,
+         COUNT(*) FILTER (WHERE follow_up_on < $2::date)::int   AS overdue,
+         COUNT(*) FILTER (WHERE follow_up_on > $2::date)::int   AS snoozed,
+         COUNT(*) FILTER (WHERE priority = 'P1' AND (follow_up_on IS NULL OR follow_up_on <= $2::date))::int AS due_p1,
          COUNT(*)::int AS total
-       FROM customer_board b
-      WHERE b.assigned_to = $1 AND b.do_not_contact = FALSE`,
-      [me]
+       FROM mine`,
+      [me, today]
     );
 
     const doneToday = await db.row(
-      `SELECT COUNT(*)::int AS calls,
-              COUNT(DISTINCT customer_id)::int AS customers
-         FROM calls WHERE caller_id = $1 AND called_at::date = $2`,
+      `SELECT COUNT(*)::int AS remarks,
+              COUNT(DISTINCT LOWER(username))::int AS customers
+         FROM followups
+        WHERE created_by = $1 AND action_date = $2::date`,
+      [me, today]
+    );
+
+    const upcoming = await db.rows(
+      `${base}
+       SELECT username, follow_up_on, last_remark, ($2::date - follow_up_on) AS in_days
+         FROM mine
+        WHERE follow_up_on > $2::date
+        ORDER BY follow_up_on ASC LIMIT 12`,
       [me, today]
     );
 
@@ -101,9 +151,70 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
       title: 'My Calls',
       page: 'mycalls',
       rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
-      stats, doneToday, today,
+      stats, doneToday, upcoming, showAll, today,
       remarks: R.REMARKS,
+      quickDates: R.QUICK_DATES,
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL, STATUS_LABEL: C.STATUS_LABEL },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* --------------------------- follow-ups due (admin) --------------------------- */
+
+// Kis caller ka kitna pending / overdue / aaj due
+router.get('/due', auth.requirePage('due'), async (req, res, next) => {
+  try {
+    const today = D.todayISO();
+
+    const perCaller = await db.rows(
+      `SELECT u.id, u.name AS caller_name,
+              COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on = CURRENT_DATE)::int AS due,
+              COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on <= CURRENT_DATE)::int AS pending,
+              COUNT(*) FILTER (WHERE lf.follow_up_on < CURRENT_DATE)::int AS overdue,
+              COUNT(*) FILTER (WHERE lf.follow_up_on > CURRENT_DATE)::int AS snoozed,
+              COUNT(*)::int AS total
+         FROM customer_board b
+         JOIN users u ON u.id = b.assigned_to
+         LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
+        WHERE b.do_not_contact = FALSE
+        GROUP BY u.id, u.name
+        ORDER BY overdue DESC, due DESC`
+    );
+
+    const doneToday = await db.rows(
+      `SELECT u.name AS caller_name, COUNT(*)::int AS remarks,
+              COUNT(DISTINCT LOWER(f.username))::int AS customers
+         FROM followups f JOIN users u ON u.id = f.created_by
+        WHERE f.action_date = CURRENT_DATE
+        GROUP BY u.name ORDER BY remarks DESC`
+    );
+
+    const overdueRows = await db.rows(
+      `SELECT b.username, b.mobile, b.priority, b.deposit_count, b.vip_category,
+              u.name AS caller_name, lf.action_type, lf.follow_up_on,
+              (CURRENT_DATE - lf.follow_up_on)::int AS days_late
+         FROM customer_board b
+         JOIN users u ON u.id = b.assigned_to
+         JOIN latest_followup lf ON lf.uname = LOWER(b.username)
+        WHERE b.do_not_contact = FALSE AND lf.follow_up_on < CURRENT_DATE
+        ORDER BY days_late DESC, b.deposit_count DESC
+        LIMIT 100`
+    );
+
+    const totals = {
+      overdue: perCaller.reduce((a, c) => a + c.overdue, 0),
+      due: perCaller.reduce((a, c) => a + c.due, 0),
+      pending: perCaller.reduce((a, c) => a + c.pending, 0),
+      done: doneToday.reduce((a, c) => a + c.remarks, 0),
+    };
+
+    res.render('followups_due', {
+      title: 'Follow-ups Due',
+      page: 'due',
+      perCaller, doneToday, overdueRows, totals, today,
+      labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
     });
   } catch (err) {
     next(err);
@@ -122,28 +233,44 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     if (!username) throw new Error('Customer chunein.');
     if (!R.ALL_ACTIONS.includes(action)) throw new Error('Remark chunein.');
 
-    const nextAction = R.nextActionFor(action);
+    const q = R.info(action);
+
+    // Follow-up date: caller ne chuni ho → wahi; warna remark ka default gap
+    let followUpOn = null;
+    if (req.body.follow_up_on && D.isDate(req.body.follow_up_on)) {
+      followUpOn = req.body.follow_up_on;
+    } else if (req.body.follow_gap !== undefined && req.body.follow_gap !== '') {
+      const gap = Number(req.body.follow_gap);
+      followUpOn = D.addDays(date, Number.isFinite(gap) ? gap : q.days);
+    } else {
+      followUpOn = D.addDays(date, q.days);
+    }
+
+    // Do Not Contact → koi follow-up nahi
+    if (R.SUPPRESS.has(action)) followUpOn = null;
 
     await db.query(
-      `INSERT INTO followups (username, action_type, action_date, response, next_action, caller_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [username, action, date, note, nextAction, req.session.user.id, req.session.user.id]
+      `INSERT INTO followups
+         (username, action_type, action_date, response, next_action, follow_up_on, caller_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$7)`,
+      [username, action, date, note, q.next, followUpOn, req.session.user.id]
     );
 
-    // Do Not Contact → customer suppress
     if (R.SUPPRESS.has(action)) {
       await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
     }
 
-    await auth.audit(req, 'remark', `${username} → ${action}`);
+    await auth.audit(req, 'remark', `${username} → ${action} · fu=${followUpOn || 'none'}`);
     req.session.flash = {
       type: 'success',
-      message: `Remark save — ${username}: ${action}${nextAction ? ' → ' + nextAction : ''}`,
+      message: followUpOn
+        ? `Remark save — ${username}: ${action}. Agla follow-up ${D.prettyDate(followUpOn)} (${D.relativeDays(followUpOn, date)}).`
+        : `Remark save — ${username}: ${action}. List se hata diya.`,
     };
-    res.redirect(req.get('referer') || '/my-calls');
+    res.redirect(req.get('referer') || '/calling/my');
   } catch (err) {
     req.session.flash = { type: 'error', message: err.message };
-    res.redirect(req.get('referer') || '/my-calls');
+    res.redirect(req.get('referer') || '/calling/my');
   }
 });
 

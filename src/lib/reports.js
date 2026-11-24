@@ -460,7 +460,7 @@ async function dashboardData() {
     total: 0, new: 0, active: 0, inactive: 0, reactivated: 0,
     vip: 0, premium: 0, high: 0,
     p1: 0, p2: 0, p3: 0, free: 0,
-    callsToday: 0, remarksToday: 0,
+    callsToday: 0, remarksToday: 0, dueNow: 0, pendingNow: 0, overdue: 0, snoozed: 0,
   };
   try {
     const row = await db.row(
@@ -481,12 +481,25 @@ async function dashboardData() {
     );
     const calls = await db.value('SELECT COUNT(*)::int FROM calls WHERE called_at::date = $1', [today]);
     const remarks = await db.value('SELECT COUNT(*)::int FROM followups WHERE action_date = $1', [today]);
+
+    // follow-up queue (due / overdue / aage rakhe)
+    const fu = await db.row(
+      `SELECT
+         COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on = CURRENT_DATE)::int AS due,
+         COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on <= CURRENT_DATE)::int AS pending,
+         COUNT(*) FILTER (WHERE lf.follow_up_on < CURRENT_DATE)::int AS overdue,
+         COUNT(*) FILTER (WHERE lf.follow_up_on > CURRENT_DATE)::int AS snoozed
+       FROM customer_board b
+       LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
+      WHERE b.assigned_to IS NOT NULL AND b.do_not_contact = FALSE`
+    );
     crm = {
       total: row.total, new: row.new_c, active: row.active_c, inactive: row.inactive_c,
       reactivated: row.reactivated_c,
       vip: row.vip_c, premium: row.premium_c, high: row.high_c,
       p1: row.p1, p2: row.p2, p3: row.p3, free: row.free,
       callsToday: Number(calls), remarksToday: Number(remarks),
+      dueNow: fu.due, pendingNow: fu.pending, overdue: fu.overdue, snoozed: fu.snoozed,
     };
   } catch (err) {
     console.error('[dashboard] crm stats skip:', err.message);

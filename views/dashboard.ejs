@@ -42,6 +42,14 @@
             <div class="hint"><%= data.crm.remarksToday %> remark<%= data.crm.remarksToday === 1 ? '' : 's' %></div>
           </div>
         </div>
+        <div class="chips" style="margin-top:14px">
+          <a class="chip <%= data.crm.overdue ? 'on' : '' %>" href="/calling/due">
+            Overdue <strong><%= data.crm.overdue %></strong>
+          </a>
+          <span class="chip">Aaj due <strong><%= data.crm.dueNow %></strong></span>
+          <span class="chip">Total pending <strong><%= data.crm.pendingNow %></strong></span>
+          <span class="chip">Aage rakhe <strong><%= data.crm.snoozed %></strong></span>
+        </div>
         <p class="muted tiny" style="margin:12px 0 0">
           <strong><%= data.crm.free %></strong> customers bina caller ke hain — Customers page se assign karein.
         </p>

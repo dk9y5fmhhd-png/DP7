@@ -9,6 +9,7 @@ const PAGES = [
   { key: 'priority', label: 'Calling List', url: '/calling', icon: 'alert', group: 'main' },
   { key: 'mycalls', label: 'My Calls', url: '/calling/my', icon: 'phone', group: 'main' },
   { key: 'calls', label: 'Call Log', url: '/calls', icon: 'clock', group: 'main' },
+  { key: 'due', label: 'Follow-ups Due', url: '/calling/due', icon: 'alert', group: 'main' },
   { key: 'upload', label: 'Daily Upload', url: '/upload', icon: 'upload', group: 'main' },
   { key: 'adddata', label: 'Add Data', url: '/add-data', icon: 'plus', group: 'main' },
   { key: 'reports', label: 'Client Reports', url: '/reports', icon: 'list', group: 'reports' },

@@ -69,13 +69,14 @@
             <th class="right">Deposits</th>
             <th class="right">Inactive</th>
             <th>Last remark</th>
+            <th>Follow-up</th>
             <th>Caller</th>
             <th class="right">Action</th>
           </tr>
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="10"><div class="empty"><span class="big"><%- icon('check', 26) %></span>Is list me koi customer nahi.</div></td></tr>
+            <tr><td colspan="11"><div class="empty"><span class="big"><%- icon('check', 26) %></span>Is list me koi customer nahi.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>
@@ -95,6 +96,14 @@
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="right num"><%= r.days_inactive < 9999 ? r.days_inactive + 'd' : '—' %></td>
               <td class="muted tiny"><%= r.last_remark || '—' %></td>
+              <td class="nowrap tiny">
+                <% if (!r.follow_up_on) { %><span class="muted">—</span>
+                <% } else if (r.follow_up_on < today) { %>
+                  <span class="badge badge-danger"><%= helpers.prettyDate(r.follow_up_on) %></span>
+                <% } else { %>
+                  <span class="muted"><%= helpers.prettyDate(r.follow_up_on) %></span>
+                <% } %>
+              </td>
               <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">free</span><% } %></td>
               <td class="right nowrap">
                 <form method="post" action="/calls/call" style="display:inline;margin:0">
