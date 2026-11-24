@@ -131,6 +131,7 @@
     </form>
   </div>
 
+  <% if (isAdmin) { %>
   <div class="card">
     <div class="card-header"><h3><%- icon('team', 15) %> Caller assign</h3></div>
     <form method="post" action="/customers/assign">
@@ -164,8 +165,10 @@
       </div>
     </form>
   </div>
+  <% } %>
 </div>
 
+<% if (isAdmin) { %>
 <div class="card" style="border-color:rgba(255,90,118,0.35)">
   <div class="card-header" style="background:rgba(255,90,118,0.07)">
     <h3><%- icon('trash', 15) %> Ye customer delete karein</h3>
@@ -185,6 +188,7 @@
     </div>
   </form>
 </div>
+<% } %>
 
 <%- include('partials/foot') %>
 

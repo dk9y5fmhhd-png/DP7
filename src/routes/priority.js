@@ -24,14 +24,23 @@ async function callerList() {
 router.get('/', auth.requirePage('priority'), async (req, res, next) => {
   try {
     const priority = PRIORITIES.includes(req.query.p) ? req.query.p : 'P1';
-    const caller = req.query.caller ? Number(req.query.caller) : null;
-    const onlyFree = req.query.free === '1';
     const today = D.todayISO();
+    const me = req.session.user;
+    const admin = me.role === 'super_admin';
+
+    // caller ko poora master nahi — sirf apne assigned customers
+    const caller = admin && req.query.caller ? Number(req.query.caller) : null;
+    const onlyFree = admin && req.query.free === '1';
 
     const params = [priority];
     let extra = '';
-    if (caller) { params.push(caller); extra += ` AND b.assigned_to = $${params.length}`; }
-    if (onlyFree) extra += ' AND b.assigned_to IS NULL';
+    if (admin) {
+      if (caller) { params.push(caller); extra += ` AND b.assigned_to = $${params.length}`; }
+      if (onlyFree) extra += ' AND b.assigned_to IS NULL';
+    } else {
+      params.push(me.id);
+      extra += ` AND b.assigned_to = $${params.length}`;
+    }
 
     const rows = await db.rows(
       `SELECT b.*, u.name AS caller_name,
@@ -49,7 +58,10 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
     const counts = await db.rows(
       `SELECT priority, COUNT(*)::int AS c,
               COUNT(*) FILTER (WHERE assigned_to IS NULL)::int AS free
-         FROM customer_board GROUP BY priority ORDER BY priority`
+         FROM customer_board b
+        WHERE ${admin ? 'TRUE' : 'b.assigned_to = $1'}
+        GROUP BY priority ORDER BY priority`,
+      admin ? [] : [me.id]
     );
 
     res.render('priority', {
@@ -58,7 +70,8 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
       priority, counts: new Map(counts.map((c) => [c.priority, c])),
       filters: { caller: caller || '', free: onlyFree },
-      callers: await callerList(),
+      isAdmin: admin,
+      callers: admin ? await callerList() : [],
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
       today,
       roleWeights: {

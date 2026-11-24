@@ -440,3 +440,29 @@ Jo caller ne khud date di thi (custom) wo **chhedi nahi jaati**. Dobara chalane 
 `/followups` page se jo remark add hota tha, usme `follow_up_on` khaali reh jaati thi —
 isliye wo customer "due" me gina jaata tha (kabhi schedule hi nahi hua). Ab wo bhi
 remark ke default gap se date laga deta hai.
+
+
+---
+
+## 19. v3.8.2 — caller ko sirf apne customers
+
+Pehle caller ke Customers page par **poore 3,500+** customers dikhte the, aur Calling List bhi
+sabki. Ab caller sirf **apne assigned** customers dekhta hai.
+
+| Kya | Super Admin | Caller |
+|---|---|---|
+| Customers page | Sab customers | **Sirf apne assigned** |
+| Total customers counter | Sab | **Sirf apne** |
+| Search | Sab | Sirf apne andar |
+| Kisi bhi customer ka profile | Haan | **Sirf apna** (doosre par 403) |
+| Calling List | Sab + caller filter | **Sirf apne** |
+| Assign / DNC / Delete / Sync | Haan | **403** |
+| Mobile number | Poora | Masked (••••3210) |
+
+Yaani caller vo hi 5-150 record dekhega jo admin ne usse diye. Poora master kabhi nahi.
+
+### Saath me
+
+- **Khaali nav groups hide** — caller ko RETENTION ke 3 item hi dikhte hain, khaali
+  "DATA / REPORTS / ADMIN" labels nahi.
+- **P3 ka label sahi** — "callback pending" nahi, **reactivated**.
