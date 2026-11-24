@@ -198,6 +198,24 @@ async function main() {
   const deny = await req('/calling/due');
   check('caller ko Follow-ups Due band (403)', deny.status === 403, 'status ' + deny.status);
 
+  /* ---------- 13. Follow-ups page ka modal bhi follow-up date set kare ---------- */
+  jar = new Map();
+  const lp5 = await req('/login');
+  await req('/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ csrf_token: csrf(lp5.text), login_id: 'admin', password: 'admin123' }).toString(),
+  });
+  const fpage = await req('/followups');
+  const t5 = csrf(fpage.text);
+  const addF = await post('/followups', {
+    username: 'FuTest01', action_type: 'Will Deposit', action_date: today, response: 'modal test',
+  }, t5);
+  check('Follow-ups page se remark save', addF.status === 302);
+  const fuModal = await db.row("SELECT follow_up_on, next_action FROM followups WHERE username='FuTest01' ORDER BY id DESC LIMIT 1");
+  check('modal se bhi follow_up_on = +2', fuModal && fuModal.follow_up_on === isoAhead(2),
+    fuModal ? String(fuModal.follow_up_on) : 'none');
+
   /* ---------- cleanup ---------- */
   await db.query('DELETE FROM deposits WHERE username = ANY($1::text[])', [names]);
   await db.query('DELETE FROM customers WHERE username = ANY($1::text[])', [names]);

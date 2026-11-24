@@ -46,6 +46,7 @@ async function main() {
     ['schema-v3.4.sql', 'schema v3.4 (upload batch protection)'],
     ['schema-v3.5.sql', 'schema v3.5 (purana unique index cleanup)'],
     ['schema-v3.8.sql', 'schema v3.8 (follow-up scheduling)'],
+    ['schema-v3.8.1.sql', 'schema v3.8.1 (purane follow-up dates fix)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);
     if (!fs.existsSync(p2)) continue;

@@ -410,3 +410,33 @@ ya date picker se koi bhi date de sakta hai.
 Upgrade par purane remarks ka `follow_up_on` = `action_date + 1` set ho jata hai.
 Isliye jin customers ko call ho chuki thi par follow-up nahi hua, wo **overdue** me
 dikhne lagenge — yahi sach hai, unhe dobara call karna chahiye.
+
+
+---
+
+## 18. v3.8.1 — purane follow-up dates ka fix
+
+Do gap mile v3.8 me:
+
+**1. Purane remarks ko galat gap mila**
+v3.8 ke migration ne har purane remark ko `action_date + 1` de diya tha — chahe remark
+kuch bhi ho. Isliye "Will Deposit" ko bhi 1 din mila jabki uska default 2 din hai.
+
+`schema-v3.8.1.sql` ab unhi rows ko theek karta hai jo migration se bani thin
+(`follow_up_on = action_date + 1`) — remark ke hisaab se:
+
+| Remark | Sahi gap |
+|---|---|
+| Will Deposit / Play Later / Message Done | +2 din |
+| Interested / Call Done | +3 din |
+| Already Active / Deposited | +7 din |
+| Not Interested | +15 din |
+| Wrong Number | +30 din |
+| Do Not Contact | NULL (koi follow-up nahi) |
+
+Jo caller ne khud date di thi (custom) wo **chhedi nahi jaati**. Dobara chalane par safe.
+
+**2. Follow-ups page ka modal follow-up date set nahi karta tha**
+`/followups` page se jo remark add hota tha, usme `follow_up_on` khaali reh jaati thi —
+isliye wo customer "due" me gina jaata tha (kabhi schedule hi nahi hua). Ab wo bhi
+remark ke default gap se date laga deta hai.

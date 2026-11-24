@@ -77,17 +77,35 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
     }
 
     const R = require('../lib/remarks');
+    const info = R.info(actionType);
+    // follow-up date: caller ne di ho → wahi, warna remark ka default gap
+    let followUpOn = null;
+    if (req.body.follow_up_on && D.isDate(req.body.follow_up_on)) {
+      followUpOn = req.body.follow_up_on;
+    } else if (req.body.follow_gap !== undefined && req.body.follow_gap !== '') {
+      const gap = Number(req.body.follow_gap);
+      followUpOn = D.addDays(actionDate, Number.isFinite(gap) ? gap : info.days);
+    } else {
+      followUpOn = D.addDays(actionDate, info.days);
+    }
+    if (R.SUPPRESS.has(actionType)) followUpOn = null;
+
     await db.query(
-      `INSERT INTO followups (username, action_type, action_date, response, next_action, caller_id, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [username, actionType, actionDate, response, R.nextActionFor(actionType),
-        req.session.user.id, req.session.user.id]
+      `INSERT INTO followups
+         (username, action_type, action_date, response, next_action, follow_up_on, caller_id, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$7)`,
+      [username, actionType, actionDate, response, info.next, followUpOn, req.session.user.id]
     );
     if (R.SUPPRESS.has(actionType)) {
       await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
     }
     await auth.audit(req, 'add_followup', `${username} → ${actionType}`);
-    req.session.flash = { type: 'success', message: `${username} ka remark save ho gaya.` };
+    req.session.flash = {
+      type: 'success',
+      message: followUpOn
+        ? `${username} ka remark save — agla follow-up ${D.prettyDate(followUpOn)}.`
+        : `${username} ka remark save (koi follow-up nahi).`,
+    };
     res.redirect(req.get('referer') || '/followups');
   } catch (err) {
     next(err);
