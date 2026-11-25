@@ -45,11 +45,8 @@ const check = (name, ok, extra = '') => {
   console.log(`${ok ? '✓' : '✗'} ${name}${extra ? ' — ' + extra : ''}`);
 };
 
-const isoAgo = (n) => {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - n);
-  return d.toISOString().slice(0, 10);
-};
+// App ke timezone (Asia/Kolkata) se date — warna UTC se ek din ka farq aa jata hai
+const isoAgo = (n) => require('../src/lib/dates').addDays(require('../src/lib/dates').todayISO(), -n);
 const isoAhead = (n) => isoAgo(-n);
 
 async function main() {

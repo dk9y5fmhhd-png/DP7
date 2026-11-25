@@ -556,3 +556,40 @@ Ye warning ab Daily Upload page par bhi dikhti hai.
 - Page access key: `newclients` (Users page se grant karein)
 - Mobile number non-admin ko masked
 - CSV aur export sirf Super Admin
+
+---
+
+## 22. v4.1 — daily target + progress
+
+Har caller ka **roz ka target** (default 40), aur My Calls par uski progress.
+
+### Aapke liye (admin)
+
+- **Users** page me naya **Target** column — har user ka target dikhta hai
+- Naya user banate waqt **"Roz ka call target"** box (default 40)
+- Edit dialog me bhi badal sakte hain — **0 = koi limit nahi** (poori list dikhegi)
+- **Follow-ups Due** page par har caller ke saamne **progress bar**: `14/40 · 26 baaki`
+- Total row me sab callers ka `14 / 40`
+
+### Caller ke liye (My Calls)
+
+- Sabse upar **"Aaj ka target"** card — bada number `14 / 40`, progress bar
+- **List sirf baaki target jitni** dikhti hai (14/40 ho to 26 rows)
+- Neeche ek line: *"20 customers aur due hain, par ye aaj ke target se bahar hain — kal ki list me sabse upar aayenge"*
+- Target poora hote hi ✅ **"Aaj ka target poora"** card + **"Phir bhi poori list dekhein"** button
+
+### "Aaj ka kaam" kaise gina jaata hai
+
+Aaj jitne **alag customers** ko touch kiya — remark **ya** call. Ek hi customer ko do baar
+remark karne se ginti nahi badhti (haan, par asli kaam ek hi hai).
+
+### 🔴 Ek bada bug bhi theek hua — timezone
+
+Database server **UTC** par chalta hai (Railway bhi), par app ka business din
+**Asia/Kolkata** ka hai. Isse SQL ka `CURRENT_DATE` ek din peeche reh jata tha —
+matlab shaam 6:30 baje ke baad app "kal" ki date dikhata tha, aur
+**"aaj ka kaam", "due", "overdue" sab galat** aata tha (screenshot me 14 kaam ho gaye
+the par progress 0/40 dikha raha tha).
+
+Ab har DB connection par `SET TIME ZONE 'Asia/Kolkata'` chalta hai — dono ek hi din par.
+Ye **follow-up dates, overdue count aur new clients window** sab ko theek karta hai.

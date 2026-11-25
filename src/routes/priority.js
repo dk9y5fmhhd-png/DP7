@@ -85,6 +85,31 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
   }
 });
 
+/* --------------------------- daily target --------------------------- */
+
+const DEFAULT_TARGET = 40;
+
+async function targetInfo(userId) {
+  const target = Number(await db.value('SELECT daily_target FROM users WHERE id = $1', [userId]));
+  const doneRow = await db.value(
+    `SELECT customers FROM caller_daily_work
+      WHERE caller_id = $1 AND work_date = CURRENT_DATE`,
+    [userId]
+  );
+  const done = Number(doneRow || 0);
+  // 0 = koi limit nahi (admin ne jaan-boojh ke off kiya)
+  const t = Number.isFinite(target) && target >= 0 ? target : DEFAULT_TARGET;
+  const unlimited = t === 0;
+  return {
+    target: t,
+    done,
+    unlimited,
+    remaining: unlimited ? Infinity : Math.max(0, t - done),
+    pct: unlimited ? 0 : Math.min(100, Math.round((done / t) * 100)),
+    complete: !unlimited && done >= t,
+  };
+}
+
 /* --------------------------- my calls (caller) --------------------------- */
 
 // Caller ki list = sirf WAHI customers jinka follow-up aaj ya pehle due hai.
@@ -112,8 +137,13 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const me = req.session.user.id;
     const today = D.todayISO();
     const showAll = req.query.all === '1';
+    const forceAll = req.query.full === '1'; // target poora hone par bhi poori list
 
     const base = mineCte();
+    const tgt = await targetInfo(me);
+
+    // List sirf baaki target jitni — target poora ho to koi row nahi
+    const limit = showAll || forceAll || tgt.unlimited ? null : tgt.remaining;
 
     const rows = await db.rows(
       `${base}
@@ -129,6 +159,10 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
           deposit_count DESC, days_inactive ASC`,
       [me, today, showAll]
     );
+
+    // Target ke hisaab se kaat do (baaki queue ka number batao)
+    const queueCount = rows.length;
+    const visibleRows = limit === null ? rows : rows.slice(0, limit);
 
     const stats = await db.row(
       `${base}
@@ -163,8 +197,12 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     res.render('mycalls', {
       title: 'My Calls',
       page: 'mycalls',
-      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
-      stats, doneToday, upcoming, showAll, today,
+      rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
+      target: tgt,
+      queueCount,
+      stats, doneToday, upcoming,
+      hiddenCount: queueCount - visibleRows.length,
+      showAll, forceAll, today,
       remarks: R.REMARKS,
       quickDates: R.QUICK_DATES,
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL, STATUS_LABEL: C.STATUS_LABEL },
@@ -182,7 +220,9 @@ router.get('/due', auth.requirePage('due'), async (req, res, next) => {
     const today = D.todayISO();
 
     const perCaller = await db.rows(
-      `SELECT u.id, u.name AS caller_name,
+      `SELECT u.id, u.name AS caller_name, u.daily_target,
+              COALESCE(cdw.customers, 0)::int AS done_today,
+              GREATEST(u.daily_target - COALESCE(cdw.customers, 0), 0)::int AS left_today,
               COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on = CURRENT_DATE)::int AS due,
               COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on <= CURRENT_DATE)::int AS pending,
               COUNT(*) FILTER (WHERE lf.follow_up_on < CURRENT_DATE)::int AS overdue,
@@ -191,8 +231,10 @@ router.get('/due', auth.requirePage('due'), async (req, res, next) => {
          FROM customer_board b
          JOIN users u ON u.id = b.assigned_to
          LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
+         LEFT JOIN caller_daily_work cdw
+                ON cdw.caller_id = u.id AND cdw.work_date = CURRENT_DATE
         WHERE b.do_not_contact = FALSE
-        GROUP BY u.id, u.name
+        GROUP BY u.id, u.name, u.daily_target, cdw.customers
         ORDER BY overdue DESC, due DESC`
     );
 
@@ -220,7 +262,9 @@ router.get('/due', auth.requirePage('due'), async (req, res, next) => {
       overdue: perCaller.reduce((a, c) => a + c.overdue, 0),
       due: perCaller.reduce((a, c) => a + c.due, 0),
       pending: perCaller.reduce((a, c) => a + c.pending, 0),
-      done: doneToday.reduce((a, c) => a + c.remarks, 0),
+      done: perCaller.reduce((a, c) => a + c.done_today, 0),
+      target: perCaller.reduce((a, c) => a + Number(c.daily_target || 0), 0),
+      left: perCaller.reduce((a, c) => a + c.left_today, 0),
     };
 
     res.render('followups_due', {

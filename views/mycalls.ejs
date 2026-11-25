@@ -14,9 +14,46 @@
   </div>
 </div>
 
+<div class="card" style="<%= target.complete ? 'border-color:rgba(70,211,154,0.45)' : '' %>">
+  <div class="card-body">
+    <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div style="flex:1 1 240px">
+        <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700">
+          Aaj ka target
+        </div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+          <span style="font-size:34px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;<%= target.complete ? 'color:var(--success)' : '' %>"><%= target.done %></span>
+          <span style="font-size:18px;color:var(--fg-muted);font-weight:600">/ <%= target.target %></span>
+          <% if (target.unlimited) { %>
+            <span class="badge badge-neutral" style="margin-left:4px">koi limit nahi</span>
+          <% } else if (target.complete) { %>
+            <span class="badge badge-success" style="margin-left:4px"><%- icon('check', 12) %> Target poora</span>
+          <% } else { %>
+            <span class="badge badge-neutral" style="margin-left:4px"><%= target.remaining %> baaki</span>
+          <% } %>
+        </div>
+      </div>
+      <div style="flex:0 0 220px;text-align:right">
+        <div class="muted tiny">Aaj kitne customer touch kiye</div>
+        <div class="muted tiny">Queue me due: <strong><%= queueCount %></strong></div>
+      </div>
+    </div>
+
+    <% if (!target.unlimited) { %>
+    <div class="progress-track" style="margin-top:14px">
+      <div class="progress-fill <%= target.complete ? 'done' : '' %>" style="width:<%= target.pct %>%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px" class="muted tiny">
+      <span><%= target.pct %>% poora</span>
+      <span><%= target.complete ? 'Shaabaash — aaj ka kaam khatam' : target.remaining + ' customers baaki' %></span>
+    </div>
+    <% } %>
+  </div>
+</div>
+
 <div class="stat-grid">
   <div class="stat">
-    <div class="label">Aaj ka kaam</div>
+    <div class="label">Aaj due</div>
     <div class="value"><%= stats.due + stats.overdue %></div>
     <div class="hint">aaj + overdue · P1: <strong><%= stats.due_p1 %></strong></div>
   </div>
@@ -39,11 +76,27 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('phone', 15) %> <%= showAll ? 'Poori list' : 'Aaj ka kaam' %></h3>
+    <h3><%- icon('phone', 15) %> <%= showAll ? 'Poori list' : 'Aaj ki list' %></h3>
     <span class="muted tiny" style="margin-left:auto">
-      <%= rows.length %> customers · overdue sabse upar · number masked hai
+      <% if (showAll || forceAll) { %>
+        <%= rows.length %> customers · overdue sabse upar
+      <% } else { %>
+        <%= rows.length %> dikha rahe hain (target ke hisaab se)
+      <% } %>
     </span>
   </div>
+
+  <% if (!showAll && !forceAll && target.complete) { %>
+    <div class="card-body" style="padding:26px 18px;text-align:center">
+      <div style="font-size:30px;line-height:1">✅</div>
+      <h3 style="margin:10px 0 6px">Aaj ka target poora — <%= target.done %> / <%= target.target %></h3>
+      <p class="muted" style="margin:0 0 14px">
+        Aapne aaj ke liye poora kaam kar liya. Kal wale customers aaj hi call karne ho to neeche se kholein —
+        par pehle thoda aaram bhi kariye.
+      </p>
+      <a class="btn btn-primary" href="/calling/my?full=1">Phir bhi poori list dekhein (<%= queueCount %>)</a>
+    </div>
+  <% } %>
   <div class="table-wrapper">
     <table>
       <thead>
@@ -64,11 +117,21 @@
             <span class="big"><%- icon('check', 26) %></span>
             <% if (showAll) { %>
               Abhi koi customer assign nahi hua. Admin se kehiye.
+            <% } else if (target.complete) { %>
+              Target poora — upar se "poori list" khol sakte hain.
             <% } else { %>
               Aaj ka koi follow-up pending nahi. Shaabaash! 🎉
               <div class="muted tiny" style="margin-top:8px">Jo aage ke liye rakhe hain wo apne din par khud yahan aayenge.</div>
             <% } %>
           </div></td></tr>
+        <% } %>
+        <% if (hiddenCount > 0) { %>
+          <tr><td colspan="8" style="text-align:center;background:rgba(245,197,66,0.05)">
+            <span class="muted tiny">
+              <strong><%= hiddenCount %></strong> customers aur due hain, par ye aaj ke target se bahar hain —
+              kal ki list me sabse upar aayenge.
+            </span>
+          </td></tr>
         <% } %>
         <% rows.forEach(function (r) {
              const overdue = r.follow_up_on && r.days_late > 0;

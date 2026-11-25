@@ -29,6 +29,17 @@ pool.on('error', (err) => {
   console.error('[db] idle client error:', err.message);
 });
 
+// PostgreSQL server aksar UTC par chalta hai (Railway bhi). App ka business din
+// Asia/Kolkata ka hai — isliye har connection par wahi timezone set karte hain,
+// warna SQL ka CURRENT_DATE ek din peeche reh jata hai aur
+// "aaj ka kaam / due / overdue" sab galat aata hai.
+const APP_TZ = process.env.APP_TZ || 'Asia/Kolkata';
+pool.on('connect', (client) => {
+  client.query(`SET TIME ZONE '${APP_TZ.replace(/'/g, "''")}'`).catch((err) => {
+    console.error('[db] timezone set fail:', err.message);
+  });
+});
+
 async function query(text, params) {
   const started = Date.now();
   try {

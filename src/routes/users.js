@@ -9,11 +9,18 @@ const router = express.Router();
 
 const GRANTABLE = auth.PAGES.filter((p) => !p.superOnly && p.key !== 'security');
 
+// Roz ka call target — 0 se 500. 0 = koi limit nahi.
+function targetOf(v, fallback = 40) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(Math.round(n), 0), 500);
+}
+
 router.use(auth.requireSuperAdmin);
 
 async function listUsers() {
   return db.rows(
-    `SELECT id, name, login_id, role, page_access, totp_enabled, failed_attempts,
+    `SELECT id, name, login_id, role, page_access, daily_target, totp_enabled, failed_attempts,
             locked_until, last_login_at, created_at
        FROM users ORDER BY role DESC, name`
   );
@@ -61,9 +68,9 @@ router.post('/create', async (req, res, next) => {
 
     const hash = await bcrypt.hash(password, 10);
     await db.query(
-      `INSERT INTO users (name, login_id, password_hash, role, page_access)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [name, loginId, hash, role, access]
+      `INSERT INTO users (name, login_id, password_hash, role, page_access, daily_target)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [name, loginId, hash, role, access, targetOf(req.body.daily_target, 40)]
     );
     await auth.audit(req, 'create_user', `${loginId} (${role})`);
     req.session.flash = { type: 'success', message: `User "${loginId}" ban gaya.` };
@@ -96,12 +103,10 @@ router.post('/:id/update', async (req, res, next) => {
     }
 
     const access = role === 'super_admin' ? [] : normaliseAccess(req.body);
-    await db.query('UPDATE users SET name = $2, role = $3, page_access = $4 WHERE id = $1', [
-      id,
-      name,
-      role,
-      access,
-    ]);
+    await db.query(
+      'UPDATE users SET name = $2, role = $3, page_access = $4, daily_target = $5 WHERE id = $1',
+      [id, name, role, access, targetOf(req.body.daily_target, target.daily_target)]
+    );
 
     if (password) {
       if (password.length < 6) {
