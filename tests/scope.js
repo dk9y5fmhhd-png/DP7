@@ -65,8 +65,8 @@ async function main() {
   await db.query("DELETE FROM users WHERE login_id IN ('sc_a','sc_b')");
   const mk = async (name, login) => {
     const r = await db.query(
-      `INSERT INTO users (name, login_id, password_hash, role, page_access)
-       VALUES ($1,$2,$3,'admin',$4) RETURNING id`,
+      `INSERT INTO users (name, login_id, password_hash, role, page_access, require_approval)
+       VALUES ($1,$2,$3,'admin',$4,FALSE) RETURNING id`,
       [name, login, await bcrypt.hash('test1234', 10), ['mycalls', 'customers', 'priority']]
     );
     return r.rows[0].id;

@@ -9,8 +9,10 @@
     </div>
   </div>
   <div class="chips">
+    <% if (user.role === 'super_admin') { %>
     <a class="chip" href="/reports/export?type=level<%= filters.level ? '&level=' + filters.level : '' %>"><%- icon('download', 13) %> CSV</a>
     <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <% } %>
   </div>
 </div>
 
@@ -91,7 +93,7 @@
             <td class="num muted"><%= (data.page - 1) * data.perPage + i + 1 %></td>
             <td class="who"><strong><%= r.username %></strong></td>
             <td class="num nowrap">
-              <%= r.mobile %>
+              <%= mask(r.mobile) %>
               <% if (r.dupeCount > 1) { %><span class="badge badge-warn">×<%= r.dupeCount %></span><% } %>
             </td>
             <td class="money right"><%= helpers.money(r.total_deposited) %></td>

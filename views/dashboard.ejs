@@ -214,7 +214,7 @@
         <tbody>
           <% data.topClients.forEach(function (c) { %>
             <tr>
-              <td class="who"><strong><%= c.username %></strong><div class="muted tiny"><%= c.mobile %></div></td>
+              <td class="who"><strong><%= c.username %></strong><div class="muted tiny"><%= mask(c.mobile) %></div></td>
               <td><span class="badge <%= c.levelClass %>"><%= c.levelName || 'No level' %></span></td>
               <td class="money right"><%= helpers.money(c.total_deposited) %></td>
               <td class="right muted tiny"><%= helpers.relativeDays(c.last_deposit, data.today) %></td>

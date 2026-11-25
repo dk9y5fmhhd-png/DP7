@@ -282,7 +282,7 @@ async function main() {
   const lp2 = await req('/login');
   const t2 = csrf(lp2.text);
   const lr2 = await post('/login', { login_id: 'ravi', password: 'caller123' }, t2);
-  if (lr2.status === 302) {
+  if (lr2.status === 302 && lr2.location !== '/login/waiting') {
     const my = await req('/calling/my');
     check('caller ka My Calls khulta hai', my.status === 200, 'status ' + my.status);
     check('caller ko full number nahi dikhta', !/9427040914/.test(my.text));

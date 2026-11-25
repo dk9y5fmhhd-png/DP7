@@ -9,10 +9,12 @@
     </div>
   </div>
   <div class="chips">
+    <% if (user.role === 'super_admin') { %>
     <a class="chip" href="/reports/export?type=client&date=<%= filters.date %>&quiet=<%= filters.quiet %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
       <%- icon('download', 13) %> CSV
     </a>
     <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <% } %>
   </div>
 </div>
 
@@ -94,7 +96,7 @@
               <div class="muted tiny"><%= helpers.money(r.total_deposited) %> · <%= r.deposit_count %> deposits</div>
             </td>
             <td class="num nowrap">
-              <%= r.mobile %>
+              <%= mask(r.mobile) %>
               <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="Ye number <%= r.dupeCount %> clients par hai">×<%= r.dupeCount %></span><% } %>
             </td>
             <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>

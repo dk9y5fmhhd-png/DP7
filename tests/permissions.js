@@ -80,6 +80,7 @@ async function main() {
   }, token);
   check('limited admin create', create.status === 302);
 
+  await db.query("UPDATE users SET require_approval = FALSE WHERE login_id = 'limited_test'");
   const row = await db.row("SELECT id, role, page_access FROM users WHERE login_id='limited_test'");
   check('role aur access save hue', row && row.role === 'admin' && row.page_access.includes('reports'));
   check('access me sirf granted pages', row && !row.page_access.includes('users'));

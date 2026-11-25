@@ -38,9 +38,11 @@ app.use(
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    // rolling: false — har request par expiry aage nahi khiskti.
+    // Login ke 10 ghante baad session khatam, refresh par logout.
+    rolling: false,
     cookie: {
-      maxAge: 1000 * 60 * 60 * 12,
+      maxAge: auth.sessionMs(),
       httpOnly: true,
       sameSite: 'lax',
       secure: 'auto',
@@ -62,6 +64,11 @@ app.use((req, res, next) => {
     today: D.todayISO,
   };
   res.locals.title = 'DP7';
+  // Mobile masking — sirf Super Admin ko poora number
+  res.locals.mask = (m) => {
+    const full = req.session && req.session.user && req.session.user.role === 'super_admin';
+    return require('./lib/customers').maskMobile(m, full);
+  };
   res.locals.appVersion = pkg.version;
   res.locals.icon = icon;
   res.locals.ACTION_TYPES = require('./lib/actions').ACTION_TYPES;
@@ -74,6 +81,7 @@ app.use(auth.checkCsrf);
 // Routes
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
+app.use('/approvals', require('./routes/approvals'));
 app.use('/customers', require('./routes/customers'));
 app.use('/calling', require('./routes/priority'));
 app.use('/calls', require('./routes/calls'));
@@ -122,7 +130,7 @@ app.listen(PORT, '0.0.0.0', async () => {
     // har deploy par schema/settings khud check ho jaayein
     await require('./lib/bootstrap').start();
     const cfg = await settings.all();
-    console.log(`✓ db connected · active window ${cfg.active_window_days}d · TZ ${D.APP_TZ}`);
+    console.log(`✓ db connected · session ${Math.round(auth.sessionMs() / 3600000)}h · active window ${cfg.active_window_days}d · TZ ${D.APP_TZ}`);
   } catch (err) {
     console.error('✗ database not reachable:', err.message);
   }

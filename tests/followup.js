@@ -74,8 +74,8 @@ async function main() {
   const bcrypt = require('bcryptjs');
   await db.query("DELETE FROM users WHERE login_id = 'fucaller'");
   const callerRes = await db.query(
-    `INSERT INTO users (name, login_id, password_hash, role, page_access)
-     VALUES ('FU Caller','fucaller',$1,'admin',$2) RETURNING id`,
+    `INSERT INTO users (name, login_id, password_hash, role, page_access, require_approval)
+     VALUES ('FU Caller','fucaller',$1,'admin',$2,FALSE) RETURNING id`,
     [await bcrypt.hash('test1234', 10), ['mycalls', 'customers', 'priority']]
   );
   const callerId = callerRes.rows[0].id;

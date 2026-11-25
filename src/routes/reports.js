@@ -129,7 +129,8 @@ for (const [path, cfg] of Object.entries(COHORT_ROUTES)) {
 
 /* ---------------- CSV export ---------------- */
 
-router.get('/export', auth.requireLogin, async (req, res, next) => {
+// Download sirf Super Admin ke liye — baaki koi CSV nahi le sakta
+router.get('/export', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     const type = req.query.type || 'client';
 

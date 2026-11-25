@@ -20,8 +20,10 @@
   <div class="chips">
     <a class="chip" href="/reports/<%= data.meta.key %>?d=<%= prevAnchor %><%= filters.dups ? '&dups=1' : '' %>" title="Pichhla period"><%- icon('left', 13) %></a>
     <a class="chip" href="/reports/<%= data.meta.key %>?d=<%= nextAnchor %><%= filters.dups ? '&dups=1' : '' %>" title="Agla period"><%- icon('right', 13) %></a>
+    <% if (user.role === 'super_admin') { %>
     <a class="chip" href="/reports/export?type=<%= data.meta.key %>&d=<%= filters.d %>"><%- icon('download', 13) %> CSV</a>
     <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <% } %>
   </div>
 </div>
 
@@ -102,7 +104,7 @@
                 <div class="muted tiny"><%= helpers.money(r.total_deposited) %> · <%= r.deposit_count %> deposits</div>
               </td>
               <td class="num nowrap">
-                <%= r.mobile %>
+                <%= mask(r.mobile) %>
                 <% if (r.dupeCount > 1) { %><span class="badge badge-warn">×<%= r.dupeCount %></span><% } %>
               </td>
               <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>

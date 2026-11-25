@@ -161,8 +161,8 @@ async function main() {
   await db.query("DELETE FROM users WHERE login_id='delstaff'");
   const bcrypt = require('bcryptjs');
   await db.query(
-    `INSERT INTO users (name, login_id, password_hash, role, page_access)
-     VALUES ('Del Staff','delstaff',$1,'admin',$2)`,
+    `INSERT INTO users (name, login_id, password_hash, role, page_access, require_approval)
+     VALUES ('Del Staff','delstaff',$1,'admin',$2,FALSE)`,
     [await bcrypt.hash('test1234', 10), ['customers']]
   );
   jar = new Map();

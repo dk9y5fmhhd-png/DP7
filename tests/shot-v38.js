@@ -29,8 +29,8 @@ async function main() {
   // ---- caller + data ----
   await db.query("DELETE FROM users WHERE login_id = 'shotcaller'");
   const cr = await db.query(
-    `INSERT INTO users (name, login_id, password_hash, role, page_access)
-     VALUES ('kamal','shotcaller',$1,'admin',$2) RETURNING id`,
+    `INSERT INTO users (name, login_id, password_hash, role, page_access, require_approval)
+     VALUES ('kamal','shotcaller',$1,'admin',$2,FALSE) RETURNING id`,
     [await bcrypt.hash('shot1234', 10), ['mycalls', 'customers', 'priority']]
   );
   const callerId = cr.rows[0].id;

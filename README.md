@@ -466,3 +466,51 @@ Yaani caller vo hi 5-150 record dekhega jo admin ne usse diye. Poora master kabh
 - **Khaali nav groups hide** — caller ko RETENTION ke 3 item hi dikhte hain, khaali
   "DATA / REPORTS / ADMIN" labels nahi.
 - **P3 ka label sahi** — "callback pending" nahi, **reactivated**.
+
+---
+
+## 20. v3.9 — admin-approved login + 10-hour session + no downloads
+
+Teen cheezein ek saath: **har login par admin ki permission**, **10 ghante ka session**, aur
+**non-admin ke liye koi download nahi**.
+
+### Login approval kaise chalta hai
+
+1. User ID + password daalte hi aapke paas request aati hai (`/approvals`)
+2. User ek waiting screen dekhta hai — "Admin ki permission ka intezaar hai"
+3. Aap **Allow** dabate hain → us page par hi uska login khud khul jata hai (2 second me)
+4. **Reject** karein to login nahi hota
+5. Request **5 minute** me expire ho jati hai — late approve karne ka faayda nahi
+
+Super Admin ko approval ki zaroorat nahi. Kisi trusted account ko
+`Login Approvals → Bina approval login karne wale` se off kar sakte hain.
+
+### Session — 10 ghante, fixed
+
+- Login ke baad **10 ghante** tak chalta hai
+- Beech me jitni baar refresh karein, kuch nahi hota (rolling: false — clock aage nahi khisakta)
+- 10 ghante poore → **agla refresh par logout**, aur dobara admin ki permission
+
+Badalna ho to env variable: `SESSION_HOURS=10`
+
+### Download band
+
+| Kya | Super Admin | Baaki sab |
+|---|---|---|
+| Report CSV (`/reports/export`) | Haan | **403** |
+| Backup CSV (`/backup/export/*`) | Haan | **403** |
+| CSV / Print buttons | Dikhte hain | **Gayab** |
+| Mobile number | Poora | **Masked** (••••3210) |
+| Login Approvals page | Haan | **403** |
+
+### Security audit (v3.9)
+
+Poore code ke 62 routes check kiye:
+
+- **9 routes** bina guard — sab `auth.js` ke login routes (public hona chahiye) ✅
+- **53 routes** par `requireLogin` / `requirePage` / `requireSuperAdmin` ✅
+- 4 router-level guards: approvals, backup, settings, users (sab `requireSuperAdmin`)
+- CSRF har non-GET request par (multipart routes me andar verify)
+- Login: 5 galat password → 15 minute lock
+- Session cookie: httpOnly, sameSite=lax, secure auto
+- Login par session regenerate (fixation se bachav)

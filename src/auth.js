@@ -19,6 +19,7 @@ const PAGES = [
   { key: 'biweekly_report', label: 'By Weekly Report', url: '/reports/biweekly', icon: 'weeks', group: 'reports' },
   { key: 'monthly_report', label: 'Monthly Report', url: '/reports/monthly', icon: 'month', group: 'reports' },
   { key: 'followups', label: 'Follow-ups', url: '/followups', icon: 'phone', group: 'reports' },
+  { key: 'approvals', label: 'Login Approvals', url: '/approvals', icon: 'shield', group: 'admin', superOnly: true },
   { key: 'backup', label: 'Backup & Export', url: '/backup', icon: 'download', group: 'admin', superOnly: true },
   { key: 'users', label: 'Users', url: '/users', icon: 'team', group: 'admin', superOnly: true },
   { key: 'settings', label: 'Settings', url: '/settings', icon: 'settings', group: 'admin', superOnly: true },
@@ -44,7 +45,41 @@ function can(user, page) {
   return grant.includes('all') || grant.includes(page);
 }
 
+// Session kitna lamba chalega — default 10 ghante (env se badal sakte hain)
+function sessionMs() {
+  const h = Number(process.env.SESSION_HOURS || 10);
+  const hours = Number.isFinite(h) && h > 0 ? h : 10;
+  return hours * 60 * 60 * 1000;
+}
+
+// 10 ghante ka fixed clock — har refresh par nahi badhta
+function sessionExpired(req) {
+  if (!req.session || !req.session.user) return false;
+  const exp = Number(req.session.expiresAt || 0);
+  if (!exp) return false;
+  return Date.now() > exp;
+}
+
+function destroySession(req) {
+  return new Promise((resolve) => {
+    if (!req.session) return resolve();
+    req.session.destroy(() => resolve());
+  });
+}
+
 function attachUser(req, res, next) {
+  // Muddat khatam → turant logout (refresh par bhi yahi hoga)
+  if (sessionExpired(req)) {
+    return destroySession(req).then(() => {
+      res.locals.user = null;
+      res.locals.can = () => false;
+      res.locals.PAGES = PAGES;
+      res.locals.page = null;
+      res.locals.path = req.path;
+      res.locals.sessionExpiredFlash = true;
+      return res.redirect('/login?expired=1');
+    });
+  }
   res.locals.user = req.session.user || null;
   res.locals.can = (page) => can(req.session.user, page);
   res.locals.PAGES = PAGES;
@@ -54,6 +89,7 @@ function attachUser(req, res, next) {
 }
 
 function requireLogin(req, res, next) {
+  if (sessionExpired(req)) return destroySession(req).then(() => res.redirect('/login?expired=1'));
   if (!req.session.user) {
     req.session.returnTo = req.originalUrl;
     return res.redirect('/login');
@@ -63,6 +99,7 @@ function requireLogin(req, res, next) {
 
 function requirePage(page) {
   return function (req, res, next) {
+    if (sessionExpired(req)) return destroySession(req).then(() => res.redirect('/login?expired=1'));
     if (!req.session.user) {
       req.session.returnTo = req.originalUrl;
       return res.redirect('/login');
@@ -154,6 +191,9 @@ module.exports = {
   landingPage,
   can,
   attachUser,
+  sessionMs,
+  sessionExpired,
+  destroySession,
   requireLogin,
   requirePage,
   requireSuperAdmin,
