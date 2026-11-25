@@ -48,11 +48,20 @@ router.get('/', auth.requirePage('calls'), async (req, res, next) => {
   try {
     const from = D.isDate(req.query.from) ? req.query.from : D.addDays(D.todayISO(), -30);
     const to = D.isDate(req.query.to) ? req.query.to : D.todayISO();
-    const caller = req.query.caller ? Number(req.query.caller) : null;
+    const me = req.session.user;
+    const admin = me.role === 'super_admin';
+
+    // Non-admin sirf apni calls dekhta hai — doosre callers ki nahi
+    const caller = admin && req.query.caller ? Number(req.query.caller) : null;
 
     const params = [from, to];
     let extra = '';
-    if (caller) { params.push(caller); extra = ` AND k.caller_id = $${params.length}`; }
+    if (admin) {
+      if (caller) { params.push(caller); extra = ` AND k.caller_id = $${params.length}`; }
+    } else {
+      params.push(me.id);
+      extra = ` AND k.caller_id = $${params.length}`;
+    }
 
     const rows = await db.rows(
       `SELECT k.*, k.called_at::text AS called, u.name AS caller_name
@@ -62,14 +71,16 @@ router.get('/', auth.requirePage('calls'), async (req, res, next) => {
       params
     );
 
+    const bcParams = admin ? [from, to] : [from, to, me.id];
     const byCaller = await db.rows(
       `SELECT u.name AS caller_name, COUNT(*)::int AS calls,
               COUNT(DISTINCT k.customer_id)::int AS customers,
               COALESCE(SUM(k.duration_sec),0)::int AS seconds
          FROM calls k LEFT JOIN users u ON u.id = k.caller_id
         WHERE k.called_at::date BETWEEN $1 AND $2
+          ${admin ? '' : ' AND k.caller_id = $3'}
         GROUP BY u.name ORDER BY calls DESC`,
-      [from, to]
+      bcParams
     );
 
     const cfg = await telecmi.config();
@@ -77,9 +88,9 @@ router.get('/', auth.requirePage('calls'), async (req, res, next) => {
     res.render('calls', {
       title: 'Call Log',
       page: 'calls',
-      rows, byCaller, cfg,
+      rows, byCaller, cfg, isAdmin: admin,
       filters: { from, to, caller: caller || '' },
-      callers: await db.rows("SELECT id, name FROM users ORDER BY name"),
+      callers: admin ? await db.rows("SELECT id, name FROM users ORDER BY name") : [],
     });
   } catch (err) {
     next(err);

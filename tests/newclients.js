@@ -198,9 +198,19 @@ async function main() {
   const ncCsv = await req(`/new-clients/export?m=${ym}`);
   check('non-admin CSV → 403', ncCsv.status === 403, 'status ' + ncCsv.status);
 
-  /* ---------- 9. mobile masked non-admin ko ---------- */
+  /* ---------- 9. non-admin ko sirf apne assigned clients + mobile masked ---------- */
+  // nc_user ko din-1 ke kuch clients assign karo (warna uski list khaali hogi)
+  const ncId = Number(await db.value("SELECT id FROM users WHERE login_id='nc_user'"));
+  const day1Users = names.slice(0, 3);
+  await db.query('UPDATE customers SET assigned_to = $1 WHERE username = ANY($2::text[])', [ncId, day1Users]);
+
   const day1nc = await req(`/new-clients?m=${ym}&d=1`);
   check('non-admin ko mobile masked', /•{3,}\d{4}/.test(day1nc.text));
+  check('non-admin ko sirf apne 3 clients', day1Users.every((u) => day1nc.text.includes(u)), 'assigned');
+  check('non-admin ko doosre ka client nahi', !day1nc.text.includes(names[7]), 'blocked');
+
+  const day1admin = await req(`/new-clients?m=${ym}&d=1`).catch(() => null);
+  await db.query('UPDATE customers SET assigned_to = NULL WHERE username = ANY($1::text[])', [day1Users]);
 
   /* ---------- 10. access na ho to 403 ---------- */
   await db.query("DELETE FROM users WHERE login_id = 'nc_none'");

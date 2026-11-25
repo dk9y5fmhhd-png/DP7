@@ -37,16 +37,17 @@ function daysInMonth(ym) {
 }
 
 // Kaunse din ka data hai — per-day new client count
-async function dailyCounts(ym) {
+async function dailyCounts(ym, scopeSql = '', scopeParams = []) {
   const rows = await db.rows(
     `SELECT first_deposit::text AS d, COUNT(*)::int AS c,
             COALESCE(SUM(deposit_amount), 0)::float8 AS amt
        FROM customers
       WHERE first_deposit >= $1::date
         AND first_deposit < ($1::date + INTERVAL '1 month')
+        ${scopeSql}
       GROUP BY first_deposit
       ORDER BY first_deposit`,
-    [ym + '-01']
+    [ym + '-01', ...scopeParams]
   );
   const map = new Map();
   for (const r of rows) map.set(Number(r.d.slice(8, 10)), { count: Number(r.c), amount: Number(r.amt) });
@@ -61,7 +62,13 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
     const total = daysInMonth(ym);
     const day = req.query.d ? Math.min(Math.max(1, Number(req.query.d)), total) : null;
 
-    const counts = await dailyCounts(ym);
+    const me = req.session.user;
+    const admin = me.role === 'super_admin';
+    // Non-admin sirf apne assigned clients dekhta hai
+    const scopeSql = admin ? '' : ' AND assigned_to = $2';
+    const scopeParams = admin ? [] : [me.id];
+
+    const counts = await dailyCounts(ym, scopeSql, scopeParams);
 
     // Din ka grid — 1 se 31 (ya 30/28)
     const days = [];
@@ -88,11 +95,12 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
     const prevTotal = Number(
       await db.value(
         `SELECT COUNT(*)::int FROM customers
-          WHERE first_deposit >= $1::date AND first_deposit < ($1::date + INTERVAL '1 month')`,
-        [prevYm + '-01']
+          WHERE first_deposit >= $1::date AND first_deposit < ($1::date + INTERVAL '1 month')
+          ${scopeSql}`,
+        [prevYm + '-01', ...scopeParams]
       )
     );
-    const prevCounts = await dailyCounts(prevYm);
+    const prevCounts = await dailyCounts(prevYm, scopeSql, scopeParams);
 
     // Selected din ke clients
     let list = [];
@@ -107,8 +115,9 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
            LEFT JOIN users u ON u.id = c.assigned_to
            LEFT JOIN latest_followup lf ON lf.uname = LOWER(c.username)
           WHERE c.first_deposit = $1::date
+            ${admin ? '' : ' AND c.assigned_to = $2'}
           ORDER BY c.deposit_amount DESC, c.username`,
-        [dateStr]
+        admin ? [dateStr] : [dateStr, me.id]
       );
     }
 
@@ -142,11 +151,11 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
       maxCount,
       today,
       grid: days.map((d) => ({ ...d, pct: Math.round((d.count / maxCount) * 100) })),
+      isAdmin: admin,
       mask: (m) => {
         const full = req.session.user && req.session.user.role === 'super_admin';
         return require('../lib/customers').maskMobile(m, full);
       },
-      isAdmin: req.session.user && req.session.user.role === 'super_admin',
     });
   } catch (err) {
     next(err);

@@ -49,6 +49,7 @@ async function main() {
     ['schema-v3.8.1.sql', 'schema v3.8.1 (purane follow-up dates fix)'],
     ['schema-v3.9.sql', 'schema v3.9 (admin-approved login)'],
     ['schema-v4.1.sql', 'schema v4.1 (daily target + progress)'],
+    ['schema-v4.2.sql', 'schema v4.2 (auto-split + caller load)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);
     if (!fs.existsSync(p2)) continue;

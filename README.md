@@ -593,3 +593,74 @@ the par progress 0/40 dikha raha tha).
 
 Ab har DB connection par `SET TIME ZONE 'Asia/Kolkata'` chalta hai — dono ek hi din par.
 Ye **follow-up dates, overdue count aur new clients window** sab ko theek karta hai.
+
+---
+
+## 23. v4.2 — barabar auto-split + Caller Load
+
+Pehle customers baantna check-box ka kaam tha: "Poora filter assign karein" poora batch **ek**
+caller ko de deta tha. 2,786 customers ko 8 callers me 600-600 baantne ke liye 600 tick × 6 baar
+karna padta — practical nahi tha.
+
+### Naya page: Caller Load (`/callers`, sirf Super Admin)
+
+Har caller ka ek line me pura hisaab:
+
+| Column | Matlab |
+|---|---|
+| **Team** | Retention / Acquisition — dropdown se badal sakte hain |
+| **Target** | Roz ka call target |
+| **Load** | `assigned / (target × 4 din)` — bar + health badge |
+| **P1 / P2** | Uske paas kitne VIP-inactive aur normal inactive |
+| **Pending / Overdue** | Follow-up ka bojh |
+| **Aaj kiya** | Aaj kitne customers touch kiye |
+| **Last login** | Kabhi login nahi kiya to "kabhi nahi" |
+
+**Health** = assigned ÷ (target × 4 din):
+`khaali` (0) · `halka` (<50%) · `theek` (50–105%) · `bhaari` (105–130%) · `zyada` (>130%)
+
+### Even auto-split
+
+Form: kaun se customers (bina caller / sab), priority filter, har caller ko kitne (khaali =
+barabar), total kitne baantne hain, aur kis-kis caller me.
+
+**Pehle Preview** — kuch save nahi hota. Preview me dikhta hai har caller ko kitne milenge aur
+P1/P2/P3/P4 ka kya mix. **Assign karein** dabane par hi badalta hai.
+
+**Algorithm** — priority bucket ke hisaab se round-robin:
+
+```
+P1 → samira, soheb, soni, Diksha, arun, kamal (round-robin)
+P2 → soheb, soni, Diksha, arun, kamal, samira (agle se shuru)
+P3 → ...
+P4 → ...
+```
+
+Har bucket alag round-robin hoti hai, isliye har caller ko **har priority se barabar hissa**
+milta hai — VIP sab ek caller ke paas nahi jaate. Agar simple "pehle 600 isko" karte to ek ke
+paas saare P1 chale jaate.
+
+- **P0 (Do Not Contact)** kabhi assign nahi hota
+- **per_caller** diya ho to cap lagta hai (baaki queue me rehte hain)
+- **take** diya ho to sirf utne hi baante jaate hain
+- Har split `split_runs` me record hota hai (kisne, kab, kitne)
+
+### Saath me
+
+- **`users.team`** — retention (purane client ka follow-up) / acquisition (naye client laana)
+- **`customers.acquired_by`, `acquired_on`** — kis caller ne customer laaya (acquisition ke liye)
+- **Users page** me Team column + create/edit me Team dropdown, default target 150
+- **`/calls` scope fix** — caller ab sirf apni calls dekhta hai (pehle sab callers ki dikhti thin)
+- **`/new-clients` scope fix** — caller ab sirf apne assigned clients dekhta hai
+- **`/callers`** non-admin ke liye 403
+
+### 🔴 Ek production bug bhi theek hua
+
+`schema-v3.sql` `CREATE OR REPLACE VIEW customer_board` karta tha. v4.2 ne us view me naye
+columns add kiye (acquired_by, caller_team). Agli baar server start hote hi purana schema
+wahi view purane columns ke saath replace karne lagta → **"cannot drop columns from view"** →
+bootstrap beech me ruk jata, aur uske baad ke saare schema (index cleanup sameth) lagne hi
+band ho jaate.
+
+Ab `DROP VIEW IF EXISTS customer_board` karke naya banate hain — teen baar lagatar bootstrap
+chalake verify kiya, har baar saaf.

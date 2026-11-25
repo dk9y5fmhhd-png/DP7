@@ -88,7 +88,12 @@ ALTER TABLE followups ADD COLUMN IF NOT EXISTS caller_id INTEGER REFERENCES user
 CREATE INDEX IF NOT EXISTS followups_action_idx ON followups (action_type);
 
 -- ---------- view: live customer scoreboard ----------
-CREATE OR REPLACE VIEW customer_board AS
+-- View ko drop karke banate hain (CREATE OR REPLACE nahi) — warna baad ke
+-- schema (v4.2) me naye column add hone par "cannot drop columns from view"
+-- error aata hai aur bootstrap beech me ruk jata hai.
+DROP VIEW IF EXISTS customer_board;
+
+CREATE VIEW customer_board AS
 SELECT
   c.id, c.username, c.mobile, c.reg_date, c.first_deposit, c.last_deposit,
   c.deposit_count, c.deposit_amount, c.status, c.vip_category,
