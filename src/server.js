@@ -83,6 +83,7 @@ app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
 app.use('/approvals', require('./routes/approvals'));
 app.use('/customers', require('./routes/customers'));
+app.use('/new-clients', require('./routes/newclients'));
 app.use('/calling', require('./routes/priority'));
 app.use('/calls', require('./routes/calls'));
 app.use('/upload', require('./routes/upload'));

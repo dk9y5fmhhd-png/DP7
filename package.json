@@ -1,6 +1,6 @@
 {
   "name": "dp7",
-  "version": "3.9.0",
+  "version": "4.0.0",
   "private": true,
   "description": "DP7 — client deposit tracking & retention reports",
   "main": "src/server.js",

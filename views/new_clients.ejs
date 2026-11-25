@@ -1,0 +1,181 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>New Clients</h1>
+    <div class="sub">
+      <strong><%= ymLabel %></strong> — har din kitne naye clients aaye. Mahina badalte hi ye window
+      naya mahina dikhati hai, pichhla mahina apne aap hat jata hai.
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip <%= isCurrent ? 'on' : '' %>" href="/new-clients?m=<%= today.slice(0, 7) %>"><%- icon('day', 13) %> Is mahine</a>
+    <a class="chip" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %> Pichhla mahina</a>
+    <% if (isAdmin) { %>
+      <a class="chip" href="/new-clients/export?m=<%= ym %>"><%- icon('download', 13) %> CSV</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat ok">
+    <div class="label">Is mahine naye clients</div>
+    <div class="value"><%= totals.month.toLocaleString('en-IN') %></div>
+    <div class="hint">
+      <%= totals.prev %> pichhle mahine ·
+      <span style="color:<%= totals.delta >= 0 ? 'var(--success)' : 'var(--danger)' %>">
+        <%= totals.delta >= 0 ? '+' : '' %><%= totals.delta %>
+      </span>
+    </div>
+  </div>
+  <div class="stat">
+    <div class="label">Aaj</div>
+    <div class="value"><%= totals.today %></div>
+    <div class="hint"><%= helpers.prettyDate(today) %></div>
+  </div>
+  <div class="stat">
+    <div class="label">Kal</div>
+    <div class="value"><%= totals.yesterday %></div>
+    <div class="hint"><%= totals.yesterdayLabel %></div>
+  </div>
+  <div class="stat">
+    <div class="label">Roz ka average</div>
+    <div class="value"><%= totals.avg %></div>
+    <div class="hint">per din</div>
+  </div>
+  <div class="stat">
+    <div class="label">Sabse achha din</div>
+    <div class="value" style="font-size:22px">
+      <% if (totals.best) { %><%= totals.best.day %><span style="font-size:13px;color:var(--fg-muted)"> <%= helpers.prettyDate(totals.best.date).split(' ')[1] %></span><% } else { %>—<% } %>
+    </div>
+    <div class="hint"><%= totals.best ? totals.best.count + ' clients' : 'koi data nahi' %></div>
+  </div>
+  <div class="stat <%= totals.zeroDays ? 'warn' : 'ok' %>">
+    <div class="label">Zero din</div>
+    <div class="value"><%= totals.zeroDays %></div>
+    <div class="hint">jin din koi naya client nahi</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('day', 15) %> Din-wise count — <%= ymLabel %></h3>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <a class="btn btn-sm" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %></a>
+      <% if (canGoNext) { %>
+        <a class="btn btn-sm" href="/new-clients?m=<%= nextYm %>"><%- icon('right', 13) %></a>
+      <% } %>
+    </div>
+  </div>
+  <div class="card-body">
+    <p class="muted tiny" style="margin:0 0 14px">
+      "Naya client" = jiska <strong>pehla deposit</strong> us din hua. Kisi din par click karein to us din ke clients dikhenge.
+    </p>
+
+    <%
+      const todayDay = Number(today.slice(8, 10));
+      const firstDow = new Date(ym + '-01T00:00:00Z').getUTCDay(); // 0=Sun
+      const pad = (firstDow + 6) % 7; // Monday start
+      const cells = [];
+      for (let i = 0; i < pad; i++) cells.push(null);
+      grid.forEach(function (d) { cells.push(d); });
+    %>
+
+    <div class="cal-head">
+      <% ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function (w) { %><span><%= w %></span><% }); %>
+    </div>
+    <div class="cal">
+      <% cells.forEach(function (d) { %>
+        <% if (!d) { %><div class="cal-cell empty"></div><% } else { %>
+          <a class="cal-cell <%= d.isToday ? 'today' : '' %> <%= d.isFuture ? 'future' : '' %> <%= day === d.day ? 'sel' : '' %> <%= d.count ? 'has' : '' %>"
+             href="/new-clients?m=<%= ym %>&d=<%= d.day %>"
+             title="<%= helpers.prettyDate(d.date) %> — <%= d.count %> naye clients">
+            <span class="cal-day"><%= d.day %></span>
+            <% if (d.count) { %>
+              <span class="cal-count"><%= d.count %></span>
+              <span class="cal-bar"><span style="width:<%= d.pct %>%"></span></span>
+            <% } else if (!d.isFuture) { %>
+              <span class="cal-zero">0</span>
+            <% } %>
+          </a>
+        <% } %>
+      <% }); %>
+    </div>
+
+    <div class="muted tiny" style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap">
+      <span><span class="badge badge-success">Aaj</span> = aaj ka din</span>
+      <span><span class="badge badge-neutral">Grey</span> = aane wale din</span>
+      <span><span class="badge badge-accent">Number</span> = us din ke naye clients</span>
+    </div>
+  </div>
+</div>
+
+<% if (day) { %>
+  <%
+    const sel = grid.find(function (g) { return g.day === day; });
+    const selLabel = ym + '-' + String(day).padStart(2, '0');
+  %>
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('team', 15) %> <%= helpers.prettyDateLong(selLabel) %> ke naye clients</h3>
+      <span class="badge badge-accent" style="margin-left:auto"><%= list.length %> clients</span>
+    </div>
+    <% if (!list.length) { %>
+      <div class="card-body"><div class="empty">
+        <span class="big">—</span>
+        Is din koi naya client nahi aaya.
+      </div></div>
+    <% } else { %>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Username</th><th>Mobile</th><th class="right">Deposits</th><th class="right">Total</th><th>Level</th><th>Status</th><th>Caller</th><th>Last remark</th></tr>
+        </thead>
+        <tbody>
+          <% list.forEach(function (r, i) { %>
+            <tr>
+              <td class="num muted"><%= i + 1 %></td>
+              <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
+              <td class="num nowrap"><%= mask(r.mobile) %></td>
+              <td class="right num"><%= r.deposit_count %></td>
+              <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
+              <td><span class="badge badge-neutral">L<%= r.level_id || '—' %></span></td>
+              <td>
+                <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= r.status %></span>
+              </td>
+              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">—</span><% } %></td>
+              <td class="muted tiny"><%= r.last_remark || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer muted tiny">
+      Is din ke clients ka total deposit: <strong><%= helpers.money(list.reduce(function (a, r) { return a + Number(r.deposit_amount); }, 0)) %></strong>
+    </div>
+    <% } %>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Ye window kaise kaam karti hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Naya client</dt>
+      <dd>Jiska <strong>pehla deposit</strong> us din hua. Ek hi client dobara aaye to wo naya nahi gina jaata.</dd>
+      <dt>Date kahan se</dt>
+      <dd>
+        Deposit file me date column na ho to <strong>Daily Upload ke "Date" box</strong> wali date lagti hai.
+        Isliye 1 tareekh ka data 2 tareekh ko upload karte waqt Date me <strong>1 tareekh</strong> chuniye —
+        tab wo is window me 1 tareekh par hi dikhega.
+      </dd>
+      <dt>Mahina badla</dt>
+      <dd>Naya mahina shuru hote hi window <strong>khud us mahine</strong> par aa jati hai. Pichhla mahina hat jata hai — par uska data delete nahi hota, "Pichhla mahina" se dekh sakte hain.</dd>
+      <dt>Purana data</dt>
+      <dd>Kisi mahine ka data dekhna ho to left/right arrows se mahina badal lein.</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

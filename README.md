@@ -514,3 +514,45 @@ Poore code ke 62 routes check kiye:
 - Login: 5 galat password → 15 minute lock
 - Session cookie: httpOnly, sameSite=lax, secure auto
 - Login par session regenerate (fixation se bachav)
+
+---
+
+## 21. v4.0 — New Clients window
+
+Ek naya page: **New Clients** — mahine ke har din kitne naye clients aaye, 1 se 31 tak.
+
+### Kaise dekhta hai
+
+- **Calendar grid** (Mon–Sun) — har din ke box me us din ke naye clients ka number
+- **6 counters**: is mahine total (pichhle mahine se compare), **aaj**, **kal**, roz ka average,
+  sabse achha din, aur zero din (jin din koi naya client nahi)
+- **Kisi din par click** → us din ke saare naye clients ki table (username, mobile,
+  deposits, total, level, status, caller, last remark)
+- Left/right arrows se koi bhi mahina — "Pichhla mahina" chip bhi hai
+- **CSV** (sirf Super Admin)
+
+### Mahina auto-reset
+
+Window hamesha **current month** par khulti hai. 1 tareekh aate hi naya mahina shuru —
+pichhla mahina apne aap window se hat jata hai. Data delete nahi hota, arrows se
+pichhla mahina dekh sakte hain.
+
+### "Naya client" ka matlab
+
+Jiska **pehla deposit** us din hua. Ek hi client dobara deposit kare to wo naya nahi ginta —
+sirf pehla din ginta hai.
+
+### ⚠️ Date ka dhyan
+
+File me date column na ho to **Daily Upload ke "Date" box** wali date lagti hai.
+
+> 1 tareekh ka data 2 tareekh ko upload kar rahe hain → Date me **1 tareekh** chuniye.
+> Warna wo client is window me 2 tareekh par ginega.
+
+Ye warning ab Daily Upload page par bhi dikhti hai.
+
+### Access
+
+- Page access key: `newclients` (Users page se grant karein)
+- Mobile number non-admin ko masked
+- CSV aur export sirf Super Admin

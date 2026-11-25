@@ -6,6 +6,7 @@ const db = require('./db');
 const PAGES = [
   { key: 'dashboard', label: 'Dashboard', url: '/', icon: 'grid', group: 'main' },
   { key: 'customers', label: 'Customers', url: '/customers', icon: 'team', group: 'main' },
+  { key: 'newclients', label: 'New Clients', url: '/new-clients', icon: 'day', group: 'main' },
   { key: 'priority', label: 'Calling List', url: '/calling', icon: 'alert', group: 'main' },
   { key: 'mycalls', label: 'My Calls', url: '/calling/my', icon: 'phone', group: 'main' },
   { key: 'calls', label: 'Call Log', url: '/calls', icon: 'clock', group: 'main' },
