@@ -664,3 +664,65 @@ band ho jaate.
 
 Ab `DROP VIEW IF EXISTS customer_board` karke naya banate hain — teen baar lagatar bootstrap
 chalake verify kiya, har baar saaf.
+
+---
+
+## 24. v4.3 — Retention Cadence Engine
+
+Pehle follow-up date **sirf remark se** banti thi. Jis customer ko koi call hi na
+kare, uski koi date hi nahi — aur jo deposit kar deta wo queue se hamesha ke liye
+gayab. "Regular retention" ka matlab har customer ka apna **cycle** hona chahiye,
+ek baar call karke chhod dena nahi.
+
+### Tier aur cycle
+
+| Tier | Kaun | Cycle |
+|---|---|---|
+| **A** | VIP, 25+ deposit, ya recently inactive (≤14 din) | **5 din** |
+| **B** | normal aur active customer | **12 din** |
+| **C** | 60 din se purana dormant | **30 din** |
+| **D** | Wrong Number / Do Not Contact | koi touch nahi |
+
+### next_touch_on — asli engine
+
+Har customer ka ek agla scheduled touch hota hai:
+
+```
+remark hai aur usme follow_up_on hai  → wahi date (caller ka faisla)
+remark hai par follow_up_on khaali    → action_date + tier gap
+remark hi nahi (kabhi call nahi hua)  → last_deposit + tier gap
+```
+
+Isse **jo kabhi call nahi hua wo bhi due** hota hai — pool me koi nahi padta.
+Remark save hote hi cycle reset — dobara call nahi karna padega kisi ko.
+
+### My Calls ab kaise chalti hai
+
+- **Ordering**: overdue → **tier A** → tier B → tier C → phir deposits
+  (target 150 kam pad jaye to VIP kabhi squeeze out nahi hote)
+- **Naya "Aaj due — tier" card**: `A 53 · B 0 · C 27`
+- Har row par **Tier** badge aur **Cadence** column — `35 din late · 22 Oct 2026`
+
+### Admin: Cadence page (`/cadence`, sirf Super Admin)
+
+| Counter | Matlab |
+|---|---|
+| Cadence me | kitne customers cycle me hain (DNC chhod ke) |
+| 7 din me touch hue | coverage — asli health metric |
+| **Bhoole gaye** | 7 din se koi touch nahi — **yahi red flag hai** |
+| Kabhi call nahi | ek baar bhi nahi |
+| Abhi due | cadence date nikal gayi |
+| **Ek round** | poore base ka ek chakkar kitne din me + roz kitni calls chahiye |
+
+Saath me tier-wise table, caller-wise coverage bar, **roz ka bar chart**, aur
+"sabse zyada chhoote gaye" (2+ deposit wale, top 25) ki list.
+
+Agar ek round ka time chuna hua window se zyada ho, page khud laal warning deta hai —
+kitni calls/din chahiye aur capacity kitni hai.
+
+### Recompute kab chalta hai
+
+- Server start par
+- Har deposit sync ke baad (status/VIP badla → tier badla)
+- Har remark save par (sirf us ek customer ka)
+- `/cadence` par **Recompute** button se poora base

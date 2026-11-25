@@ -99,6 +99,7 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
     if (R.SUPPRESS.has(actionType)) {
       await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
     }
+    await require('../lib/cadence').refreshOne(username).catch(() => null);
     await auth.audit(req, 'add_followup', `${username} → ${actionType}`);
     req.session.flash = {
       type: 'success',

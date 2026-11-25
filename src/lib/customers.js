@@ -157,7 +157,18 @@ async function syncCustomers() {
     cleared++;
   }
 
-  return { total: rows.length, created, updated, cleared };
+  // Deposit badla → status/VIP badla → cadence tier bhi badal sakta hai.
+  // (schema v4.3 se pehle ye column nahi hota, isliye silent fail.)
+  let cadence = null;
+  try {
+    cadence = await require('./cadence').refreshAll();
+  } catch (e) {
+    if (!/cadence_tier|next_touch_on|does not exist/i.test(e.message)) {
+      console.error('[cadence]', e.message);
+    }
+  }
+
+  return { total: rows.length, created, updated, cleared, cadence };
 }
 
 function daysBetween(dateStr) {

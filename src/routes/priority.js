@@ -2,6 +2,7 @@
 
 const express = require('express');
 const db = require('../db');
+const CAD = require('../lib/cadence');
 const auth = require('../auth');
 const C = require('../lib/customers');
 const R = require('../lib/remarks');
@@ -148,14 +149,18 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const rows = await db.rows(
       `${base}
        SELECT *,
-              (follow_up_on IS NOT NULL AND follow_up_on < $2::date) AS is_overdue,
-              ($2::date - follow_up_on) AS days_late
+              (next_touch_on IS NOT NULL AND next_touch_on < $2::date) AS is_overdue,
+              ($2::date - next_touch_on) AS days_late,
+              (next_touch_on IS NULL) AS never_scheduled
          FROM mine
-        WHERE $3::boolean OR follow_up_on IS NULL OR follow_up_on <= $2::date
+        WHERE $3::boolean OR next_touch_on IS NULL OR next_touch_on <= $2::date
         ORDER BY
-          CASE WHEN follow_up_on IS NOT NULL AND follow_up_on < $2::date THEN 0 ELSE 1 END,
-          follow_up_on ASC NULLS FIRST,
-          CASE priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 ELSE 4 END,
+          -- overdue pehle
+          CASE WHEN next_touch_on IS NOT NULL AND next_touch_on < $2::date THEN 0 ELSE 1 END,
+          -- phir VIP (tier A), phir normal, phir dormant — target kam pade to
+          -- VIP kabhi squeezed out na ho
+          CASE cadence_tier WHEN 'A' THEN 0 WHEN 'B' THEN 1 WHEN 'C' THEN 2 ELSE 3 END,
+          next_touch_on ASC NULLS FIRST,
           deposit_count DESC, days_inactive ASC`,
       [me, today, showAll]
     );
@@ -167,11 +172,14 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const stats = await db.row(
       `${base}
        SELECT
-         COUNT(*) FILTER (WHERE follow_up_on IS NULL
-                            OR follow_up_on = $2::date)::int   AS due,
-         COUNT(*) FILTER (WHERE follow_up_on < $2::date)::int   AS overdue,
-         COUNT(*) FILTER (WHERE follow_up_on > $2::date)::int   AS snoozed,
-         COUNT(*) FILTER (WHERE priority = 'P1' AND (follow_up_on IS NULL OR follow_up_on <= $2::date))::int AS due_p1,
+         COUNT(*) FILTER (WHERE next_touch_on IS NULL
+                            OR next_touch_on = $2::date)::int   AS due,
+         COUNT(*) FILTER (WHERE next_touch_on < $2::date)::int   AS overdue,
+         COUNT(*) FILTER (WHERE next_touch_on > $2::date)::int   AS snoozed,
+         COUNT(*) FILTER (WHERE priority = 'P1' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_p1,
+         COUNT(*) FILTER (WHERE cadence_tier = 'A' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_a,
+         COUNT(*) FILTER (WHERE cadence_tier = 'B' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_b,
+         COUNT(*) FILTER (WHERE cadence_tier = 'C' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_c,
          COUNT(*)::int AS total
        FROM mine`,
       [me, today]
@@ -187,10 +195,10 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
 
     const upcoming = await db.rows(
       `${base}
-       SELECT username, follow_up_on, last_remark, ($2::date - follow_up_on) AS in_days
+       SELECT username, next_touch_on, cadence_tier, last_remark, ($2::date - next_touch_on) AS in_days
          FROM mine
-        WHERE follow_up_on > $2::date
-        ORDER BY follow_up_on ASC LIMIT 12`,
+        WHERE next_touch_on > $2::date
+        ORDER BY next_touch_on ASC LIMIT 12`,
       [me, today]
     );
 
@@ -205,6 +213,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
       showAll, forceAll, today,
       remarks: R.REMARKS,
       quickDates: R.QUICK_DATES,
+      tiers: CAD.TIERS,
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL, STATUS_LABEL: C.STATUS_LABEL },
     });
   } catch (err) {
@@ -317,12 +326,16 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
       await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
     }
 
-    await auth.audit(req, 'remark', `${username} → ${action} · fu=${followUpOn || 'none'}`);
+    // Cadence clock reset — remark save hote hi agla touch schedule ho jata hai
+    const cad = await CAD.refreshOne(username).catch(() => null);
+
+    await auth.audit(req, 'remark', `${username} → ${action} · fu=${followUpOn || 'none'} · tier=${cad ? cad.tier : '?'}`);
+    const nextTouch = cad && cad.next;
     req.session.flash = {
       type: 'success',
-      message: followUpOn
-        ? `Remark save — ${username}: ${action}. Agla follow-up ${D.prettyDate(followUpOn)} (${D.relativeDays(followUpOn, date)}).`
-        : `Remark save — ${username}: ${action}. List se hata diya.`,
+      message: nextTouch
+        ? `Remark save — ${username}: ${action}. Agla touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
+        : `Remark save — ${username}: ${action}. Cycle se hata diya.`,
     };
     res.redirect(req.get('referer') || '/calling/my');
   } catch (err) {

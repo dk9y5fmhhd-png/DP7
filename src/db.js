@@ -13,8 +13,15 @@ types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 const connectionString = process.env.DATABASE_URL || '';
 const needsSsl = /sslmode=require/.test(connectionString) || process.env.PGSSL === 'true';
 
+// PostgreSQL server aksar UTC par chalta hai (Railway bhi). App ka business din
+// Asia/Kolkata ka hai — isliye har connection par wahi timezone set hota hai
+// (startup parameter se, taaki koi race na ho), warna SQL ka CURRENT_DATE ek
+// din peeche reh jata hai aur "aaj ka kaam / due / overdue" sab galat aata hai.
+const APP_TZ = process.env.APP_TZ || 'Asia/Kolkata';
+
 const pool = new Pool({
   connectionString: connectionString || undefined,
+  options: `-c timezone=${APP_TZ}`,
   host: process.env.PGHOST,
   port: process.env.PGPORT ? Number(process.env.PGPORT) : undefined,
   user: process.env.PGUSER,
@@ -29,16 +36,6 @@ pool.on('error', (err) => {
   console.error('[db] idle client error:', err.message);
 });
 
-// PostgreSQL server aksar UTC par chalta hai (Railway bhi). App ka business din
-// Asia/Kolkata ka hai — isliye har connection par wahi timezone set karte hain,
-// warna SQL ka CURRENT_DATE ek din peeche reh jata hai aur
-// "aaj ka kaam / due / overdue" sab galat aata hai.
-const APP_TZ = process.env.APP_TZ || 'Asia/Kolkata';
-pool.on('connect', (client) => {
-  client.query(`SET TIME ZONE '${APP_TZ.replace(/'/g, "''")}'`).catch((err) => {
-    console.error('[db] timezone set fail:', err.message);
-  });
-});
 
 async function query(text, params) {
   const started = Date.now();

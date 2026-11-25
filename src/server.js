@@ -81,6 +81,7 @@ app.use(auth.checkCsrf);
 // Routes
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
+app.use('/cadence', require('./routes/cadence'));
 app.use('/callers', require('./routes/callers'));
 app.use('/approvals', require('./routes/approvals'));
 app.use('/customers', require('./routes/customers'));
