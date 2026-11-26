@@ -3,7 +3,9 @@
 <div class="page-head">
   <div class="titles">
     <h1>Call Log</h1>
-    <div class="sub">Kaun, kab, kisko call kiya — TeleCMI ya manual.</div>
+    <div class="sub">
+      <% if (isAdmin) { %>Kaun, kab, kisko call kiya — TeleCMI ya manual.<% } else { %>Aapki apni calls ka record.<% } %>
+    </div>
   </div>
   <div class="chips">
     <a class="chip" href="/calling/due"><%- icon('alert', 13) %> Follow-ups Due</a>
@@ -39,15 +41,17 @@
   <form method="get" action="/calls" class="filter-bar">
     <div><label>From</label><input type="date" name="from" value="<%= filters.from %>"></div>
     <div><label>To</label><input type="date" name="to" value="<%= filters.to %>"></div>
+    <% if (isAdmin) { %>
     <div>
       <label>Caller</label>
       <select name="caller" data-autosubmit>
-        <option value="">All</option>
+        <option value="">All callers</option>
         <% callers.forEach(function (c) { %>
           <option value="<%= c.id %>" <%= filters.caller === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
         <% }); %>
       </select>
     </div>
+    <% } %>
     <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
   </form>
 

@@ -4,15 +4,23 @@
   <div class="titles">
     <h1>Customers</h1>
     <div class="sub">
-      Customer master — status 7-din ke niyam se, VIP deposit ke <strong>count</strong> se (amount se nahi).
+      <% if (isAdmin) { %>
+        Customer master — status 7-din ke niyam se, VIP deposit ke <strong>count</strong> se (amount se nahi).
+      <% } else { %>
+        Sirf <strong>aapko assign hue</strong> customers. Status 7-din ke niyam se, VIP deposit ke count se.
+      <% } %>
     </div>
   </div>
   <div class="chips">
-    <form method="post" action="/customers/sync" style="margin:0">
-      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-      <button class="chip" type="submit"><%- icon('refresh', 13) %> Sync from deposits</button>
-    </form>
-    <a class="chip" href="/upload"><%- icon('upload', 13) %> Upload</a>
+    <% if (isAdmin) { %>
+      <form method="post" action="/customers/sync" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="chip" type="submit"><%- icon('refresh', 13) %> Sync from deposits</button>
+      </form>
+      <a class="chip" href="/upload"><%- icon('upload', 13) %> Upload</a>
+    <% } else { %>
+      <a class="chip" href="/calling/my"><%- icon('phone', 13) %> My Calls</a>
+    <% } %>
   </div>
 </div>
 
@@ -58,6 +66,7 @@
         <% }); %>
       </select>
     </div>
+    <% if (isAdmin) { %>
     <div>
       <label>Caller</label>
       <select name="caller" data-autosubmit>
@@ -68,6 +77,7 @@
         <% }); %>
       </select>
     </div>
+    <% } %>
     <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
     <div><a href="/customers" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
   </form>
@@ -80,25 +90,48 @@
 <form method="post" action="/customers/assign">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny"><strong><%= count.toLocaleString('en-IN') %></strong> customers filter me</span>
+      <span class="muted tiny">
+        <strong><%= count.toLocaleString('en-IN') %></strong> customers filter me
+        <% if (filters.caller || filters.status || filters.vip || filters.priority || filters.q) { %>
+          <span class="badge badge-warn" style="margin-left:6px">filter laga hua</span>
+        <% } else { %>
+          <span class="badge badge-danger" style="margin-left:6px">koi filter nahi — sab par lagega</span>
+        <% } %>
+      </span>
+      <% if (isAdmin) { %>
       <span class="muted tiny">·</span>
       <span class="muted tiny"><%= (totals.unassigned || 0).toLocaleString('en-IN') %> bina caller</span>
+      <% } %>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select name="caller_id" style="min-width:160px">
-          <option value="">— caller hatao —</option>
+      <% if (isAdmin) { %>
+        <%# yahi filter bulk assign par lagta hai — inke bina WHERE TRUE ban jata tha %>
+        <input type="hidden" name="f_status" value="<%= filters.status %>">
+        <input type="hidden" name="f_vip" value="<%= filters.vip %>">
+        <input type="hidden" name="f_priority" value="<%= filters.priority %>">
+        <input type="hidden" name="f_caller" value="<%= filters.caller %>">
+        <input type="hidden" name="f_q" value="<%= filters.q %>">
+        <select name="caller_id" style="min-width:160px" required>
+          <option value="">— caller chunein —</option>
           <% callers.forEach(function (c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
         </select>
         <button class="btn btn-sm" type="submit" name="assign_filter" value="1"
-                data-confirm="Is filter ke SAB customers ko is caller ko de dein?">
+                data-confirm="Is filter ke SAB <%= count %> customers ko chune hue caller ko de dein?">
           Poora filter assign karein
         </button>
         <button class="btn btn-sm btn-primary" type="submit">Chune hue assign karein</button>
+        <button class="btn btn-sm" type="submit" name="unassign" value="1"
+                data-confirm="Is filter ke <%= count %> customers se caller hata dein? (data safe rehta hai)">
+          <%- icon('x', 13) %> Bina caller karein
+        </button>
         <span style="width:1px;height:22px;background:var(--border)"></span>
         <button class="btn btn-sm btn-danger" type="submit"
                 formaction="/customers/delete-selected" name="confirm" value="DELETE"
                 data-confirm="Chune hue customers delete ho jayenge (remarks bhi). Pakka?">
           <%- icon('trash', 13) %> Delete
         </button>
+      <% } else { %>
+        <span class="muted tiny">Aapke assigned customers · number masked hai</span>
+      <% } %>
       </div>
     </div>
 
@@ -106,7 +139,7 @@
       <table>
         <thead>
           <tr>
-            <th style="width:36px"><input type="checkbox" data-check-all></th>
+            <% if (isAdmin) { %><th style="width:36px"><input type="checkbox" data-check-all></th><% } %>
             <th>Username</th>
             <th>Mobile</th>
             <th>Deposits</th>
@@ -117,16 +150,16 @@
             <th>Caller</th>
             <th>Last deposit</th>
             <th>Last remark</th>
-            <th style="width:44px"></th>
+            <% if (isAdmin) { %><th style="width:44px"></th><% } %>
           </tr>
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="12"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
+            <tr><td colspan="<%= isAdmin ? 12 : 10 %>"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>
-              <td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td>
+              <% if (isAdmin) { %><td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td><% } %>
               <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
                 <% if (r.do_not_contact) { %><span class="badge badge-danger">DNC</span><% } %>
               </td>
@@ -155,13 +188,13 @@
               <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">—</span><% } %></td>
               <td class="muted tiny nowrap"><%= r.last_deposit || '—' %></td>
               <td class="muted tiny"><%= r.last_remark || '—' %></td>
-              <td class="right">
+              <% if (isAdmin) { %><td class="right">
                 <button class="btn btn-sm btn-danger btn-icon" type="submit" form="delOne"
                         name="username" value="<%= r.username %>"
                         data-confirm="<%= r.username %> ko delete karein? Iske remarks aur calls bhi hat jayenge.">
                   <%- icon('trash', 12) %>
                 </button>
-              </td>
+              </td><% } %>
             </tr>
           <% }); %>
         </tbody>
@@ -177,6 +210,7 @@
   </div>
 </div>
 
+<% if (isAdmin) { %>
 <div class="card" style="border-color:rgba(255,90,118,0.35)">
   <div class="card-header" style="background:rgba(255,90,118,0.07)">
     <h3><%- icon('trash', 15) %> Customer data delete</h3>
@@ -212,6 +246,7 @@
     </div>
   </form>
 </div>
+<% } %>
 
 <div class="card">
   <div class="card-header"><h3><%- icon('alert', 15) %> Rules kaise lagte hain</h3></div>
@@ -222,7 +257,7 @@
       <dt>VIP</dt>
       <dd>Sirf <strong>successful deposit ke count</strong> se: 25+ VIP · 51+ Premium VIP · 101+ High Value VIP. Amount se nahi. Ek baar VIP bana to hamesha VIP rahega.</dd>
       <dt>Priority</dt>
-      <dd><strong>P1</strong> VIP inactive / recently inactive · <strong>P2</strong> normal inactive + naya customer · <strong>P3</strong> callback pending · <strong>P4</strong> active (call ki zaroorat nahi)</dd>
+      <dd><strong>P1</strong> VIP inactive / recently inactive · <strong>P2</strong> normal inactive + naya customer · <strong>P3</strong> reactivated (dobara active hua) · <strong>P4</strong> active (call ki zaroorat nahi)</dd>
       <dt>Deposits (count)</dt>
       <dd>Ek deposit = ek row. Summary file (ek row me lifetime total) upload karne par count <strong>1</strong> hi rahega —
         VIP ke liye transaction-wise rows chahiye.</dd>

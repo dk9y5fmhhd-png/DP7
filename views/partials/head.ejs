@@ -18,20 +18,22 @@
 
     <%
       const GROUPS = [
-        { label: 'Retention', keys: ['dashboard', 'customers', 'priority', 'mycalls', 'calls', 'upload'] },
+        { label: 'Retention', keys: ['dashboard', 'customers', 'newclients', 'priority', 'mycalls', 'due', 'calls', 'upload'] },
         { label: 'Data',      keys: ['adddata'] },
         { label: 'Reports',   keys: ['reports', 'level_report', 'daily_report', 'weekly_report', 'biweekly_report', 'monthly_report', 'followups'] },
-        { label: 'Admin',     keys: ['backup', 'users', 'settings'] },
+        { label: 'Admin',     keys: ['assign', 'cadence', 'callers', 'approvals', 'backup', 'users', 'settings'] },
         { label: 'Account',   keys: ['security'] }
       ];
     %>
 
     <% GROUPS.forEach(function (g) { %>
+      <% const visible = g.keys.filter(function (k) { return can(k); }); %>
+      <% if (!visible.length) { return; } %>
       <div class="nav-group">
         <div class="nav-label"><%= g.label %></div>
-        <% g.keys.forEach(function (key) { %>
+        <% visible.forEach(function (key) { %>
           <% const item = PAGES.find(function (p) { return p.key === key; }); %>
-          <% if (item && can(key)) { %>
+          <% if (item) { %>
             <a class="nav-item <%= page === key ? 'active' : '' %>" href="<%= item.url %>">
               <span class="ico"><%- icon(item.icon, 15) %></span>
               <span><%= item.label %></span>

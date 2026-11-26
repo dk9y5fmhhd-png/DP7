@@ -1,0 +1,285 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Assignment</h1>
+    <div class="sub">
+      Naye client ka queue, aur Excel se bulk assign — dono ek jagah.
+      Pehle <strong>Preview</strong> dikhega, tab tak kuch nahi badalta.
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/assign/template"><%- icon('download', 13) %> Template</a>
+    <a class="chip" href="/assign/export"><%- icon('download', 13) %> Sab export</a>
+    <a class="chip" href="/assign/export?only=unassigned"><%- icon('download', 13) %> Bina caller export</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat <%= totals.fresh ? 'warn' : 'ok' %>">
+    <div class="label">Naye — assign nahi hue</div>
+    <div class="value"><%= totals.fresh.toLocaleString('en-IN') %></div>
+    <div class="hint">pichhle <%= days %> din ke</div>
+  </div>
+  <div class="stat <%= totals.older ? 'bad' : 'ok' %>">
+    <div class="label">Purane — bina caller</div>
+    <div class="value"><%= totals.older.toLocaleString('en-IN') %></div>
+    <div class="hint"><%= days %> din se purane</div>
+  </div>
+  <div class="stat">
+    <div class="label">Total bina caller</div>
+    <div class="value"><%= totals.unassigned.toLocaleString('en-IN') %></div>
+    <div class="hint">Do Not Contact <%= totals.dnc %> alag</div>
+  </div>
+  <div class="stat">
+    <div class="label">Callers</div>
+    <div class="value"><%= callers.length %></div>
+    <div class="hint">
+      <%= callers.filter(function (c) { return c.team === 'retention'; }).length %> retention ·
+      <%= callers.filter(function (c) { return c.team === 'acquisition'; }).length %> acquisition
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PREVIEW ==================== -->
+<% if (preview) { %>
+  <div class="card" id="preview" style="border-color:rgba(245,197,66,0.5);margin-bottom:18px">
+    <div class="card-header" style="background:rgba(245,197,66,0.08)">
+      <h3><%- icon('file', 15) %> Preview — kuch save nahi hua</h3>
+      <span class="badge badge-warn" style="margin-left:auto"><%= preview.fileName %></span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:16px">
+        <div><div class="muted tiny">File me rows</div><div style="font-size:20px;font-weight:800"><%= preview.stats.total %></div></div>
+        <div><div class="muted tiny">Lagegi</div><div style="font-size:20px;font-weight:800;color:var(--success)"><%= preview.stats.valid %></div></div>
+        <div><div class="muted tiny">Badlegi</div><div style="font-size:20px;font-weight:800"><%= preview.stats.changes %></div></div>
+        <% if (preview.stats.unmatched) { %>
+          <div><div class="muted tiny">Username nahi mila</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.unmatched %></div></div>
+        <% } %>
+        <% if (preview.stats.badCaller) { %>
+          <div><div class="muted tiny">Caller galat</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.badCaller %></div></div>
+        <% } %>
+      </div>
+
+      <div class="table-wrapper" style="border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
+        <table>
+          <thead><tr><th>Caller</th><th class="right">Milenge</th></tr></thead>
+          <tbody>
+            <% preview.perCaller.forEach(function (c) { %>
+              <tr>
+                <td><strong><%= c.name %></strong> <span class="muted tiny"><%= c.login_id %></span></td>
+                <td class="right num"><strong><%= c.count %></strong></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (preview.errors.length) { %>
+        <details style="margin-bottom:6px">
+          <summary class="tiny" style="cursor:pointer;color:var(--danger)">
+            <strong><%= preview.errorTotal %></strong> rows skip hongi — dekhein
+          </summary>
+          <div style="max-height:220px;overflow:auto;margin-top:10px;font-family:monospace;font-size:11.5px;line-height:1.75">
+            <% preview.errors.forEach(function (e) { %>
+              <div class="<%= e.type === 'duplicate' ? 'muted' : '' %>"><%= e.message %></div>
+            <% }); %>
+            <% if (preview.errorTotal > preview.errors.length) { %>
+              <div class="muted">… aur <%= preview.errorTotal - preview.errors.length %> errors</div>
+            <% } %>
+          </div>
+        </details>
+      <% } %>
+    </div>
+    <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
+      <form method="post" action="/assign/cancel" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-ghost" type="submit">Cancel</button>
+      </form>
+      <form method="post" action="/assign/apply" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-primary" type="submit"
+                data-confirm="<%= preview.stats.valid %> customers assign ho jayenge. Pakka?">
+          <%- icon('check', 15) %> <%= preview.stats.valid %> assign karein
+        </button>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<!-- ==================== NAYE CLIENT KA QUEUE ==================== -->
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('day', 15) %> Naye client — assign nahi hue</h3>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <% [1, 3, 7, 15, 30, 365].forEach(function (d) { %>
+        <a class="chip <%= days === d ? 'on' : '' %>" href="/assign?days=<%= d %>">
+          <%= d === 1 ? 'Aaj' : (d === 365 ? 'Sab' : d + ' din') %>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+
+  <form method="post" action="/assign/manual">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="muted tiny"><strong><%= fresh.length %></strong> customers · <%= days %> din me aaye</span>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select name="caller_id" style="min-width:170px">
+          <option value="">— caller chunein —</option>
+          <% callers.forEach(function (c) { %>
+            <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>) · <%= c.assigned %></option>
+          <% }); %>
+        </select>
+        <button class="btn btn-sm btn-primary" type="submit"
+                data-confirm="Chune hue customers ko is caller ko de dein?">
+          <%- icon('check', 13) %> Chune hue assign
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px"><input type="checkbox" data-check-all></th>
+            <th>Username</th>
+            <th>Mobile</th>
+            <th>Pehla deposit</th>
+            <th class="right">Deposits</th>
+            <th class="right">Total</th>
+            <th>Status</th>
+            <th>VIP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!fresh.length) { %>
+            <tr><td colspan="8"><div class="empty">
+              <span class="big"><%- icon('check', 26) %></span>
+              <%= days %> din ke saare naye client assign ho gaye. 🎉
+              <div class="muted tiny" style="margin-top:8px">Naya data upload karein — yahan apne aap aa jayega.</div>
+            </div></td></tr>
+          <% } %>
+          <% fresh.forEach(function (r) { %>
+            <tr>
+              <td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td>
+              <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
+              <td class="num nowrap"><%= r.mobile ? mask(r.mobile) : '—' %></td>
+              <td class="nowrap tiny"><%= r.first_deposit ? helpers.prettyDate(r.first_deposit) : '—' %></td>
+              <td class="right num"><strong><%= r.deposit_count %></strong></td>
+              <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
+              <td><span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= r.status %></span></td>
+              <td>
+                <% if (r.vip_category !== 'normal') { %>
+                  <span class="badge badge-accent"><%= r.vip_category === 'high_value_vip' ? 'HV' : (r.vip_category === 'premium_vip' ? 'Prem' : 'VIP') %></span>
+                <% } else { %><span class="muted">—</span><% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <% if (fresh.length) { %>
+    <div class="card-footer" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="muted tiny">Poora queue ek caller ko dena ho to:</span>
+      <form method="post" action="/assign/all-fresh" style="margin:0;display:flex;gap:8px;align-items:center">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <input type="hidden" name="days" value="<%= days %>">
+        <select name="caller_id" style="min-width:170px" required>
+          <option value="">— caller chunein —</option>
+          <% callers.forEach(function (c) { %>
+            <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>)</option>
+          <% }); %>
+        </select>
+        <button class="btn btn-sm" type="submit"
+                data-confirm="Saare <%= fresh.length %> naye client is caller ko de dein?">
+          Sab <%= fresh.length %> is caller ko
+        </button>
+      </form>
+    </div>
+  <% } %>
+</div>
+
+<!-- ==================== EXCEL IMPORT ==================== -->
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('upload', 15) %> Excel se assign</h3>
+    <span class="muted tiny" style="margin-left:auto">username + caller · .xlsx ya .csv</span>
+  </div>
+  <form method="post" action="/assign/import" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <p class="muted tiny" style="margin:0 0 14px">
+        Do column wali file: <code>username</code> aur <code>caller</code>.
+        caller me <strong>login_id</strong> likhein (naam nahi) —
+        <%= callers.map(function (c) { return c.login_id; }).join(', ') %>.
+        Upload par pehle preview aayega, phir Apply.
+      </p>
+
+      <label class="dropzone" for="assignFile" style="display:block">
+        <input type="file" name="file" id="assignFile" accept=".xlsx,.xlsm,.csv,.txt" required
+               style="display:none" onchange="this.closest('label').querySelector('.dz-name').textContent = this.files[0] ? this.files[0].name : ''">
+        <div style="text-align:center;padding:26px 16px">
+          <%- icon('upload', 26) %>
+          <div style="margin-top:10px"><strong>File chunein</strong> ya yahan drag karein</div>
+          <div class="muted tiny" style="margin-top:5px">.xlsx ya .csv · max 20 MB · 5,000 rows tak</div>
+          <div class="dz-name" style="margin-top:9px;color:var(--accent-2);font-size:12.5px;font-weight:700"></div>
+        </div>
+      </label>
+    </div>
+    <div class="card-footer" style="text-align:right">
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Preview banayein</button>
+    </div>
+  </form>
+</div>
+
+<!-- ==================== PICHHLE IMPORTS ==================== -->
+<% if (history.length) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle imports</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Kab</th><th>File</th><th>Kisne</th><th class="right">Rows</th><th class="right">Lage</th><th class="right">Skip</th></tr></thead>
+        <tbody>
+          <% history.forEach(function (h) { %>
+            <tr>
+              <td class="muted tiny nowrap"><%= helpers.prettyDateTime(h.uploaded_at) %></td>
+              <td class="tiny"><%= h.file_name || '—' %></td>
+              <td class="tiny"><%= h.by_name || '—' %></td>
+              <td class="right num"><%= h.total_rows %></td>
+              <td class="right num"><strong><%= h.applied %></strong></td>
+              <td class="right num muted"><%= h.unmatched + h.bad_caller %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Kaise kaam karta hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Naya client kaun</dt>
+      <dd>Jiska <strong>pehla deposit</strong> us din hua aur abhi kisi caller ke paas nahi hai.
+        Daily Upload ke baad ye list apne aap bhar jaati hai.</dd>
+      <dt>Queue se assign</dt>
+      <dd>Tick karke caller chunein — 200 bhi ek baar me. Ya poora queue ek caller ko.</dd>
+      <dt>Excel se</dt>
+      <dd>Export lein → Excel me <code>caller</code> column bharein → upload → Preview → Apply.
+        Jo username database me nahi milega wo skip, preview me dikh jayega.</dd>
+      <dt>caller me kya likhein</dt>
+      <dd><strong>login_id</strong>, naam nahi. <%= callers.map(function (c) { return c.login_id + ' (' + c.name + ')'; }).join(' · ') %></dd>
+      <dt>Purani assignment</dt>
+      <dd>Jo customer pehle se kisi ke paas hai, file usse <strong>badal</strong> degi. Preview me "Badlegi" column wahi ginti hai.</dd>
+      <dt>Do Not Contact</dt>
+      <dd>DNC wale kabhi assign nahi hote — queue me bhi nahi aate.</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

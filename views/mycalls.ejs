@@ -62,6 +62,17 @@
     <div class="value"><%= stats.overdue %></div>
     <div class="hint"><%= stats.overdue ? 'date nikal gayi — pehle inhe karein' : 'kuch pending nahi' %></div>
   </div>
+  <div class="stat">
+    <div class="label">Aaj due — tier</div>
+    <div class="value" style="font-size:17px;letter-spacing:0">
+      <span style="color:var(--success)">A <%= stats.due_a %></span>
+      <span class="muted" style="font-size:12px"> · </span>
+      B <%= stats.due_b %>
+      <span class="muted" style="font-size:12px"> · </span>
+      <span class="muted">C <%= stats.due_c %></span>
+    </div>
+    <div class="hint">VIP pehle, phir normal, phir purane</div>
+  </div>
   <div class="stat ok">
     <div class="label">Aaj ho gaya</div>
     <div class="value"><%= doneToday.remarks %></div>
@@ -79,7 +90,7 @@
     <h3><%- icon('phone', 15) %> <%= showAll ? 'Poori list' : 'Aaj ki list' %></h3>
     <span class="muted tiny" style="margin-left:auto">
       <% if (showAll || forceAll) { %>
-        <%= rows.length %> customers · overdue sabse upar
+        <%= rows.length %> customers · overdue → VIP → normal → purane
       <% } else { %>
         <%= rows.length %> dikha rahe hain (target ke hisaab se)
       <% } %>
@@ -104,8 +115,8 @@
           <th>Customer</th>
           <th>Mobile</th>
           <th>VIP</th>
-          <th>Priority</th>
-          <th>Follow-up</th>
+          <th>Tier</th>
+          <th>Cadence</th>
           <th class="right">Deposits</th>
           <th>Last remark</th>
           <th class="right">Action</th>
@@ -134,8 +145,7 @@
           </td></tr>
         <% } %>
         <% rows.forEach(function (r) {
-             const overdue = r.follow_up_on && r.days_late > 0;
-             const ahead = r.follow_up_on && r.days_late < 0; %>
+             const overdue = r.next_touch_on && r.days_late > 0; %>
           <tr style="<%= overdue ? 'background:rgba(255,107,116,0.06)' : '' %>">
             <td class="who">
               <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
@@ -149,18 +159,23 @@
                 </span>
               <% } else { %><span class="muted">—</span><% } %>
             </td>
-            <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : (r.priority === 'P2' ? 'badge-warn' : 'badge-neutral') %>"><%= r.priority %></span></td>
+            <td>
+              <span class="badge <%= r.cadence_tier === 'A' ? 'badge-success' : (r.cadence_tier === 'C' ? 'badge-neutral' : 'badge-info') %>"><%= r.cadence_tier || 'B' %></span>
+            </td>
             <td class="nowrap">
-              <% if (!r.follow_up_on) { %>
-                <span class="badge badge-info">Naya</span>
-              <% } else if (overdue) { %>
+              <% if (r.days_late > 0) { %>
                 <span class="badge badge-danger"><%= r.days_late %> din late</span>
-                <div class="muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></div>
-              <% } else if (ahead) { %>
+                <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
+              <% } else if (r.never_scheduled) { %>
+                <span class="badge badge-warn">kabhi schedule nahi hua</span>
+              <% } else if (r.days_late < 0) { %>
                 <span class="badge badge-neutral"><%= -r.days_late %> din baad</span>
-                <div class="muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></div>
+                <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
               <% } else { %>
                 <span class="badge badge-success">Aaj</span>
+              <% } %>
+              <% if (r.last_touched_at) { %>
+                <div class="muted tiny"><%= r.days_since_touch %> din se touch nahi</div>
               <% } %>
             </td>
             <td class="right num"><strong><%= r.deposit_count %></strong></td>
@@ -199,7 +214,7 @@
           <% upcoming.forEach(function (u) { %>
             <tr>
               <td><a href="/customers/<%= encodeURIComponent(u.username) %>"><strong><%= u.username %></strong></a></td>
-              <td class="nowrap"><strong><%= helpers.prettyDate(u.follow_up_on) %></strong></td>
+              <td class="nowrap"><strong><%= helpers.prettyDate(u.next_touch_on) %></strong></td>
               <td class="num"><%= u.in_days %> din</td>
               <td class="muted tiny"><%= u.last_remark || '—' %></td>
             </tr>
