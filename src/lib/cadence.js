@@ -17,10 +17,10 @@
 
 const db = require('../db');
 
-const GAPS = { N: 2, A: 5, B: 12, C: 30, D: null };
+const GAPS = { N: 1, A: 5, B: 12, C: 30, D: null };
 
 const TIERS = {
-  N: { key: 'N', label: 'ID bana, deposit nahi', gap: 2, tone: 'warn', hint: 'har 2 din' },
+  N: { key: 'N', label: 'ID bana, deposit nahi', gap: 1, tone: 'warn', hint: 'pehla call 1 din me' },
   A: { key: 'A', label: 'VIP / high value', gap: 5, tone: 'accent', hint: 'har 5 din' },
   B: { key: 'B', label: 'Normal / active', gap: 12, tone: 'info', hint: 'har 12 din' },
   C: { key: 'C', label: 'Purana dormant', gap: 30, tone: 'neutral', hint: 'har 30 din' },
@@ -80,8 +80,8 @@ async function refreshAll() {
              CASE
                WHEN x.tier = 'D' THEN NULL
                WHEN x.remark_next IS NOT NULL THEN x.remark_next
-               WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 2 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
-               ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 2 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+               WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+               ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
              END
       FROM calc x
      WHERE t.id = x.id
@@ -91,8 +91,8 @@ async function refreshAll() {
               CASE
                 WHEN x.tier = 'D' THEN NULL
                 WHEN x.remark_next IS NOT NULL THEN x.remark_next
-                WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 2 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
-                ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 2 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+                WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+                ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
               END)`);
 
   return out.rowCount;

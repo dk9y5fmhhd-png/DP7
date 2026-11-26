@@ -5,7 +5,8 @@
     <h1>Calling List</h1>
     <div class="sub">
       <% if (isAdmin) { %>
-        Priority ke hisaab se aaj kisko call karna hai. Ek customer sirf ek caller ke paas.
+        Priority ke hisaab se aaj kisko call karna hai — <strong>PD</strong> (ID bana, deposit nahi) sabse pehle.
+        Ek customer sirf ek caller ke paas.
       <% } else { %>
         Aapko assign hue customers, priority ke hisaab se.
       <% } %>
@@ -20,9 +21,10 @@
 <div class="card">
   <div class="card-header" style="padding:10px 14px">
     <div class="chips">
-      <% ['P1','P2','P3'].forEach(function (p) { %>
+      <% ['PD','P1','P2','P3'].forEach(function (p) { %>
         <% const c = counts.get(p) || { c: 0, free: 0 }; %>
-        <a class="chip <%= priority === p ? 'on' : '' %>" href="/calling?p=<%= p %><%= filters.free ? '&free=1' : '' %>">
+        <a class="chip <%= priority === p ? 'on' : '' %>" href="/calling?p=<%= p %><%= filters.free ? '&free=1' : '' %>"
+           <%= p === 'PD' && c.c ? 'style="border-color:rgba(245,197,66,0.55)"' : '' %>>
           <strong><%= p %></strong> · <%= c.c %> <span class="muted tiny">(<%= c.free %> free)</span>
         </a>
       <% }); %>

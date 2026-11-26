@@ -10,7 +10,7 @@ const D = require('../lib/dates');
 
 const router = express.Router();
 
-const PRIORITIES = ['P1', 'P2', 'P3'];
+const PRIORITIES = ['PD', 'P1', 'P2', 'P3', 'P4'];
 
 async function callerList() {
   return db.rows(
@@ -76,6 +76,7 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
       today,
       roleWeights: {
+        PD: 'ID bana par ek bhi deposit nahi — sabse pehle',
         P1: 'VIP inactive + recently inactive (14 din)',
         P2: 'Normal inactive + naya customer',
         P3: 'Reactivated — dobara active hua',
@@ -143,6 +144,25 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const base = mineCte();
     const tgt = await targetInfo(me);
 
+    // Do alag queue — bina deposit (naye ID) aur deposit wale.
+    // Pehle dono ek hi list me mila-jula aate the, isliye caller ko pata nahi
+    // chalta tha kis line par naya lead hai aur kis par purana customer.
+    const tCounts = await db.row(
+      `${base}
+       SELECT COUNT(*) FILTER (WHERE status = 'no_deposit')::int AS nodep,
+              COUNT(*) FILTER (WHERE status <> 'no_deposit')::int AS dep,
+              COUNT(*) FILTER (WHERE status = 'no_deposit'
+                                 AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS nodep_due,
+              COUNT(*) FILTER (WHERE status <> 'no_deposit'
+                                 AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS dep_due
+         FROM mine`,
+      [me, today]
+    );
+
+    const tab = req.query.tab === 'nodep' ? 'nodep'
+      : req.query.tab === 'dep' ? 'dep'
+        : (tCounts.nodep_due > 0 ? 'nodep' : 'dep');
+
     // List sirf baaki target jitni — target poora ho to koi row nahi
     const limit = showAll || forceAll || tgt.unlimited ? null : tgt.remaining;
 
@@ -153,22 +173,29 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
               ($2::date - next_touch_on) AS days_late,
               (next_touch_on IS NULL) AS never_scheduled
          FROM mine
-        WHERE $3::boolean OR next_touch_on IS NULL OR next_touch_on <= $2::date
+        WHERE ($3::boolean OR next_touch_on IS NULL OR next_touch_on <= $2::date)
+          AND CASE WHEN $4::text = 'nodep' THEN status = 'no_deposit'
+                   ELSE status <> 'no_deposit' END
         ORDER BY
-          -- overdue pehle
+          -- 1. ID bana par deposit nahi — sabse pehle (yahi sabse garam lead hai)
+          CASE WHEN cadence_tier = 'N'
+                    AND (next_touch_on IS NULL OR next_touch_on <= $2::date)
+               THEN 0 ELSE 1 END,
+          -- 2. phir overdue
           CASE WHEN next_touch_on IS NOT NULL AND next_touch_on < $2::date THEN 0 ELSE 1 END,
-          -- phir VIP (tier A), phir normal, phir dormant — target kam pade to
-          -- VIP kabhi squeezed out na ho
+          -- 3. phir VIP (tier A), normal, dormant — target kam pade to VIP squeeze na ho
           CASE cadence_tier WHEN 'N' THEN 0 WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
           next_touch_on ASC NULLS FIRST,
           deposit_count DESC, days_inactive ASC`,
-      [me, today, showAll]
+      [me, today, showAll, tab]
     );
 
     // Target ke hisaab se kaat do (baaki queue ka number batao)
     const queueCount = rows.length;
     const visibleRows = limit === null ? rows : rows.slice(0, limit);
 
+    // Stats bhi sirf current tab ke — warna "Aaj due 10" dikhta tha jabki
+    // list me 5 rows hoti thin. Ab counter aur list hamesha match karte hain.
     const stats = await db.row(
       `${base}
        SELECT
@@ -182,8 +209,10 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
          COUNT(*) FILTER (WHERE cadence_tier = 'B' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_b,
          COUNT(*) FILTER (WHERE cadence_tier = 'C' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_c,
          COUNT(*)::int AS total
-       FROM mine`,
-      [me, today]
+       FROM mine
+      WHERE CASE WHEN $3::text = 'nodep' THEN status = 'no_deposit'
+                 ELSE status <> 'no_deposit' END`,
+      [me, today, tab]
     );
 
     const doneToday = await db.row(
@@ -199,8 +228,10 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
        SELECT username, next_touch_on, cadence_tier, last_remark, ($2::date - next_touch_on) AS in_days
          FROM mine
         WHERE next_touch_on > $2::date
+          AND CASE WHEN $3::text = 'nodep' THEN status = 'no_deposit'
+                   ELSE status <> 'no_deposit' END
         ORDER BY next_touch_on ASC LIMIT 12`,
-      [me, today]
+      [me, today, tab]
     );
 
     res.render('mycalls', {
@@ -208,6 +239,8 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
       page: 'mycalls',
       rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
       target: tgt,
+      tab,
+      tabCounts: tCounts,
       queueCount,
       stats, doneToday, upcoming,
       hiddenCount: queueCount - visibleRows.length,

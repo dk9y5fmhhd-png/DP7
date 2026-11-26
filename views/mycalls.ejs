@@ -9,9 +9,27 @@
     </div>
   </div>
   <div class="chips">
-    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my"><%- icon('phone', 13) %> Aaj due</a>
-    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?all=1"><%- icon('list', 13) %> Poori list</a>
+    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my?tab=<%= tab %>"><%- icon('phone', 13) %> Aaj due</a>
+    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?tab=<%= tab %>&all=1"><%- icon('list', 13) %> Poori list</a>
   </div>
+</div>
+
+<%# Do alag queue — naya ID aur deposit wala customer kabhi mila-jula na dikhe %>
+<div class="tab-switch">
+  <a class="tab-btn <%= tab === 'nodep' ? 'on' : '' %>" href="/calling/my?tab=nodep<%= showAll ? '&all=1' : '' %>">
+    <span class="tab-name">Bina deposit</span>
+    <span class="tab-meta">
+      <strong><%= tabCounts.nodep_due %></strong> due · <%= tabCounts.nodep %> total
+    </span>
+    <span class="tab-note">ID bana, pehla deposit baaki</span>
+  </a>
+  <a class="tab-btn <%= tab === 'dep' ? 'on' : '' %>" href="/calling/my?tab=dep<%= showAll ? '&all=1' : '' %>">
+    <span class="tab-name">Deposit wale</span>
+    <span class="tab-meta">
+      <strong><%= tabCounts.dep_due %></strong> due · <%= tabCounts.dep %> total
+    </span>
+    <span class="tab-note">Purane customer ka follow-up</span>
+  </a>
 </div>
 
 <div class="card" style="<%= target.complete ? 'border-color:rgba(70,211,154,0.45)' : '' %>">
@@ -89,7 +107,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('phone', 15) %> <%= showAll ? 'Poori list' : 'Aaj ki list' %></h3>
+    <h3><%- icon('phone', 15) %> <%= tab === 'nodep' ? 'Bina deposit — naye ID' : 'Deposit wale customers' %> · <%= showAll ? 'poori list' : 'aaj ki list' %></h3>
     <span class="muted tiny" style="margin-left:auto">
       <% if (showAll || forceAll) { %>
         <%= rows.length %> customers · overdue → VIP → normal → purane
@@ -129,9 +147,12 @@
           <tr><td colspan="8"><div class="empty">
             <span class="big"><%- icon('check', 26) %></span>
             <% if (showAll) { %>
-              Abhi koi customer assign nahi hua. Admin se kehiye.
+              <%= tab === 'nodep' ? 'Abhi koi bina-deposit customer nahi hai.' : 'Abhi koi deposit wala customer assign nahi hua.' %>
             <% } else if (target.complete) { %>
               Target poora — upar se "poori list" khol sakte hain.
+            <% } else if (tab === 'nodep') { %>
+              Koi naya ID aaj due nahi hai. Shaabaash! 🎉
+              <div class="muted tiny" style="margin-top:8px">Naya ID upload hone par yahan apne aap aa jayega.</div>
             <% } else { %>
               Aaj ka koi follow-up pending nahi. Shaabaash! 🎉
               <div class="muted tiny" style="margin-top:8px">Jo aage ke liye rakhe hain wo apne din par khud yahan aayenge.</div>
