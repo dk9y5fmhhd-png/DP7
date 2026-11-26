@@ -7,6 +7,9 @@
 const ExcelJS = require('exceljs');
 
 const FIELDS = {
+  // caller pehle — warna "login id" username me chala jata hai
+  caller: ['caller', 'caller name', 'caller id', 'assign to', 'assigned to', 'assigned caller',
+           'agent', 'team member', 'login id', 'login_id', 'created by'],
   username: ['username', 'user name', 'user', 'client', 'name', 'player', 'userid', 'user id', 'login', 'customer'],
   mobile: ['mobile', 'mobile number', 'mob', 'phone', 'contact', 'number', 'whatsapp', 'no'],
   date: ['date', 'deposit date', 'registration date', 'reg date', 'play date', 'date of deposit', 'tarikh', 'day'],
@@ -188,6 +191,7 @@ async function parseSheet(buffer, filename, opts) {
       count: normaliseNumber(get('count')),
       qty: normaliseNumber(get('amount')),
       status: str(get('status')),
+      caller: str(get('caller')),
     };
 
     // kuch bhi nahi mila to row khaali hai
@@ -223,16 +227,19 @@ async function buildTemplate(kind) {
       { header: 'username', width: 22 },
       { header: 'mobile', width: 16 },
       { header: 'registration date', width: 18 },
+      { header: 'caller', width: 18 },
     ];
     const head = ws.getRow(1);
     head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D5EFC' } };
-    ws.addRow(['rahul123', '9876543210', '2026-11-01']);
-    ws.addRow(['priya_s', '+91 91234 56780', '05/11/2026']);
-    ws.getColumn('mobile').numFmt = '@';
+    ws.addRow(['rahul123', '9876543210', '2026-11-01', 'arun']);
+    ws.addRow(['priya_s', '+91 91234 56780', '05/11/2026', 'kamal']);
+    ws.getColumn(2).numFmt = '@';
     ws.addRow([]);
     ws.addRow(['Note:']).font = { bold: true };
     ws.addRow(['Username unique hai — dobara aaya to sirf mobile/date update hoga.']).font = { size: 10, color: { argb: 'FF666666' } };
+    ws.addRow(['caller khaali chhod dein to customer assign nahi hoga, sirf follow-up queue me aayega.']).font = { size: 10, color: { argb: 'FF666666' } };
+    ws.addRow(['caller me login_id likhein (naam nahi) — jaise dikshadp7, indianteam.']).font = { size: 10, color: { argb: 'FF666666' } };
   } else {
     const ws = wb.addWorksheet('Deposits');
     ws.columns = [

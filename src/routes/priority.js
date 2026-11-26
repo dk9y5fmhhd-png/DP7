@@ -159,7 +159,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
           CASE WHEN next_touch_on IS NOT NULL AND next_touch_on < $2::date THEN 0 ELSE 1 END,
           -- phir VIP (tier A), phir normal, phir dormant — target kam pade to
           -- VIP kabhi squeezed out na ho
-          CASE cadence_tier WHEN 'A' THEN 0 WHEN 'B' THEN 1 WHEN 'C' THEN 2 ELSE 3 END,
+          CASE cadence_tier WHEN 'N' THEN 0 WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
           next_touch_on ASC NULLS FIRST,
           deposit_count DESC, days_inactive ASC`,
       [me, today, showAll]
@@ -177,6 +177,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
          COUNT(*) FILTER (WHERE next_touch_on < $2::date)::int   AS overdue,
          COUNT(*) FILTER (WHERE next_touch_on > $2::date)::int   AS snoozed,
          COUNT(*) FILTER (WHERE priority = 'P1' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_p1,
+         COUNT(*) FILTER (WHERE cadence_tier = 'N' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_n,
          COUNT(*) FILTER (WHERE cadence_tier = 'A' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_a,
          COUNT(*) FILTER (WHERE cadence_tier = 'B' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_b,
          COUNT(*) FILTER (WHERE cadence_tier = 'C' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_c,

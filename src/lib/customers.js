@@ -32,10 +32,11 @@ const STATUS_LABEL = {
   active: 'Active',
   inactive: 'Inactive',
   reactivated: 'Reactivated',
-  no_deposit: 'No deposit',
+  no_deposit: 'ID bana · deposit nahi',
 };
 const PRIORITY_LABEL = {
   P0: 'P0 — Do not contact',
+  PD: 'PD — Pehla deposit baaki',
   P1: 'P1 — Sabse pehle',
   P2: 'P2 — Regular',
   P3: 'P3 — Callback',
@@ -204,6 +205,8 @@ async function thresholds() {
 
 function priorityFor(c, cfg) {
   if (c.do_not_contact) return 'P0';
+  // ID bana par ek bhi deposit nahi — sabse pehle
+  if (c.status === 'no_deposit') return 'PD';
   if (c.status === 'inactive' && c.vip_category !== 'normal') return 'P1';
   if (c.status === 'inactive' && Number(c.days_inactive) <= (cfg ? cfg.recent_inactive_days : 14)) return 'P1';
   if (c.status === 'new') return 'P2';

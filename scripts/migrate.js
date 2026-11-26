@@ -52,6 +52,7 @@ async function main() {
     ['schema-v4.2.sql', 'schema v4.2 (auto-split + caller load)'],
     ['schema-v4.3.sql', 'schema v4.3 (retention cadence)'],
     ['schema-v4.4.sql', 'schema v4.4 (excel assignment)'],
+    ['schema-v4.5.sql', 'schema v4.5 (registered IDs follow-up)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);
     if (!fs.existsSync(p2)) continue;

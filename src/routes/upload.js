@@ -26,6 +26,19 @@ const upload = multer({
   },
 });
 
+// Har page par caller logins — upload page me hint ke liye
+router.use(async (req, res, next) => {
+  try {
+    const rows = await db.rows(
+      `SELECT login_id FROM users WHERE role <> 'super_admin' ORDER BY name`
+    );
+    res.locals.callerLogins = rows.map((r) => r.login_id).join(', ');
+  } catch (e) {
+    res.locals.callerLogins = '';
+  }
+  next();
+});
+
 /* ------------------------------ page ------------------------------ */
 
 router.get('/', auth.requirePage('upload'), async (req, res, next) => {
@@ -124,7 +137,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       );
 
       const opts = kind === 'customers'
-        ? { required: ['username'], positional: ['username', 'mobile', 'date'] }
+        ? { required: ['username'], positional: ['username', 'mobile', 'date', 'caller'] }
         : { required: ['username', 'qty'], positional: ['username', 'txn_id', 'date', 'qty', 'status'] };
 
       if (kind === 'deposits' && !dryRun && batchInfo && batchInfo.rows > 0) {
@@ -156,8 +169,17 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
 
       let inserted = 0;
       let skipped = 0;
+      let autoAssigned = 0;
+      let badCaller = 0;
 
       if (kind === 'customers') {
+        // caller column optional — login_id ya naam se match
+        const userRows = await db.rows('SELECT id, name, login_id FROM users WHERE role <> \'super_admin\'');
+        const byCaller = new Map();
+        for (const u of userRows) {
+          byCaller.set(String(u.login_id).toLowerCase(), u);
+          byCaller.set(String(u.name).toLowerCase(), u);
+        }
         for (const rec of parsed.rows) {
           const username = String(rec.username || rec.item || rec.worker || '').trim();
           if (!username) {
@@ -168,30 +190,45 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
           // masked number (+919****0880) ya adhoora number store na karo
           if (mobile.length < 10) mobile = '';
           const regDate = rec.date || null;
+          const callerRaw = String(rec.caller || '').trim();
+          const callerUser = callerRaw ? byCaller.get(callerRaw.toLowerCase()) : null;
+          if (callerRaw && !callerUser) badCaller++;
 
           preview.push({
             line: rec.line, username, mobile,
             date: regDate || '—',
+            caller: callerUser ? callerUser.name : (callerRaw || ''),
             note: mobile ? '' : 'mobile missing',
           });
 
           if (!dryRun) {
             // customer master me upsert — deposit ka hisaab sync karega
-            const existing = await db.row('SELECT id FROM customers WHERE LOWER(username) = LOWER($1)', [username]);
+            const existing = await db.row(
+              `SELECT id, assigned_to, status FROM customers WHERE LOWER(username) = LOWER($1)`,
+              [username]
+            );
             if (existing) {
-              if (mobile) {
-                await db.query('UPDATE customers SET mobile = $2, reg_date = COALESCE($3, reg_date) WHERE id = $1',
-                  [existing.id, mobile, regDate]);
-              } else if (regDate) {
-                await db.query('UPDATE customers SET reg_date = COALESCE($3, reg_date) WHERE id = $1', [existing.id, mobile, regDate]);
-              }
+              // purana customer — sirf mobile/date/caller update, deposit data nahi chhedte
+              await db.query(
+                `UPDATE customers
+                    SET mobile = COALESCE(NULLIF($2,''), mobile),
+                        reg_date = COALESCE($3, reg_date),
+                        created_by = COALESCE($4, created_by),
+                        assigned_to = CASE
+                          WHEN assigned_to IS NULL AND $4::int IS NOT NULL THEN $4
+                          ELSE assigned_to END
+                  WHERE id = $1`,
+                [existing.id, mobile, regDate, callerUser ? callerUser.id : null]
+              );
               skipped++;
             } else {
               await db.query(
-                `INSERT INTO customers (username, mobile, reg_date, status)
-                 VALUES ($1,$2,$3,'no_deposit')`,
-                [username, mobile, regDate]
+                `INSERT INTO customers
+                   (username, mobile, reg_date, status, created_by, assigned_to, reg_source)
+                 VALUES ($1,$2,COALESCE($3, CURRENT_DATE),'no_deposit',$4,$4,'upload')`,
+                [username, mobile, regDate, callerUser ? callerUser.id : null]
               );
+              if (callerUser) autoAssigned++;
               inserted++;
             }
           }
@@ -304,6 +341,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
           sheet: parsed.sheet,
           headerMap: parsed.headerMap,
           preview, errors, inserted, skipped, sync,
+          autoAssigned, badCaller,
           count: preview.length,
         },
       });

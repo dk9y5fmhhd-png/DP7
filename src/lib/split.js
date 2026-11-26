@@ -9,7 +9,7 @@
 
 const db = require('../db');
 
-const PRIORITY_ORDER = ['P1', 'P2', 'P3', 'P4'];
+const PRIORITY_ORDER = ['PD', 'P1', 'P2', 'P3', 'P4'];
 
 const SCOPES = {
   unassigned: {
@@ -51,7 +51,8 @@ async function buildPlan({ callerIds, scope = 'unassigned', priority = '', perCa
        FROM customer_board b
       WHERE ${where}
       ORDER BY
-        CASE b.priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 ELSE 4 END,
+        CASE b.priority WHEN 'PD' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2
+                             WHEN 'P3' THEN 3 ELSE 4 END,
         b.deposit_count DESC, b.username`,
     params
   );

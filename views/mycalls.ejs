@@ -65,6 +65,8 @@
   <div class="stat">
     <div class="label">Aaj due — tier</div>
     <div class="value" style="font-size:17px;letter-spacing:0">
+      <span style="color:var(--accent-2)">N <%= stats.due_n %></span>
+      <span class="muted" style="font-size:12px"> · </span>
       <span style="color:var(--success)">A <%= stats.due_a %></span>
       <span class="muted" style="font-size:12px"> · </span>
       B <%= stats.due_b %>
@@ -149,6 +151,7 @@
           <tr style="<%= overdue ? 'background:rgba(255,107,116,0.06)' : '' %>">
             <td class="who">
               <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
+              <% if (r.status === 'no_deposit') { %><span class="badge badge-warn">ID bana · deposit nahi</span><% } %>
               <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= r.calls_today %> call</span><% } %>
             </td>
             <td class="num nowrap"><%= r.mobile_shown %></td>
@@ -160,7 +163,7 @@
               <% } else { %><span class="muted">—</span><% } %>
             </td>
             <td>
-              <span class="badge <%= r.cadence_tier === 'A' ? 'badge-success' : (r.cadence_tier === 'C' ? 'badge-neutral' : 'badge-info') %>"><%= r.cadence_tier || 'B' %></span>
+              <span class="badge <%= r.cadence_tier === 'N' ? 'badge-warn' : (r.cadence_tier === 'A' ? 'badge-success' : (r.cadence_tier === 'C' ? 'badge-neutral' : 'badge-info')) %>"><%= r.cadence_tier || 'B' %></span>
             </td>
             <td class="nowrap">
               <% if (r.days_late > 0) { %>

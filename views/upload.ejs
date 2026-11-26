@@ -87,7 +87,13 @@
     </div>
     <div class="card-body">
       <dl class="kv">
-        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers (username + mobile)' : 'Deposit transactions' %></dd>
+        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers / ID bane (username + mobile + caller)' : 'Deposit transactions' %></dd>
+        <% if (result.kind === 'customers' && result.autoAssigned) { %>
+          <dt>Caller ko assign</dt><dd><strong><%= result.autoAssigned %></strong> customers seedha caller ko gaye</dd>
+        <% } %>
+        <% if (result.kind === 'customers' && result.badCaller) { %>
+          <dt>Caller nahi mila</dt><dd><strong><%= result.badCaller %></strong> rows — caller ka login_id galat tha</dd>
+        <% } %>
         <dt>Valid rows</dt><dd><%= result.count %></dd>
         <dt>Saved</dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
         <% if (result.headerMap) { %>
@@ -161,13 +167,18 @@
   <div class="card">
     <div class="card-header">
       <h3><%- icon('team', 15) %> A. Naye customers</h3>
-      <span class="muted tiny" style="margin-left:auto">username · mobile · reg date</span>
+      <span class="muted tiny" style="margin-left:auto">username · mobile · reg date · caller</span>
     </div>
     <form method="post" action="/upload/customers" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <p class="muted tiny" style="margin:0 0 10px">
-          Power BI me mobile numbers nahi hote — wahan se username nikalein, aur yahan se mobile match kar dein.
+          <strong>ID bana par deposit nahi hua</strong> — aise customers yahan se aate hain. Ye turant
+          follow-up queue me lag jaate hain (tier N, har 2 din), chahe ek bhi deposit na ho.
+          <br><br>
+          <code>caller</code> column optional hai — usme login_id likhein (<%= callerLogins %>) to customer
+          seedha usi caller ko assign ho jayega aur usi ka follow-up ban jayega.
+          <br>
           Username unique hai: dobara aaya to sirf mobile/date update hoga, naya record nahi banega.
         </p>
         <label class="dropzone">
