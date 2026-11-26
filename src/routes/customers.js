@@ -184,32 +184,78 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
 
 /* ------------------------------ assign ------------------------------ */
 
+// Bulk assign ka WHERE — wahi filter jo list page par laga hua hai.
+// Pehle ye filters view se aate hi nahi the, isliye WHERE 'TRUE' ban jata tha
+// aur "Poora filter assign" SAARE customers par chal jata tha — sab ek caller
+// ke paas. Ab har filter explicitly aata hai.
+function bulkWhere(body, params) {
+  const conds = [];
+  if (body.f_status) { params.push(body.f_status); conds.push(`b.status = $${params.length}`); }
+  if (body.f_vip) { params.push(body.f_vip); conds.push(`b.vip_category = $${params.length}`); }
+  if (body.f_priority) { params.push(body.f_priority); conds.push(`b.priority = $${params.length}`); }
+  if (body.f_caller === 'none') conds.push('b.assigned_to IS NULL');
+  else if (body.f_caller) { params.push(Number(body.f_caller)); conds.push(`b.assigned_to = $${params.length}`); }
+  if (body.f_q) {
+    params.push(`%${String(body.f_q).toLowerCase()}%`);
+    conds.push(`(LOWER(b.username) LIKE $${params.length} OR b.mobile LIKE $${params.length})`);
+  }
+  return conds.length ? conds.join(' AND ') : 'TRUE';
+}
+
 router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
   try {
-    const callerId = Number(req.body.caller_id) || null;
+    const unassign = req.body.unassign === '1';
+    const rawCaller = String(req.body.caller_id || '').trim();
+    const chosen = Number(rawCaller);
+    const callerId = unassign ? null : (Number.isFinite(chosen) && chosen > 0 ? chosen : null);
     const usernames = [].concat(req.body.username || []).filter(Boolean);
-    const byFilter = req.body.assign_filter === '1';
+    const byFilter = req.body.assign_filter === '1' || unassign;
+    const back = req.get('referer') || '/customers';
+
+    // Assign karna hai par koi caller chuna hi nahi
+    if (!unassign && callerId === null) {
+      req.session.flash = {
+        type: 'error',
+        message: 'Pehle caller chunein. Kisi se caller hatana ho to "Bina caller karein" dabayein.',
+      };
+      return res.redirect(back);
+    }
 
     if (byFilter) {
-      // filter ke hisaab se bulk assign
       const params = [];
-      const conds = ['TRUE'];
-      if (req.body.f_status) { params.push(req.body.f_status); conds.push(`status = $${params.length}`); }
-      if (req.body.f_vip) { params.push(req.body.f_vip); conds.push(`vip_category = $${params.length}`); }
-      if (req.body.f_priority) { params.push(req.body.f_priority); conds.push(`priority = $${params.length}`); }
-      const where = conds.join(' AND ');
+      const where = bulkWhere(req.body, params);
+
+      const total = Number(
+        await db.value(`SELECT COUNT(*)::int FROM customer_board b WHERE ${where}`, params)
+      );
+      if (!total) {
+        req.session.flash = { type: 'error', message: 'Is filter me koi customer nahi mila.' };
+        return res.redirect(back);
+      }
+
+      // Safety: koi filter hi nahi laga → saare customers badal jayenge
+      if (where === 'TRUE' && req.body.confirm_all !== '1') {
+        req.session.flash = {
+          type: 'error',
+          message: `Filter khali hai — ye SAARE ${total} customers par lagega. Pehle filter lagayein.`,
+        };
+        return res.redirect(back);
+      }
 
       const out = await db.query(
         `UPDATE customers SET assigned_to = $${params.length + 1}
-          WHERE id IN (SELECT id FROM customer_board WHERE ${where})`,
+          WHERE id IN (SELECT b.id FROM customer_board b WHERE ${where})`,
         [...params, callerId]
       );
-      await auth.audit(req, 'assign_bulk', `caller=${callerId} rows=${out.rowCount}`);
+      await auth.audit(req, 'assign_bulk',
+        `${unassign ? 'unassign' : 'caller=' + callerId} where=${where} rows=${out.rowCount}`);
       req.session.flash = {
         type: 'success',
-        message: out.rowCount + ' customers assign ho gaye.',
+        message: unassign
+          ? `${out.rowCount} customers se caller hata diya (ab bina caller).`
+          : `${out.rowCount} customers assign ho gaye.`,
       };
-      return res.redirect(req.get('referer') || '/customers');
+      return res.redirect(back);
     }
 
     if (!usernames.length) {

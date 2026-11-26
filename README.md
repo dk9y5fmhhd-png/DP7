@@ -726,3 +726,37 @@ kitni calls/din chahiye aur capacity kitni hai.
 - Har deposit sync ke baad (status/VIP badla → tier badla)
 - Har remark save par (sirf us ek customer ka)
 - `/cadence` par **Recompute** button se poora base
+
+---
+
+## 25. v4.3.1 — bulk assign ka data bug (important)
+
+### Kya galat tha
+
+Customers page ka bulk bar filter ke hisaab se assign karta tha, par **filter
+form se bulk bar tak pahunchta hi nahi tha**. Route `f_status` / `f_vip` /
+`f_priority` padhta tha, aur view unhe bhejta hi nahi tha.
+
+Isliye:
+
+```sql
+-- jabh bhi "Poora filter assign karein" dabaya
+UPDATE customers SET assigned_to = X
+ WHERE id IN (SELECT id FROM customer_board WHERE TRUE)   -- ← SAARE customers
+```
+
+Matlab page par 267 dikh rahe the, par command **4,825** par chalti thi.
+Aur agar caller dropdown khali tha, to **saare customers se caller hat jata tha**.
+
+### Ab kya hai
+
+1. **Filter sach me jaata hai** — `f_status`, `f_vip`, `f_priority`, `f_caller`,
+   `f_q` sab hidden inputs se (jo page par laga filter hai, wahi bulk par lagta hai)
+2. **Filter khali ho to block** — "Filter khali hai — ye SAARE 4,825 customers par lagega"
+3. **Caller chune bina assign nahi hota** — saaf error
+4. **Alag "Bina caller karein" button** — pehle dropdown me "— caller hatao —"
+   chunna padta tha, jo galti se assign kar deta tha. Ab unassign apna alag button hai
+5. **Confirm me asli number** — "Is filter ke 267 customers ko … de dein?"
+6. **Filter badge** — bar par dikhta hai `filter laga hua` ya
+   `koi filter nahi — sab par lagega`
+7. **Unassign data nahi todta** — remarks, follow-ups, deposits, call history sab safe
