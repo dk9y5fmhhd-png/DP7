@@ -1,0 +1,141 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Level Report</h1>
+    <div class="sub">
+      Lifetime deposits ke hisaab se ranking. Active = <%= helpers.prettyDate(data.cutoff) %> ke baad deposit.
+      · <strong>Deposits</strong> = kitni rows, <strong>Level</strong> = total amount se
+    </div>
+  </div>
+  <div class="chips">
+    <% if (user.role === 'super_admin') { %>
+    <a class="chip" href="/reports/export?type=level<%= filters.level ? '&level=' + filters.level : '' %>"><%- icon('download', 13) %> CSV</a>
+    <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label">Clients</div>
+    <div class="value"><%= data.total.toLocaleString('en-IN') %></div>
+    <div class="hint">is filter me</div>
+  </div>
+  <div class="stat <%= data.unbanded ? 'warn' : 'ok' %>">
+    <div class="label">Unbanded</div>
+    <div class="value"><%= data.unbanded.toLocaleString('en-IN') %></div>
+    <div class="hint">kisi level me nahi aate</div>
+  </div>
+  <div class="stat bad">
+    <div class="label">Duplicate mobiles</div>
+    <div class="value"><%= data.dupes.size.toLocaleString('en-IN') %></div>
+    <div class="hint">same number, 2+ clients</div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" action="/reports/level" class="filter-bar">
+    <div>
+      <label>Level</label>
+      <select name="level" data-autosubmit>
+        <option value="">All levels</option>
+        <% levels.forEach(function (l) { %>
+          <option value="<%= l.id %>" <%= String(filters.level) === String(l.id) ? 'selected' : '' %>><%= l.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div>
+      <label>Sort by</label>
+      <select name="sort" data-autosubmit>
+        <option value="total_desc" <%= filters.sort === 'total_desc' ? 'selected' : '' %>>Total deposited (high → low)</option>
+        <option value="total_asc" <%= filters.sort === 'total_asc' ? 'selected' : '' %>>Total deposited (low → high)</option>
+        <option value="count_desc" <%= filters.sort === 'count_desc' ? 'selected' : '' %>>No. of deposits (high → low)</option>
+        <option value="count_asc" <%= filters.sort === 'count_asc' ? 'selected' : '' %>>No. of deposits (low → high)</option>
+        <option value="days_desc" <%= filters.sort === 'days_desc' ? 'selected' : '' %>>Active days (high → low)</option>
+        <option value="user_asc" <%= filters.sort === 'user_asc' ? 'selected' : '' %>>Username (A → Z)</option>
+        <option value="user_desc" <%= filters.sort === 'user_desc' ? 'selected' : '' %>>Username (Z → A)</option>
+        <option value="mobile_asc" <%= filters.sort === 'mobile_asc' ? 'selected' : '' %>>Mobile number (↑)</option>
+        <option value="mobile_desc" <%= filters.sort === 'mobile_desc' ? 'selected' : '' %>>Mobile number (↓)</option>
+      </select>
+    </div>
+    <div>
+      <label>Duplicates</label>
+      <label class="check-pill" style="height:36px">
+        <input type="checkbox" name="dups" value="1" <%= filters.dups ? 'checked' : '' %>> Only duplicate numbers
+      </label>
+    </div>
+    <div><button type="submit" class="btn btn-primary"><%- icon('search', 15) %> Apply</button></div>
+    <div><a href="/reports/level" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
+  </form>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:44px">#</th>
+          <th>Username</th>
+          <th>Mobile Number</th>
+          <th class="right">Total Deposited</th>
+          <th class="right">Deposits</th>
+          <th>Level</th>
+          <th>Status</th>
+          <th>Remark</th>
+          <th class="right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!data.rows.length) { %>
+          <tr><td colspan="9"><div class="empty"><span class="big">—</span>Koi client nahi mila.</div></td></tr>
+        <% } %>
+        <% data.rows.forEach(function (r, i) { %>
+          <tr>
+            <td class="num muted"><%= (data.page - 1) * data.perPage + i + 1 %></td>
+            <td class="who"><strong><%= r.username %></strong></td>
+            <td class="num nowrap">
+              <%= mask(r.mobile) %>
+              <% if (r.dupeCount > 1) { %><span class="badge badge-warn">×<%= r.dupeCount %></span><% } %>
+            </td>
+            <td class="money right"><%= helpers.money(r.total_deposited) %></td>
+            <td class="num right"><%= r.deposit_count %></td>
+            <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>
+            <td>
+              <% if (r.active) { %>
+                <span class="badge badge-success">Active</span>
+              <% } else { %>
+                <span class="badge badge-danger">Inactive</span>
+                <span class="muted tiny" style="display:block;margin-top:3px"><%= helpers.relativeDays(r.last_deposit, helpers.today()) %></span>
+              <% } %>
+            </td>
+            <td>
+              <% if (r.followup) { %>
+                <div class="note" title="<%= r.followup.response %>"><%= r.followup.response || '—' %></div>
+                <span class="muted tiny" style="display:block"><%= r.followup.action_type %> · <%= r.followup.action_date %></span>
+              <% } else { %><span class="muted">—</span><% } %>
+            </td>
+            <td class="right">
+              <button type="button" class="btn btn-sm" onclick="openFollowup('<%= r.username.replace(/'/g, "\\'") %>')">
+                <%- icon('phone', 13) %>
+              </button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer pagination">
+    <span class="page-info">Page <%= data.page %> of <%= data.pages %> · <%= data.total.toLocaleString('en-IN') %> rows</span>
+    <% const q = 'sort=' + filters.sort + (filters.level ? '&level=' + filters.level : '') + (filters.dups ? '&dups=1' : ''); %>
+    <% if (data.page > 1) { %>
+      <a class="btn btn-sm" href="/reports/level?<%= q %>&page=<%= data.page - 1 %>"><%- icon('left', 14) %> Prev</a>
+    <% } %>
+    <% if (data.page < data.pages) { %>
+      <a class="btn btn-sm" href="/reports/level?<%= q %>&page=<%= data.page + 1 %>">Next <%- icon('right', 14) %></a>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+
+

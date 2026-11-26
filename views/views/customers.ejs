@@ -1,0 +1,271 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Customers</h1>
+    <div class="sub">
+      <% if (isAdmin) { %>
+        Customer master — status 7-din ke niyam se, VIP deposit ke <strong>count</strong> se (amount se nahi).
+      <% } else { %>
+        Sirf <strong>aapko assign hue</strong> customers. Status 7-din ke niyam se, VIP deposit ke count se.
+      <% } %>
+    </div>
+  </div>
+  <div class="chips">
+    <% if (isAdmin) { %>
+      <form method="post" action="/customers/sync" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="chip" type="submit"><%- icon('refresh', 13) %> Sync from deposits</button>
+      </form>
+      <a class="chip" href="/upload"><%- icon('upload', 13) %> Upload</a>
+    <% } else { %>
+      <a class="chip" href="/calling/my"><%- icon('phone', 13) %> My Calls</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Total customers</div><div class="value"><%= totals.total.toLocaleString('en-IN') %></div><div class="hint">master records</div></div>
+  <div class="stat"><div class="label">New</div><div class="value"><%= totals.new_c.toLocaleString('en-IN') %></div><div class="hint">repeat deposit ka wait</div></div>
+  <div class="stat ok"><div class="label">Active</div><div class="value"><%= totals.active_c.toLocaleString('en-IN') %></div><div class="hint">7 din me deposit</div></div>
+  <div class="stat bad"><div class="label">Inactive</div><div class="value"><%= totals.inactive_c.toLocaleString('en-IN') %></div><div class="hint">7 din se zyada</div></div>
+  <div class="stat warn"><div class="label">Reactivated</div><div class="value"><%= totals.reactivated_c.toLocaleString('en-IN') %></div><div class="hint">wapas aaye</div></div>
+  <div class="stat"><div class="label">VIP customers</div><div class="value"><%= totals.vip_c.toLocaleString('en-IN') %></div><div class="hint">25+ deposits</div></div>
+</div>
+
+<div class="card">
+  <form method="get" action="/customers" class="filter-bar">
+    <div style="flex:1 1 200px">
+      <label>Search</label>
+      <input type="search" name="q" value="<%= filters.q %>" placeholder="username ya mobile…" style="width:100%">
+    </div>
+    <div>
+      <label>Status</label>
+      <select name="status" data-autosubmit>
+        <option value="">All</option>
+        <% Object.keys(labels.STATUS_LABEL).forEach(function (k) { %>
+          <option value="<%= k %>" <%= filters.status === k ? 'selected' : '' %>><%= labels.STATUS_LABEL[k] %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div>
+      <label>VIP</label>
+      <select name="vip" data-autosubmit>
+        <option value="">All</option>
+        <% Object.keys(labels.VIP_LABEL).forEach(function (k) { %>
+          <option value="<%= k %>" <%= filters.vip === k ? 'selected' : '' %>><%= labels.VIP_LABEL[k] %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div>
+      <label>Priority</label>
+      <select name="priority" data-autosubmit>
+        <option value="">All</option>
+        <% ['P1','P2','P3','P4','P0'].forEach(function (k) { %>
+          <option value="<%= k %>" <%= filters.priority === k ? 'selected' : '' %>><%= labels.PRIORITY_LABEL[k] %></option>
+        <% }); %>
+      </select>
+    </div>
+    <% if (isAdmin) { %>
+    <div>
+      <label>Caller</label>
+      <select name="caller" data-autosubmit>
+        <option value="">All</option>
+        <option value="none" <%= filters.caller === 'none' ? 'selected' : '' %>>— bina caller —</option>
+        <% callers.forEach(function (c) { %>
+          <option value="<%= c.id %>" <%= filters.caller === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <% } %>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
+    <div><a href="/customers" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
+  </form>
+
+  <form method="post" action="/customers/delete-selected" id="delOne" style="display:none">
+  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+  <input type="hidden" name="confirm" value="DELETE">
+</form>
+
+<form method="post" action="/customers/assign">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="muted tiny">
+        <strong><%= count.toLocaleString('en-IN') %></strong> customers filter me
+        <% if (filters.caller || filters.status || filters.vip || filters.priority || filters.q) { %>
+          <span class="badge badge-warn" style="margin-left:6px">filter laga hua</span>
+        <% } else { %>
+          <span class="badge badge-danger" style="margin-left:6px">koi filter nahi — sab par lagega</span>
+        <% } %>
+      </span>
+      <% if (isAdmin) { %>
+      <span class="muted tiny">·</span>
+      <span class="muted tiny"><%= (totals.unassigned || 0).toLocaleString('en-IN') %> bina caller</span>
+      <% } %>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <% if (isAdmin) { %>
+        <%# yahi filter bulk assign par lagta hai — inke bina WHERE TRUE ban jata tha %>
+        <input type="hidden" name="f_status" value="<%= filters.status %>">
+        <input type="hidden" name="f_vip" value="<%= filters.vip %>">
+        <input type="hidden" name="f_priority" value="<%= filters.priority %>">
+        <input type="hidden" name="f_caller" value="<%= filters.caller %>">
+        <input type="hidden" name="f_q" value="<%= filters.q %>">
+        <select name="caller_id" style="min-width:160px" required>
+          <option value="">— caller chunein —</option>
+          <% callers.forEach(function (c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
+        </select>
+        <button class="btn btn-sm" type="submit" name="assign_filter" value="1"
+                data-confirm="Is filter ke SAB <%= count %> customers ko chune hue caller ko de dein?">
+          Poora filter assign karein
+        </button>
+        <button class="btn btn-sm btn-primary" type="submit">Chune hue assign karein</button>
+        <button class="btn btn-sm" type="submit" name="unassign" value="1"
+                data-confirm="Is filter ke <%= count %> customers se caller hata dein? (data safe rehta hai)">
+          <%- icon('x', 13) %> Bina caller karein
+        </button>
+        <span style="width:1px;height:22px;background:var(--border)"></span>
+        <button class="btn btn-sm btn-danger" type="submit"
+                formaction="/customers/delete-selected" name="confirm" value="DELETE"
+                data-confirm="Chune hue customers delete ho jayenge (remarks bhi). Pakka?">
+          <%- icon('trash', 13) %> Delete
+        </button>
+      <% } else { %>
+        <span class="muted tiny">Aapke assigned customers · number masked hai</span>
+      <% } %>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <% if (isAdmin) { %><th style="width:36px"><input type="checkbox" data-check-all></th><% } %>
+            <th>Username</th>
+            <th>Mobile</th>
+            <th>Deposits</th>
+            <th class="right">Total</th>
+            <th>Status</th>
+            <th>VIP</th>
+            <th>Priority</th>
+            <th>Caller</th>
+            <th>Last deposit</th>
+            <th>Last remark</th>
+            <% if (isAdmin) { %><th style="width:44px"></th><% } %>
+          </tr>
+        </thead>
+        <tbody data-check-scope>
+          <% if (!rows.length) { %>
+            <tr><td colspan="<%= isAdmin ? 12 : 10 %>"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
+          <% } %>
+          <% rows.forEach(function (r) { %>
+            <tr>
+              <% if (isAdmin) { %><td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td><% } %>
+              <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
+                <% if (r.do_not_contact) { %><span class="badge badge-danger">DNC</span><% } %>
+              </td>
+              <td class="num nowrap"><%= r.mobile_shown %></td>
+              <td class="num"><strong><%= r.deposit_count %></strong></td>
+              <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
+              <td>
+                <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : (r.status === 'new' ? 'badge-info' : 'badge-warn')) %>">
+                  <%= labels.STATUS_LABEL[r.status] || r.status %>
+                </span>
+              </td>
+              <td>
+                <% if (r.vip_category === 'normal') { %><span class="muted">—</span>
+                <% } else { %>
+                  <span class="badge <%= r.vip_category === 'high_value_vip' ? 'badge-accent' : (r.vip_category === 'premium_vip' ? 'badge-warn' : 'badge-success') %>">
+                    <%= labels.VIP_LABEL[r.vip_category] %>
+                  </span>
+                <% } %>
+              </td>
+              <td>
+                <span class="badge <%= r.priority === 'P1' ? 'badge-danger' : (r.priority === 'P2' ? 'badge-warn' : 'badge-neutral') %>">
+                  <%= r.priority %>
+                </span>
+                <% if (r.days_inactive < 9999) { %><span class="muted tiny"><%= r.days_inactive %>d</span><% } %>
+              </td>
+              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">—</span><% } %></td>
+              <td class="muted tiny nowrap"><%= r.last_deposit || '—' %></td>
+              <td class="muted tiny"><%= r.last_remark || '—' %></td>
+              <% if (isAdmin) { %><td class="right">
+                <button class="btn btn-sm btn-danger btn-icon" type="submit" form="delOne"
+                        name="username" value="<%= r.username %>"
+                        data-confirm="<%= r.username %> ko delete karein? Iske remarks aur calls bhi hat jayenge.">
+                  <%- icon('trash', 12) %>
+                </button>
+              </td><% } %>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <div class="card-footer pagination">
+    <span class="page-info">Page <%= page %> of <%= pages %></span>
+    <% const qs = 'q=' + encodeURIComponent(filters.q) + '&status=' + filters.status + '&vip=' + filters.vip + '&priority=' + filters.priority + '&caller=' + filters.caller; %>
+    <% if (page > 1) { %><a class="btn btn-sm" href="/customers?<%= qs %>&page=<%= page - 1 %>"><%- icon('left', 14) %> Prev</a><% } %>
+    <% if (page < pages) { %><a class="btn btn-sm" href="/customers?<%= qs %>&page=<%= page + 1 %>">Next <%- icon('right', 14) %></a><% } %>
+  </div>
+</div>
+
+<% if (isAdmin) { %>
+<div class="card" style="border-color:rgba(255,90,118,0.35)">
+  <div class="card-header" style="background:rgba(255,90,118,0.07)">
+    <h3><%- icon('trash', 15) %> Customer data delete</h3>
+    <span class="badge badge-danger" style="margin-left:auto"><%= totals.total.toLocaleString('en-IN') %> records</span>
+  </div>
+  <form method="post" action="/customers/clear">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label>Kya delete karein</label>
+          <select name="scope">
+            <option value="customers">Sirf customer master (deposits bache rahenge)</option>
+            <option value="all">Sab kuch — customers + deposits + remarks + calls</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Confirm ke liye <code>DELETE</code> likhein</label>
+          <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <button class="btn btn-danger" type="submit"
+                  data-confirm="Ye action permanent hai. Aage badhein?">
+            <%- icon('trash', 15) %> Delete karein
+          </button>
+        </div>
+      </div>
+      <p class="muted tiny" style="margin:12px 0 0">
+        <strong>Sirf customer master</strong> delete karne par deposits bache rehte hain —
+        <strong>Sync from deposits</strong> dabane par customers wapas ban jayenge.
+        Poora saaf karna ho to <strong>Sab kuch</strong> chunein, phir nayi file upload karein.
+      </p>
+    </div>
+  </form>
+</div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Rules kaise lagte hain</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Status</dt>
+      <dd>Pehla deposit → <strong>New</strong> · 7 din me dobara → <strong>Active</strong> · 7 din koi deposit nahi → <strong>Inactive</strong> · Inactive ne dobara kiya → <strong>Reactivated</strong></dd>
+      <dt>VIP</dt>
+      <dd>Sirf <strong>successful deposit ke count</strong> se: 25+ VIP · 51+ Premium VIP · 101+ High Value VIP. Amount se nahi. Ek baar VIP bana to hamesha VIP rahega.</dd>
+      <dt>Priority</dt>
+      <dd><strong>P1</strong> VIP inactive / recently inactive · <strong>P2</strong> normal inactive + naya customer · <strong>P3</strong> reactivated (dobara active hua) · <strong>P4</strong> active (call ki zaroorat nahi)</dd>
+      <dt>Deposits (count)</dt>
+      <dd>Ek deposit = ek row. Summary file (ek row me lifetime total) upload karne par count <strong>1</strong> hi rahega —
+        VIP ke liye transaction-wise rows chahiye.</dd>
+      <dt>DNC</dt>
+      <dd>"Do Not Contact" — aage koi calling list me nahi aayega</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

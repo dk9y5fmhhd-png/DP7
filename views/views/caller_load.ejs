@@ -1,0 +1,294 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Caller Load</h1>
+    <div class="sub">
+      Kis caller ke paas kitna kaam hai — aur yahan se <strong>barabar auto-split</strong> karein.
+      Har caller ko har priority ka hissa milta hai, isliye VIP sab ek ke paas nahi jaate.
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip <%= team === '' ? 'on' : '' %>" href="/callers">Sab</a>
+    <a class="chip <%= team === 'retention' ? 'on' : '' %>" href="/callers?team=retention">Retention</a>
+    <a class="chip <%= team === 'acquisition' ? 'on' : '' %>" href="/callers?team=acquisition">Acquisition</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label">Assigned</div>
+    <div class="value"><%= totals.assigned.toLocaleString('en-IN') %></div>
+    <div class="hint"><%= totals.callers %> callers me</div>
+  </div>
+  <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
+    <div class="label">Overdue</div>
+    <div class="value"><%= totals.overdue.toLocaleString('en-IN') %></div>
+    <div class="hint">date nikal gayi</div>
+  </div>
+  <div class="stat">
+    <div class="label">Total pending</div>
+    <div class="value"><%= totals.pending.toLocaleString('en-IN') %></div>
+    <div class="hint">overdue + aaj due</div>
+  </div>
+  <div class="stat ok">
+    <div class="label">Aaj kiya</div>
+    <div class="value"><%= totals.done.toLocaleString('en-IN') %></div>
+    <div class="hint">customers touch kiye</div>
+  </div>
+  <div class="stat <%= unassigned.total ? 'warn' : 'ok' %>">
+    <div class="label">Bina caller</div>
+    <div class="value"><%= unassigned.total.toLocaleString('en-IN') %></div>
+    <div class="hint">P1: <%= unassigned.p1 %> · P2: <%= unassigned.p2 %> · P3: <%= unassigned.p3 %></div>
+  </div>
+  <div class="stat <%= totals.empty ? 'warn' : 'ok' %>">
+    <div class="label">Khaali callers</div>
+    <div class="value"><%= totals.empty %></div>
+    <div class="hint"><%= totals.over %> callers overloaded</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('users', 15) %> Callers</h3>
+    <span class="muted tiny" style="margin-left:auto">
+      Load health = assigned ÷ (target × 4 din)
+    </span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Caller</th>
+          <th>Team</th>
+          <th class="right">Target</th>
+          <th>Load</th>
+          <th class="right">P1</th>
+          <th class="right">P2</th>
+          <th class="right">Pending</th>
+          <th class="right">Overdue</th>
+          <th class="right">Aaj kiya</th>
+          <th>Last login</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="10"><div class="empty">
+            <span class="big">—</span>
+            Koi caller account nahi. <a href="/users">Users</a> page se banayein.
+          </div></td></tr>
+        <% } %>
+        <% rows.forEach(function (c) {
+             const healthLabel = {
+               empty: 'khaali', light: 'halka', ok: 'theek',
+               heavy: 'bhaari', over: 'zyada'
+             }[c.health];
+             const healthClass = {
+               empty: 'badge-neutral', light: 'badge-info', ok: 'badge-success',
+               heavy: 'badge-warn', over: 'badge-danger'
+             }[c.health]; %>
+          <tr>
+            <td class="who">
+              <strong><%= c.name %></strong>
+              <div class="muted tiny"><%= c.login_id %><%= c.totp_enabled ? ' · 2FA' : '' %></div>
+            </td>
+            <td>
+              <form method="post" action="/callers/<%= c.id %>/team" style="margin:0">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <select name="team" onchange="this.form.submit()" style="font-size:11.5px;padding:3px 6px;min-height:26px">
+                  <option value="retention" <%= c.team === 'retention' ? 'selected' : '' %>>Retention</option>
+                  <option value="acquisition" <%= c.team === 'acquisition' ? 'selected' : '' %>>Acquisition</option>
+                </select>
+              </form>
+            </td>
+            <td class="right num"><%= c.daily_target %></td>
+            <td style="min-width:170px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="num" style="font-size:12.5px;min-width:62px">
+                  <strong><%= c.assigned.toLocaleString('en-IN') %></strong>
+                  <span class="muted">/<%= c.capacity.toLocaleString('en-IN') %></span>
+                </span>
+                <div class="progress-track" style="flex:1;height:7px">
+                  <div class="progress-fill <%= c.health === 'ok' ? 'done' : '' %>"
+                       style="width:<%= Math.min(100, c.utilisation) %>%;
+                              <%= c.health === 'over' || c.health === 'heavy' ? 'background:linear-gradient(90deg,#b23b48,#ff6b74)' : (c.health === 'light' ? 'background:linear-gradient(90deg,#2b6f8f,#7fc9d8)' : '') %>"></div>
+                </div>
+                <span class="badge <%= healthClass %>" style="font-size:10px"><%= healthLabel %></span>
+              </div>
+            </td>
+            <td class="right num"><%= c.p1 %></td>
+            <td class="right num muted"><%= c.p2 %></td>
+            <td class="right num"><strong><%= c.pending %></strong></td>
+            <td class="right num">
+              <% if (c.overdue) { %><span class="badge badge-danger"><%= c.overdue %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num"><%= c.done_today %></td>
+            <td class="muted tiny nowrap"><%= c.last_login_at ? helpers.prettyDateTime(c.last_login_at) : 'kabhi nahi' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (preview) { %>
+  <div class="card" id="preview" style="border-color:rgba(245,197,66,0.45)">
+    <div class="card-header" style="background:rgba(245,197,66,0.06)">
+      <h3><%- icon('alert', 15) %> Preview — kuch save nahi hua</h3>
+      <span class="badge badge-warn" style="margin-left:auto"><%= preview.total %> customers</span>
+    </div>
+    <div class="card-body">
+      <p class="soft" style="margin-top:0">
+        <%= preview.scope === 'all' ? 'Sab customers dobara' : 'Bina caller wale' %>
+        <%= preview.priority ? '· sirf ' + preview.priority : '' %>
+        · total available <strong><%= preview.available %></strong>
+        · har caller ko ~<strong><%= preview.perCaller %></strong>
+      </p>
+      <div class="table-wrapper" style="border:1px solid var(--border);border-radius:10px">
+        <table>
+          <thead><tr><th style="width:34%">Caller</th><th class="right" style="width:22%">Milenge</th><th class="right">P1</th><th class="right">P2</th><th class="right">P3</th><th class="right">P4</th></tr></thead>
+          <tbody>
+            <% preview.rows.forEach(function (r) { %>
+              <tr>
+                <td><strong><%= r.name %></strong></td>
+                <td class="right num"><strong><%= r.count %></strong></td>
+                <td class="right num"><%= r.P1 %></td>
+                <td class="right num muted"><%= r.P2 %></td>
+                <td class="right num muted"><%= r.P3 %></td>
+                <td class="right num muted"><%= r.P4 %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+          <tfoot>
+            <tr style="background:rgba(245,197,66,0.05)">
+              <td><strong>Total</strong></td>
+              <td class="right num"><strong><%= preview.total %></strong></td>
+              <td colspan="4"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
+      <form method="post" action="/callers/cancel" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-ghost" type="submit">Cancel</button>
+      </form>
+      <form method="post" action="/callers/apply" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-primary" type="submit"
+                data-confirm="<%= preview.total %> customers assign ho jayenge. Pakka?">
+          <%- icon('check', 15) %> Assign karein
+        </button>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('layers', 15) %> Barabar auto-split</h3>
+  </div>
+  <form method="post" action="/callers/preview">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="card-body">
+      <p class="muted tiny" style="margin:0 0 14px">
+        Ek click me customers barabar baant dein. Pehle <strong>Preview</strong> dikhega — jab tak aap
+        Assign na dabayein, kuch nahi badalta.
+      </p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kaun se customers</label>
+          <select name="scope">
+            <option value="unassigned">Bina caller wale (<%= unassigned.total.toLocaleString('en-IN') %>)</option>
+            <option value="all">Sab customers (dobara baant)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority <span class="muted tiny">(optional)</span></label>
+          <select name="priority">
+            <option value="">Sab priorities</option>
+            <option value="P1">Sirf P1 — VIP inactive</option>
+            <option value="P2">Sirf P2</option>
+            <option value="P3">Sirf P3</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Har caller ko kitne <span class="muted tiny">(khaali = barabar)</span></label>
+          <input type="number" name="per_caller" min="0" step="1" placeholder="auto">
+        </div>
+        <div class="form-group">
+          <label>Total kitne baantne hain <span class="muted tiny">(khaali = sab)</span></label>
+          <input type="number" name="take" min="0" step="1" placeholder="sab">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:6px">
+        <label>Kis-kis caller me baantna hai</label>
+        <div class="check-row" data-check-scope>
+          <label class="check-pill"><input type="checkbox" data-check-all> <span>Sab chunein</span></label>
+          <% const previewIds = preview ? preview.rows.map(function (r) { return r.id; }) : []; %>
+          <% callers.forEach(function (c) {
+               const ticked = preview
+                 ? previewIds.indexOf(c.id) !== -1
+                 : (c.assigned === 0 && c.team === 'retention'); %>
+            <label class="check-pill">
+              <input type="checkbox" name="caller_id" value="<%= c.id %>" data-checkable <%= ticked ? 'checked' : '' %>>
+              <span><%= c.name %> <span class="muted tiny">(<%= c.assigned %> · <%= c.team === 'acquisition' ? 'acq' : 'ret' %>)</span></span>
+            </label>
+          <% }); %>
+        </div>
+        <span class="muted tiny">Khaali callers pehle se tick hain.</span>
+      </div>
+    </div>
+    <div class="card-footer" style="text-align:right">
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Preview banayein</button>
+    </div>
+  </form>
+</div>
+
+<% if (lastRuns.length) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle splits</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Kab</th><th>Kisne</th><th>Scope</th><th class="right">Total</th><th class="right">Callers</th><th class="right">Per caller</th></tr></thead>
+        <tbody>
+          <% lastRuns.forEach(function (r) { %>
+            <tr>
+              <td class="nowrap muted tiny"><%= helpers.prettyDateTime(r.run_at) %></td>
+              <td class="tiny"><%= r.by_name || '—' %></td>
+              <td class="tiny"><%= r.scope === 'all' ? 'Sab customers' : 'Bina caller' %></td>
+              <td class="right num"><strong><%= r.total %></strong></td>
+              <td class="right num"><%= r.callers %></td>
+              <td class="right num">~<%= r.per_caller %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Auto-split kaise kaam karta hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Barabar</dt>
+      <dd>Har caller ko lagbhag same number — 2,786 ko 8 me baantne par 348-348</dd>
+      <dt>Priority ka mix</dt>
+      <dd>Har priority (P1, P2, P3, P4) <strong>alag-alag</strong> round-robin hoti hai —
+        isliye VIP sab ek caller ke paas nahi jaate, sabko barabar milte hain</dd>
+      <dt>P0 skip</dt>
+      <dd>"Do Not Contact" wale kabhi assign nahi hote</dd>
+      <dt>Load health</dt>
+      <dd>assigned ÷ (target × 4 din) — 100% ke aas-paas theek, 130% se upar zyada</dd>
+      <dt>Team</dt>
+      <dd><strong>Retention</strong> = purane client ka follow-up · <strong>Acquisition</strong> = naye client laana</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

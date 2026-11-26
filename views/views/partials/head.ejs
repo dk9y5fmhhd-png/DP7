@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> · Dailyplay7 CRM</title>
+  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
+  <link rel="icon" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/brand/mark.png">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a href="/" class="brand-plate" title="Dailyplay7">
+      <span class="wordmark">Dailyplay<span class="wordmark-7">7</span></span>
+    </a>
+
+    <%
+      const GROUPS = [
+        { label: 'Retention', keys: ['dashboard', 'customers', 'newclients', 'priority', 'mycalls', 'due', 'calls', 'upload'] },
+        { label: 'Data',      keys: ['adddata'] },
+        { label: 'Reports',   keys: ['reports', 'level_report', 'daily_report', 'weekly_report', 'biweekly_report', 'monthly_report', 'followups'] },
+        { label: 'Admin',     keys: ['assign', 'cadence', 'callers', 'approvals', 'backup', 'users', 'settings'] },
+        { label: 'Account',   keys: ['security'] }
+      ];
+    %>
+
+    <% GROUPS.forEach(function (g) { %>
+      <% const visible = g.keys.filter(function (k) { return can(k); }); %>
+      <% if (!visible.length) { return; } %>
+      <div class="nav-group">
+        <div class="nav-label"><%= g.label %></div>
+        <% visible.forEach(function (key) { %>
+          <% const item = PAGES.find(function (p) { return p.key === key; }); %>
+          <% if (item) { %>
+            <a class="nav-item <%= page === key ? 'active' : '' %>" href="<%= item.url %>">
+              <span class="ico"><%- icon(item.icon, 15) %></span>
+              <span><%= item.label %></span>
+            </a>
+          <% } %>
+        <% }); %>
+      </div>
+    <% }); %>
+
+    <div style="margin-top:auto;padding:10px 10px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">
+      <span class="muted tiny" style="font-variant-numeric:tabular-nums">v<%= appVersion %></span>
+      <a href="/health" target="_blank" class="muted tiny" style="margin-left:auto;text-decoration:none" title="Health check">health</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="today"><%- icon('clock', 13) %> <%= helpers.prettyDateLong(helpers.today()) %></div>
+      <div class="spacer"></div>
+      <div class="user-chip">
+        <div class="avatar"><%= (user.name || 'U').slice(0, 1).toUpperCase() %></div>
+        <div class="who">
+          <b><%= user.name %></b>
+          <span><%= user.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span>
+        </div>
+      </div>
+      <form method="post" action="/logout" style="margin:0">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-ghost btn-sm" type="submit" title="Sign out"><%- icon('logout', 15) %></button>
+      </form>
+    </header>
+
+    <div class="content">
+      <% if (flash) { %>
+        <div class="flash flash-<%= flash.type || 'info' %>">
+          <%- icon(flash.type === 'error' ? 'alert' : 'check', 15) %> <span><%= flash.message %></span>
+        </div>
+      <% } %>
+
+
+

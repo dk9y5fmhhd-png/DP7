@@ -1,0 +1,324 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Daily Upload</h1>
+    <div class="sub">Roz ka do data — naye customers ki list, aur deposit transactions. Upload ke baad customer master khud update ho jaata hai.</div>
+  </div>
+</div>
+
+<% if (result && result.blocked) { %>
+  <div class="flash flash-error">
+    <span>
+      <strong>Ye file pehle upload ho chuki hai.</strong>
+      Is file ki <strong><%= result.batchRows %></strong> rows pehle se database me hain —
+      dobara upload karne par count double ho jata, isliye rok diya.
+      <br>Phir se upload karna ho to pehle neeche <strong>"Galat upload hatayein"</strong> se
+      purana data hatayein, phir file upload karein.
+    </span>
+  </div>
+<% } %>
+
+<% if (perUser && perUser.length) { %>
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('users', 15) %> Is file ka hisaab — customer-wise</h3>
+      <span class="muted tiny" style="margin-left:auto">
+        <%= perUserTotal.users %> customers · <%= perUserTotal.rows %> rows ·
+        <%= helpers.money(perUserTotal.amount) %> total
+      </span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>#</th><th>Username</th><th class="right">Rows (deposits)</th><th class="right">Total amount</th></tr></thead>
+        <tbody>
+          <% perUser.forEach(function (u, i) { %>
+            <tr>
+              <td class="num muted"><%= i + 1 %></td>
+              <td><strong><%= u.username %></strong></td>
+              <td class="right num"><strong><%= u.rows %></strong></td>
+              <td class="right money"><strong><%= helpers.money(u.amount) %></strong></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% if (perUserTotal.users > perUser.length) { %>
+      <div class="card-footer muted tiny">Top <%= perUser.length %> dikha rahe hain (total <%= perUserTotal.users %> customers).</div>
+    <% } %>
+  </div>
+<% } %>
+
+<% if (result && result.kind === 'deposits' && hasDateCol === false) { %>
+  <div class="card" style="border-color:rgba(255,176,32,0.4)">
+    <div class="card-header" style="background:rgba(255,176,32,0.07)">
+      <h3><%- icon('alert', 15) %> File me "deposit date" column nahi hai</h3>
+    </div>
+    <div class="card-body">
+      <p class="soft" style="margin:0">
+        Sab rows <strong><%= result.playDate %></strong> par save hongi. Isse
+        <strong>count aur total sahi</strong> aayega, lekin "last deposit" aur
+        "kitne din inactive" galat dikhega — kyunki asli date pata nahi.
+        Sahi chahiye to Excel me ek <code>deposit date</code> column jodein.
+      </p>
+    </div>
+  </div>
+<% } %>
+
+<% if (result && !result.blocked) { %>
+  <div class="flash flash-<%= result.errors && result.errors.length ? 'info' : 'success' %>">
+    <span>
+      <% if (result.empty) { %>
+        <strong>Koi valid row nahi mili.</strong> Template download karke usi format me daalein.
+      <% } else if (result.dryRun) { %>
+        <strong>Preview</strong> — <%= result.count %> rows valid hain. Kuch save nahi hua; neeche dekh ke <strong>Save</strong> dabayein.
+      <% } else { %>
+        <strong><%= result.inserted %></strong> rows save<%= result.skipped ? ', ' + result.skipped + ' skip' : '' %>.
+        <% if (result.sync) { %> Customer master sync: <strong><%= result.sync.total %></strong> total, <%= result.sync.created %> naye, <%= result.sync.updated %> update.<% } %>
+      <% } %>
+      <% if (result.errors && result.errors.length) { %> · <strong><%= result.errors.length %></strong> lines skip hui.<% } %>
+    </span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('file', 15) %> File</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= result.fileName %><% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %></span>
+    </div>
+    <div class="card-body">
+      <dl class="kv">
+        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers (username + mobile)' : 'Deposit transactions' %></dd>
+        <dt>Valid rows</dt><dd><%= result.count %></dd>
+        <dt>Saved</dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
+        <% if (result.headerMap) { %>
+          <dt>Columns</dt>
+          <dd>
+            <% Object.keys(result.headerMap).forEach(function (k) { %>
+              <span class="badge badge-neutral"><%= k %> → col <%= result.headerMap[k] + 1 %></span>
+            <% }); %>
+          </dd>
+        <% } %>
+      </dl>
+    </div>
+  </div>
+
+  <% if (result.errors && result.errors.length) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('alert', 15) %> Skipped lines</h3></div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
+          <tbody>
+            <% result.errors.slice(0, 60).forEach(function (e) { %>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= e.reason %></span></td></tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('list', 15) %> Preview</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Line</th>
+            <% if (result.kind === 'customers') { %>
+              <th>Username</th><th>Mobile</th><th>Reg date</th><th></th>
+            <% } else { %>
+              <th>Username</th><th>Date</th><th class="right">Amount</th><th>Txn ID</th><th>Status</th><th class="right">Count</th>
+            <% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% result.preview.slice(0, 100).forEach(function (p) { %>
+            <tr>
+              <td class="num muted"><%= p.line %></td>
+              <% if (result.kind === 'customers') { %>
+                <td><strong><%= p.username %></strong></td>
+                <td class="num"><%= p.mobile || '—' %></td>
+                <td class="muted"><%= p.date %></td>
+                <td class="muted tiny"><%= p.note %></td>
+              <% } else { %>
+                <td><strong><%= p.username %></strong></td>
+                <td class="muted nowrap"><%= p.date %></td>
+                <td class="money right"><%= helpers.money(p.amount) %></td>
+                <td class="muted tiny"><%= p.txn || '—' %></td>
+                <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= p.status %></span></td>
+                <td class="right num"><%= p.count || 1 %></td>
+              <% } %>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<div class="grid-2 grid-equal">
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('team', 15) %> A. Naye customers</h3>
+      <span class="muted tiny" style="margin-left:auto">username · mobile · reg date</span>
+    </div>
+    <form method="post" action="/upload/customers" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          Power BI me mobile numbers nahi hote — wahan se username nikalein, aur yahan se mobile match kar dein.
+          Username unique hai: dobara aaya to sirf mobile/date update hoga, naya record nahi banega.
+        </p>
+        <label class="dropzone">
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
+          <span class="dz-icon"><%- icon('upload', 22) %></span>
+          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
+        </label>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <a class="tiny" href="/upload/template/customers">Template ↓</a>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('money', 15) %> B. Deposit transactions</h3>
+      <span class="muted tiny" style="margin-left:auto">username · txn id · date · amount · status</span>
+    </div>
+    <form method="post" action="/upload/deposits" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          <strong>Sirf successful</strong> deposits customer ke count me jaate hain. Duplicate transaction ID reject hoti hai.
+          Ek username ke kai genuine deposits allowed hain.
+        </p>
+        <label class="dropzone">
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
+          <span class="dz-icon"><%- icon('upload', 22) %></span>
+          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
+        </label>
+        <div class="form-group" style="margin-top:10px">
+          <label>Date <span class="muted tiny">(file me date na ho to)</span></label>
+          <input type="date" name="play_date" value="<%= today %>">
+          <span class="muted tiny">
+            ⚠️ <strong>Yahan wo din chuniye jis din client aaya tha.</strong>
+            1 tareekh ka data 2 tareekh ko upload kar rahe hain to date <strong>1 tareekh</strong> rakhein —
+            warna wo "New Clients" window me galat din par ginega.
+          </span>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <a class="tiny" href="/upload/template/deposits">Template ↓</a>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2 grid-equal">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert', 15) %> Deposit count kaise banta hai</h3></div>
+    <div class="card-body">
+      <p class="soft" style="margin-top:0">
+        <strong>Deposits</strong> column = us customer ki kitni <strong>rows</strong> hain. Ek row = ek deposit.
+        Isliye <strong>total amount</strong> alag cheez hai aur <strong>count</strong> alag.
+      </p>
+      <dl class="kv">
+        <dt>Galat file</dt>
+        <dd>Ek customer ki ek hi row, jisme lifetime total likha ho <strong>aur count column na ho</strong> →
+          count <strong>1</strong>, level total se banega (jaise ₹30,000 → Level 4)</dd>
+        <dt>Summary + count</dt>
+        <dd>Wahi summary file, par ek extra column <code>deposit count</code> = 25 →
+          level total se, VIP count se. Dono sahi</dd>
+        <dt>Sahi file</dt>
+        <dd>Har deposit ki alag row (₹500, ₹700, ₹900…) → <strong>count 3</strong>,
+          aur 25+ hone par VIP</dd>
+      </dl>
+      <p class="muted tiny" style="margin:12px 0 0">
+        <strong>Same din ki do deposits bhi alag rows hongi</strong> — system ab dono ginata hai (pehle ek merge ho jati thi).
+        VIP count sirf <strong>successful</strong> rows se banta hai.
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('trash', 15) %> Galat upload hatayein</h3></div>
+    <form method="post" action="/upload/clear">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 10px">
+          Summary file galti se chali gayi ho to pehle use hataayein, phir transaction-wise file upload karein.
+          Ye delete karne ke baad customer master khud dobara ban jayega.
+        </p>
+        <div class="form-group">
+          <label>Kya delete karein</label>
+          <select name="scope">
+            <option value="excel">Sirf Excel upload wala data</option>
+            <option value="all">Sab deposits (manual + demo bhi)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Confirm karne ke liye <code>DELETE</code> likhein</label>
+          <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
+        </div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button class="btn btn-danger" type="submit"
+                data-confirm="Deposits delete ho jayenge aur customer master dobara banega. Pakka?">
+          <%- icon('trash', 15) %> Delete aur re-sync
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock', 15) %> Kis source se data aaya</h3></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Source</th><th class="right">Rows</th><th class="right">Last upload</th></tr></thead>
+        <tbody>
+          <% (recent || []).forEach(function (r) { %>
+            <tr>
+              <td><span class="badge badge-neutral"><%= r.source %></span></td>
+              <td class="right num"><%= r.rows %></td>
+              <td class="right muted tiny"><%= r.last_at ? helpers.prettyDateTime(r.last_at) : '—' %></td>
+            </tr>
+          <% }); %>
+          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty">Abhi koi data nahi.</div></td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert', 15) %> Upload ke rules</h3></div>
+    <div class="card-body">
+      <dl class="kv">
+        <dt>Column order</dt><dd>Koi bhi — header padh liya jaata hai</dd>
+        <dt>Dates</dt><dd><code>2026-11-20</code>, <code>20/11/2026</code>, <code>20 Nov 2026</code></dd>
+        <dt>Duplicate txn</dt><dd>Wahi transaction ID dobara → line reject</dd>
+        <dt>Same username</dt><dd>Kai deposits allowed (genuine hai to)</dd>
+        <dt>Status</dt><dd>successful / failed / pending / reversed — khaali = successful</dd>
+        <dt>Deposit count</dt><dd><strong>Optional.</strong> Transaction-wise rows me khaali chhod dein (=1).
+          Summary row me (ek row = lifetime total) us row me kitni deposits hain wo likhein — VIP isi se banega</dd>
+        <dt>Upload ke baad</dt><dd>Customer master khud sync ho jaata hai</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

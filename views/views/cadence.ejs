@@ -1,0 +1,238 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Retention Cadence</h1>
+    <div class="sub">
+      Har customer ka regular touch cycle — <strong>A: 5 din</strong> ·
+      <strong>B: 12 din</strong> · <strong>C: 30 din</strong>.
+      Yahan dikhta hai kaun bhoole gaye aur ek poora round kitne din me khatam hoga.
+    </div>
+  </div>
+  <div class="chips">
+    <% [7, 15, 30].forEach(function (d) { %>
+      <a class="chip <%= days === d ? 'on' : '' %>" href="/cadence?days=<%= d %>"><%= d %> din</a>
+    <% }); %>
+    <form method="post" action="/cadence/refresh" style="margin:0">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <button class="chip" type="submit"><%- icon('refresh', 13) %> Recompute</button>
+    </form>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label">Cadence me</div>
+    <div class="value"><%= overall.total.toLocaleString('en-IN') %></div>
+    <div class="hint">Do Not Contact chhod ke</div>
+  </div>
+  <div class="stat <%= totals.coverage >= 60 ? 'ok' : 'warn' %>">
+    <div class="label"><%= days %> din me touch hue</div>
+    <div class="value"><%= overall.covered.toLocaleString('en-IN') %></div>
+    <div class="hint"><strong><%= totals.coverage %>%</strong> coverage</div>
+  </div>
+  <div class="stat <%= overall.stale ? 'bad' : 'ok' %>">
+    <div class="label">Bhoole gaye</div>
+    <div class="value"><%= overall.stale.toLocaleString('en-IN') %></div>
+    <div class="hint"><%= days %> din se koi touch nahi</div>
+  </div>
+  <div class="stat <%= overall.never ? 'bad' : 'ok' %>">
+    <div class="label">Kabhi call nahi</div>
+    <div class="value"><%= overall.never.toLocaleString('en-IN') %></div>
+    <div class="hint">ek baar bhi nahi</div>
+  </div>
+  <div class="stat warn">
+    <div class="label">Abhi due</div>
+    <div class="value"><%= overall.due.toLocaleString('en-IN') %></div>
+    <div class="hint">cadence date nikal gayi</div>
+  </div>
+  <div class="stat <%= totals.daysToFinish && totals.daysToFinish <= days ? 'ok' : 'bad' %>">
+    <div class="label">Ek round</div>
+    <div class="value" style="font-size:24px"><%= totals.daysToFinish ? totals.daysToFinish + ' din' : '—' %></div>
+    <div class="hint"><%= (totals.need_per_day || 0).toLocaleString('en-IN') %> calls/din chahiye · capacity <%= totals.target %></div>
+  </div>
+</div>
+
+<% if (totals.daysToFinish && totals.daysToFinish > days) { %>
+  <div class="flash flash-error" style="margin-bottom:18px">
+    <span>
+      <strong>Ek round <%= totals.daysToFinish %> din le raha hai — <%= days %> din ke target se zyada.</strong><br>
+      <span class="muted tiny">
+        <%= totals.stale.toLocaleString('en-IN') %> customers bhoole gaye hain, aur capacity
+        <%= totals.target %> calls/din hai. Roz <%= totals.need_per_day.toLocaleString('en-IN') %> chahiye.
+        Options: caller ka target badhayein, ya ek-do caller aur retention par lagayein.
+      </span>
+    </span>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('layers', 15) %> Tier-wise</h3>
+    <span class="muted tiny" style="margin-left:auto">A = VIP · B = normal · C = purana · D = DNC</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Tier</th><th>Cycle</th><th class="right">Customers</th><th class="right">Due</th><th class="right"><%= days %> din se chhoote</th><th class="right">Kabhi call nahi</th></tr></thead>
+      <tbody>
+        <% tierRows.forEach(function (t) { %>
+          <tr>
+            <td>
+              <span class="badge <%= t.key === 'A' ? 'badge-success' : (t.key === 'D' ? 'badge-danger' : 'badge-neutral') %>">
+                <%= t.key %>
+              </span>
+              <strong style="margin-left:8px"><%= t.label %></strong>
+            </td>
+            <td class="muted tiny"><%= t.hint %></td>
+            <td class="right num"><strong><%= (t.total || 0).toLocaleString('en-IN') %></strong></td>
+            <td class="right num">
+              <% if (t.due) { %><span class="badge badge-warn"><%= t.due %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num">
+              <% if (t.stale) { %><span class="badge badge-danger"><%= t.stale %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num muted"><%= t.never || 0 %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('team', 15) %> Caller-wise coverage</h3>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Caller</th><th>Team</th><th class="right">Target</th>
+          <th>Coverage</th>
+          <th class="right">Assigned</th><th class="right">A</th><th class="right">B</th><th class="right">C</th>
+          <th class="right">Bhoole</th><th class="right">Roz chahiye</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!perCaller.length) { %>
+          <tr><td colspan="10"><div class="empty">Koi caller nahi.</div></td></tr>
+        <% } %>
+        <% perCaller.forEach(function (c) { %>
+          <tr>
+            <td class="who"><strong><%= c.name %></strong><div class="muted tiny"><%= c.team === 'acquisition' ? 'acquisition' : 'retention' %></div></td>
+            <td>
+              <span class="badge <%= c.team === 'acquisition' ? 'badge-info' : 'badge-neutral' %>">
+                <%= c.team === 'acquisition' ? 'Acq' : 'Ret' %>
+              </span>
+            </td>
+            <td class="right num"><%= c.daily_target %></td>
+            <td style="min-width:150px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="num" style="font-size:12.5px;min-width:38px"><strong><%= c.coverage %>%</strong></span>
+                <div class="progress-track" style="flex:1;height:7px">
+                  <div class="progress-fill <%= c.coverage >= 60 ? 'done' : '' %>"
+                       style="width:<%= Math.min(100, c.coverage) %>%;
+                              <%= c.coverage < 40 ? 'background:linear-gradient(90deg,#b23b48,#ff6b74)' : '' %>"></div>
+                </div>
+              </div>
+            </td>
+            <td class="right num"><%= c.assigned.toLocaleString('en-IN') %></td>
+            <td class="right num"><%= c.tier_a %></td>
+            <td class="right num muted"><%= c.tier_b %></td>
+            <td class="right num muted"><%= c.tier_c %></td>
+            <td class="right num">
+              <% if (c.stale) { %><span class="badge badge-danger"><%= c.stale %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num"><%= c.need_per_day %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('day', 15) %> Roz kitne touch hue (last <%= days %> din)</h3>
+  </div>
+  <div class="card-body">
+    <%
+      const maxBar = Math.max(1, ...daily.map(function (d) { return d.customers; }));
+    %>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:130px;margin:6px 0 10px">
+      <% daily.forEach(function (d) { %>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">
+          <div class="num tiny" style="margin-bottom:5px;<%= d.customers ? '' : 'opacity:0.4' %>"><%= d.customers %></div>
+          <div style="width:100%;max-width:52px;border-radius:6px 6px 0 0;
+                      height:<%= Math.round((d.customers / maxBar) * 100) %>%;
+                      min-height:3px;
+                      background:linear-gradient(180deg,#f5c542,#b8860b)"></div>
+        </div>
+      <% }); %>
+    </div>
+    <div style="display:flex;gap:8px">
+      <% daily.forEach(function (d) { %>
+        <div class="muted tiny" style="flex:1;text-align:center"><%= d.day.slice(8, 10) %>/<%= d.day.slice(5, 7) %></div>
+      <% }); %>
+    </div>
+    <p class="muted tiny" style="margin:14px 0 0">
+      Ye <strong>alag customers</strong> ka number hai — ek hi customer ko do baar call kiya to ek hi gina.
+      Ek round poora karne ke liye roz <strong><%= (totals.need_per_day || 0).toLocaleString('en-IN') %></strong> naye customers chahiye.
+    </p>
+  </div>
+</div>
+
+<% if (worst.length) { %>
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('alert', 15) %> Sabse zyada chhoote gaye (2+ deposits wale)</h3>
+      <span class="muted tiny" style="margin-left:auto">Top 25</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Customer</th><th>Tier</th><th class="right">Deposits</th><th class="right">Total</th><th class="right">Din se chhoota</th><th>Cadence tha</th><th>Caller</th></tr></thead>
+        <tbody>
+          <% worst.forEach(function (r) { %>
+            <tr>
+              <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
+              <td><span class="badge badge-neutral"><%= r.cadence_tier || '—' %></span></td>
+              <td class="right num"><strong><%= r.deposit_count %></strong></td>
+              <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
+              <td class="right num">
+                <% if (r.days_since_touch >= 9999) { %><span class="badge badge-danger">kabhi nahi</span>
+                <% } else { %><span class="badge badge-danger"><%= r.days_since_touch %> din</span><% } %>
+              </td>
+              <td class="muted tiny nowrap"><%= r.next_touch_on ? helpers.prettyDate(r.next_touch_on) : '—' %></td>
+              <td class="tiny"><%= r.caller_name || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Cadence kaise kaam karta hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Tier A</dt>
+      <dd>VIP, high value (25+ deposit), ya recently inactive — <strong>har 5 din</strong> touch</dd>
+      <dt>Tier B</dt>
+      <dd>Normal aur active customers — <strong>har 12 din</strong>. Yahi base ka sabse bada hissa hai</dd>
+      <dt>Tier C</dt>
+      <dd>60 din se purane dormant — <strong>har 30 din</strong>. Dead numbers yahin nikal kar D me jaate hain</dd>
+      <dt>Tier D</dt>
+      <dd>Wrong Number / Do Not Contact — <strong>koi touch nahi</strong>, queue se hamesha hat</dd>
+      <dt>Remark se reset</dt>
+      <dd>Jab bhi remark save hota hai, agla touch usi din se count hota hai.
+        "Will Deposit" → 2 din · "No Answer" → kal · "Not Interested" → 15 din</dd>
+      <dt>Bhoole gaye</dt>
+      <dd>Jinka <code>next_touch_on</code> nikal gaya — yahi asli red flag hai.
+        Ye number lagatar badh raha ho to capacity kam hai</dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

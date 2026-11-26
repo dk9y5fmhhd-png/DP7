@@ -1,0 +1,183 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Login Approvals</h1>
+    <div class="sub">
+      Jab bhi koi user login karta hai, aapki permission ka intezaar karta hai.
+      Approve karte hi uska login khud khul jata hai. Request <strong><%= ttl %> minute</strong> me expire hoti hai.
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/users"><%- icon('team', 13) %> Users</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat <%= stats.pending ? 'warn' : 'ok' %>">
+    <div class="label">Abhi pending</div>
+    <div class="value" id="pendingCount"><%= stats.pending %></div>
+    <div class="hint"><%= stats.pending ? 'inhe abhi allow karein' : 'koi intezaar nahi kar raha' %></div>
+  </div>
+  <div class="stat ok"><div class="label">Approve kiye</div><div class="value"><%= stats.approved %></div><div class="hint">total</div></div>
+  <div class="stat bad"><div class="label">Reject kiye</div><div class="value"><%= stats.rejected %></div><div class="hint">total</div></div>
+  <div class="stat"><div class="label">Expire hue</div><div class="value"><%= stats.expired %></div><div class="hint">approve na karne se</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('shield', 15) %> Pending requests</h3>
+    <% if (rows.length > 1) { %>
+      <form method="post" action="/approvals/approve-all" style="margin:0 0 0 auto">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-sm btn-primary" type="submit"
+                data-confirm="Sab <%= rows.length %> requests approve kar dein?">
+          <%- icon('check', 13) %> Sab approve karein
+        </button>
+      </form>
+    <% } %>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>2FA</th>
+          <th>IP</th>
+          <th>Kab se</th>
+          <th class="right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="6"><div class="empty">
+            <span class="big"><%- icon('check', 26) %></span>
+            Abhi koi login ka intezaar nahi kar raha.
+            <div class="muted tiny" style="margin-top:8px">Ye page har 3 second me khud update hota hai.</div>
+          </div></td></tr>
+        <% } %>
+        <% rows.forEach(function (r) { %>
+          <tr style="<%= r.age_min >= ttl ? 'background:rgba(255,107,116,0.08)' : '' %>">
+            <td class="who">
+              <strong><%= r.name %></strong>
+              <div class="muted tiny"><%= r.login_id %></div>
+            </td>
+            <td><span class="badge badge-neutral"><%= r.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span></td>
+            <td><% if (r.totp_enabled) { %><span class="badge badge-success">On</span><% } else { %><span class="badge badge-neutral">Off</span><% } %></td>
+            <td class="num tiny"><%= r.ip || '—' %></td>
+            <td class="nowrap">
+              <span class="badge <%= r.age_min >= ttl ? 'badge-danger' : 'badge-warn' %>"><%= r.age_min %> min</span>
+              <div class="muted tiny"><%= helpers.prettyDateTime(r.requested_at) %></div>
+            </td>
+            <td class="right nowrap">
+              <form method="post" action="/approvals/<%= r.id %>/approve" style="display:inline;margin:0">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-primary" type="submit"><%- icon('check', 13) %> Allow</button>
+              </form>
+              <form method="post" action="/approvals/<%= r.id %>/reject" style="display:inline;margin:0">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-danger" type="submit"
+                        data-confirm="<%= r.login_id %> ka login reject karein?"><%- icon('x', 13) %></button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('clock', 15) %> Recent history</h3></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>User</th><th>Status</th><th>IP</th><th>Manga</th><th>Decide</th><th class="right">Wait</th><th class="right">Kisne</th></tr></thead>
+      <tbody>
+        <% if (!history.length) { %>
+          <tr><td colspan="7"><div class="empty">Abhi koi history nahi.</div></td></tr>
+        <% } %>
+        <% history.forEach(function (h) { %>
+          <tr>
+            <td class="who"><strong><%= h.name %></strong><div class="muted tiny"><%= h.login_id %></div></td>
+            <td>
+              <span class="badge <%= h.status === 'approved' ? 'badge-success' : (h.status === 'rejected' ? 'badge-danger' : 'badge-neutral') %>">
+                <%= h.status %>
+              </span>
+            </td>
+            <td class="num tiny"><%= h.ip || '—' %></td>
+            <td class="muted tiny nowrap"><%= helpers.prettyDateTime(h.requested_at) %></td>
+            <td class="muted tiny nowrap"><%= h.decided_at ? helpers.prettyDateTime(h.decided_at) : '—' %></td>
+            <td class="right num tiny"><%= h.wait_sec != null ? Math.max(0, h.wait_sec) + 's' : '—' %></td>
+            <td class="right tiny"><%= h.decided_by_name || 'auto' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('team', 15) %> Bina approval login karne wale</h3>
+    <span class="muted tiny" style="margin-left:auto">Super Admin hamesha bypass karta hai</span>
+  </div>
+  <div class="card-body">
+    <p class="muted tiny" style="margin-top:0">
+      Kisi trusted account ko har baar approve karne se bachana ho to yahan se off kar dein.
+      <strong>Dhyan:</strong> off karne ka matlab wo bina aapki permission ke login kar sakta hai.
+    </p>
+    <% if (!usersOff.length) { %>
+      <div class="empty" style="padding:24px">Sabhi users ke liye approval chalu hai. 👍</div>
+    <% } else { %>
+      <div class="chips">
+        <% usersOff.forEach(function (u) { %>
+          <form method="post" action="/approvals/user/<%= u.id %>/toggle" style="margin:0">
+            <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+            <button class="chip" type="submit" title="Approval dobara chalu karein">
+              <%- icon('x', 12) %> <%= u.name %> (<%= u.login_id %>)
+            </button>
+          </form>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> Kaise kaam karta hai</h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt>Login</dt>
+      <dd>User ID + password daalta hai → aapke paas request aati hai → aap <strong>Allow</strong> dabate hain → uska login khul jata hai</dd>
+      <dt>Session</dt>
+      <dd>Login ke baad <strong>10 ghante</strong> tak chalta hai. Beech me refresh karne se kuch nahi hota</dd>
+      <dt>10 ghante baad</dt>
+      <dd>Session khatam — agla refresh par logout, aur dobara aapki permission chahiye</dd>
+      <dt>Request expire</dt>
+      <dd><%= ttl %> minute me decide na karein to request mar jati hai, user ko dobara login karna padta hai</dd>
+      <dt>Download</dt>
+      <dd>Non-admin koi CSV / export download nahi kar sakta — sab block hai</dd>
+    </dl>
+  </div>
+</div>
+
+<script>
+  // Naye pending requests ke liye page khud refresh
+  (function () {
+    var last = <%= stats.pending %>;
+    setInterval(function () {
+      fetch('/approvals/pending.json', { headers: { 'accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var el = document.getElementById('pendingCount');
+          if (el) el.textContent = d.count;
+          if (d.count !== last) location.reload();
+        })
+        .catch(function () {});
+    }, 3000);
+  })();
+</script>
+
+<%- include('partials/foot') %>
+

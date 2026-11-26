@@ -1,0 +1,195 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= c.username %></h1>
+    <div class="sub">
+      <span class="badge <%= c.status === 'active' ? 'badge-success' : (c.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= labels.STATUS_LABEL[c.status] %></span>
+      <% if (c.vip_category !== 'normal') { %>
+        <span class="badge badge-accent"><%= labels.VIP_LABEL[c.vip_category] %></span>
+      <% } %>
+      <span class="badge badge-neutral"><%= c.priority %></span>
+      <% if (c.caller_name) { %> · Caller: <strong><%= c.caller_name %></strong><% } else { %> · <span class="muted">bina caller</span><% } %>
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/customers"><%- icon('left', 13) %> Customers</a>
+    <form method="post" action="/calls/call" style="margin:0">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="hidden" name="username" value="<%= c.username %>">
+      <button class="chip" type="submit" <%= c.do_not_contact ? 'disabled' : '' %>><%- icon('phone', 13) %> Call</button>
+    </form>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Deposits</div><div class="value"><%= c.deposit_count %></div><div class="hint">successful only</div></div>
+  <div class="stat ok"><div class="label">Lifetime total</div><div class="value"><%= helpers.money(c.deposit_amount) %></div><div class="hint">jama kiya</div></div>
+  <div class="stat"><div class="label">First deposit</div><div class="value" style="font-size:17px"><%= c.first_deposit || '—' %></div><div class="hint">pehli baar</div></div>
+  <div class="stat <%= c.status === 'inactive' ? 'bad' : '' %>">
+    <div class="label">Last deposit</div>
+    <div class="value" style="font-size:17px"><%= c.last_deposit || '—' %></div>
+    <div class="hint"><%= c.days_inactive < 9999 ? c.days_inactive + ' din pehle' : 'kabhi nahi' %></div>
+  </div>
+  <div class="stat"><div class="label">Mobile</div><div class="value" style="font-size:17px"><%= mobileShown %></div><div class="hint"><%= canSeeFull ? 'full number' : 'masked' %></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('money', 15) %> Deposit history</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= deposits.length %> rows</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th class="right">Amount</th><th>Status</th><th>Txn</th></tr></thead>
+        <tbody>
+          <% if (!deposits.length) { %><tr><td colspan="4"><div class="empty">Koi deposit nahi.</div></td></tr><% } %>
+          <% deposits.forEach(function (d) { %>
+            <tr>
+              <td class="nowrap"><strong><%= d.d %></strong></td>
+              <td class="money right"><%= helpers.money(d.amount) %></td>
+              <td>
+                <span class="badge <%= d.status === 'successful' ? 'badge-success' : (d.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= d.status %></span>
+              </td>
+              <td class="muted tiny"><%= d.txn_id || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('phone', 15) %> Remarks</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= remarks.length %></span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Remark</th><th>Note</th><th>By</th></tr></thead>
+        <tbody>
+          <% if (!remarks.length) { %><tr><td colspan="4"><div class="empty">Koi remark nahi.</div></td></tr><% } %>
+          <% remarks.forEach(function (f) { %>
+            <tr>
+              <td class="nowrap muted tiny"><%= f.action_date %></td>
+              <td><span class="badge badge-accent"><%= f.action_type %></span>
+                <% if (f.next_action) { %><div class="muted tiny"><%= f.next_action %></div><% } %>
+              </td>
+              <td class="tiny"><%= f.response || '—' %></td>
+              <td class="muted tiny"><%= f.by_name || '—' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('clock', 15) %> Call log</h3></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Kab</th><th>Caller</th><th>Provider</th><th>Status</th><th class="right">Duration</th><th>Note</th></tr></thead>
+      <tbody>
+        <% if (!calls.length) { %><tr><td colspan="6"><div class="empty">Koi call nahi.</div></td></tr><% } %>
+        <% calls.forEach(function (k) { %>
+          <tr>
+            <td class="nowrap muted tiny"><%= helpers.prettyDateTime(k.called_at) %></td>
+            <td><%= k.caller_name || '—' %></td>
+            <td><span class="badge badge-neutral"><%= k.provider %></span></td>
+            <td class="tiny"><%= k.status %></td>
+            <td class="right num"><%= k.duration_sec || 0 %>s</td>
+            <td class="muted tiny"><%= k.note || '—' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('phone', 15) %> Remark daalein</h3></div>
+    <form method="post" action="/calling/remark">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="hidden" name="username" value="<%= c.username %>">
+      <div class="card-body">
+        <div class="form-group">
+          <label>Remark</label>
+          <select name="action_type" required>
+            <option value="">— chunein —</option>
+            <% REMARKS.forEach(function (r) { %>
+              <option value="<%= r.key %>"><%= r.key %> → <%= r.next %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group"><label>Date</label><input type="date" name="action_date" value="<%= today %>"></div>
+        <div class="form-group"><label>Note</label><textarea name="response" rows="3" style="min-height:80px" placeholder="call par kya baat hui…"></textarea></div>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> Save remark</button>
+      </div>
+    </form>
+  </div>
+
+  <% if (isAdmin) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('team', 15) %> Caller assign</h3></div>
+    <form method="post" action="/customers/assign">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="hidden" name="username" value="<%= c.username %>">
+      <div class="card-body">
+        <div class="form-group">
+          <label>Caller</label>
+          <select name="caller_id">
+            <option value="">— koi nahi —</option>
+            <% callers.forEach(function (u) { %>
+              <option value="<%= u.id %>" <%= c.assigned_to === u.id ? 'selected' : '' %>><%= u.name %></option>
+            <% }); %>
+          </select>
+          <span class="muted tiny">Ek customer ek hi caller ke paas rehta hai.</span>
+        </div>
+        <div class="form-group">
+          <label>Do Not Contact</label>
+          <span class="muted tiny" style="display:block;margin-bottom:6px">
+            <%= c.do_not_contact ? 'Ye customer abhi suppressed hai — koi call list me nahi aayega.' : 'Mark karne par ye customer kisi calling list me nahi aayega.' %>
+          </span>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
+        <button class="btn btn-sm <%= c.do_not_contact ? 'btn-success' : 'btn-danger' %>" type="submit"
+                formaction="/customers/<%= c.id %>/flags" formmethod="post"
+                name="do_not_contact" value="<%= c.do_not_contact ? '0' : '1' %>">
+          <%= c.do_not_contact ? 'Wapas calling list me' : 'Do Not Contact' %>
+        </button>
+        <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> Assign</button>
+      </div>
+    </form>
+  </div>
+  <% } %>
+</div>
+
+<% if (isAdmin) { %>
+<div class="card" style="border-color:rgba(255,90,118,0.35)">
+  <div class="card-header" style="background:rgba(255,90,118,0.07)">
+    <h3><%- icon('trash', 15) %> Ye customer delete karein</h3>
+  </div>
+  <form method="post" action="/customers/<%= c.id %>/delete">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <input type="hidden" name="back" value="detail">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <p class="muted tiny" style="margin:0;flex:1 1 260px">
+        <strong><%= c.username %></strong> ka master record, uske saare remarks aur call log delete ho jayenge.
+        Deposits rows alag rehti hain — chahiye to pehle <a href="/upload">Daily Upload</a> se wo bhi hata lein.
+      </p>
+      <button class="btn btn-danger" type="submit"
+              data-confirm="<%= c.username %> permanently delete karein?">
+        <%- icon('trash', 15) %> Customer delete
+      </button>
+    </div>
+  </form>
+</div>
+<% } %>
+
+<%- include('partials/foot') %>
+
+

@@ -1,0 +1,143 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Client Reports</h1>
+    <div class="sub">
+      Jin clients ne <%= helpers.prettyDateLong(filters.date) %> ko deposit nahi kiya (us se pehle active the) —
+      yehi aaj ki follow-up list hai.
+    </div>
+  </div>
+  <div class="chips">
+    <% if (user.role === 'super_admin') { %>
+    <a class="chip" href="/reports/export?type=client&date=<%= filters.date %>&quiet=<%= filters.quiet %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
+      <%- icon('download', 13) %> CSV
+    </a>
+    <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" action="/reports" class="filter-bar">
+    <div>
+      <label>Date</label>
+      <input type="date" name="date" value="<%= filters.date %>" max="<%= helpers.today() %>">
+    </div>
+    <div>
+      <label>Level</label>
+      <select name="level" data-autosubmit>
+        <option value="">All levels</option>
+        <% levels.forEach(function (l) { %>
+          <option value="<%= l.id %>" <%= String(filters.level) === String(l.id) ? 'selected' : '' %>>
+            <%= l.name %> (<%= helpers.money(l.min) %><%= l.max === null ? '+' : ' – ' + helpers.money(l.max) %>)
+          </option>
+        <% }); %>
+      </select>
+    </div>
+    <div>
+      <label>Duplicates</label>
+      <label class="check-pill" style="height:36px">
+        <input type="checkbox" name="dups" value="1" <%= filters.dups ? 'checked' : '' %>> Only duplicate numbers
+      </label>
+    </div>
+    <input type="hidden" name="quiet" value="<%= filters.quiet %>">
+    <div>
+      <button type="submit" class="btn btn-primary"><%- icon('search', 15) %> Search</button>
+    </div>
+    <div>
+      <a href="/reports" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a>
+    </div>
+  </form>
+
+  <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border)">
+    <div class="chips">
+      <% [['today', 'Naye quiet (kal tak active)'], ['d3', '3 din me'], ['d7', '7 din me'], ['all', 'Poora backlog']].forEach(function (opt) { %>
+        <a class="chip <%= filters.quiet === opt[0] ? 'on' : '' %>"
+           href="/reports?date=<%= filters.date %>&quiet=<%= opt[0] %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
+          <%= opt[1] %>
+        </a>
+      <% }); %>
+      <span class="muted tiny" style="align-self:center;margin-left:6px">
+        <strong><%= data.total.toLocaleString('en-IN') %></strong> clients
+        <% if (data.dupes && data.dupes.size) { %> · <%= data.dupes.size %> duplicate numbers<% } %>
+      </span>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Mobile Number</th>
+          <th>Level</th>
+          <th>Inactive On</th>
+          <th>Last Active</th>
+          <th>Status</th>
+          <th>Remark</th>
+          <th>Follow-up</th>
+          <th class="right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!data.rows.length) { %>
+          <tr><td colspan="9">
+            <div class="empty">
+              <span class="big"><%- icon('check', 30) %></span>
+              Is filter par koi client nahi mila. Date ya chip badal ke dekhiye.
+            </div>
+          </td></tr>
+        <% } %>
+        <% data.rows.forEach(function (r) {
+             const daysInactive = Math.max(0, Math.round((new Date(filters.date) - new Date(r.last_deposit)) / 86400000)); %>
+          <tr>
+            <td class="who"><strong><%= r.username %></strong>
+              <div class="muted tiny"><%= helpers.money(r.total_deposited) %> · <%= r.deposit_count %> deposits</div>
+            </td>
+            <td class="num nowrap">
+              <%= mask(r.mobile) %>
+              <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="Ye number <%= r.dupeCount %> clients par hai">×<%= r.dupeCount %></span><% } %>
+            </td>
+            <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>
+            <td class="nowrap muted"><%= filters.date %></td>
+            <td class="nowrap"><%= r.last_deposit %></td>
+            <td>
+              <span class="badge badge-danger">Inactive</span>
+              <span class="muted tiny" style="display:block;margin-top:3px"><%= daysInactive %> din se</span>
+            </td>
+            <td><div class="note <%= r.followup && r.followup.response ? '' : 'muted' %>" title="<%= r.followup && r.followup.response ? r.followup.response : '' %>"><%= r.followup && r.followup.response ? r.followup.response : '—' %></div></td>
+            <td>
+              <% if (r.followup) { %>
+                <span class="badge badge-neutral"><%= r.followup.action_type %></span>
+                <span class="muted tiny" style="display:block;margin-top:3px"><%= r.followup.action_date %></span>
+              <% } else { %><span class="muted">—</span><% } %>
+            </td>
+            <td class="right">
+              <button type="button" class="btn btn-primary btn-sm" onclick="openFollowup('<%= r.username.replace(/'/g, "\\'") %>')">
+                <%- icon('phone', 13) %> Follow-up
+              </button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer pagination">
+    <span class="page-info">
+      Page <%= data.page %> of <%= data.pages %> · <%= data.total.toLocaleString('en-IN') %> rows
+    </span>
+    <% if (data.page > 1) { %>
+      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page - 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>"><%- icon('left', 14) %> Prev</a>
+    <% } %>
+    <% if (data.page < data.pages) { %>
+      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page + 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">Next <%- icon('right', 14) %></a>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+
+
+

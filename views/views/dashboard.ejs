@@ -1,0 +1,262 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>Dashboard</h1>
+    <div class="sub">
+      <%= helpers.prettyDateLong(data.today) %> ·
+      active window <%= data.windowDays %> din
+    </div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/add-data"><%- icon('plus', 13) %> Add data</a>
+    <a class="chip" href="/reports"><%- icon('list', 13) %> Client reports</a>
+    <a class="chip" href="/new-clients"><%- icon('day', 13) %> New clients</a>
+    <a class="chip" href="/reports/weekly"><%- icon('week', 13) %> This week</a>
+  </div>
+</div>
+
+
+<% if (data.crm && data.crm.total) { %>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('alert', 15) %> Aaj ki calling queue</h3>
+        <a href="/calling" class="tiny" style="margin-left:auto">Calling list →</a>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat bad">
+            <div class="label">P1</div><div class="value"><%= data.crm.p1 %></div>
+            <div class="hint">VIP / recently inactive</div>
+          </div>
+          <div class="stat warn">
+            <div class="label">P2</div><div class="value"><%= data.crm.p2 %></div>
+            <div class="hint">normal inactive + new</div>
+          </div>
+          <div class="stat">
+            <div class="label">P3</div><div class="value"><%= data.crm.p3 %></div>
+            <div class="hint">callback pending</div>
+          </div>
+          <div class="stat ok">
+            <div class="label">Aaj call</div><div class="value"><%= data.crm.callsToday %></div>
+            <div class="hint"><%= data.crm.remarksToday %> remark<%= data.crm.remarksToday === 1 ? '' : 's' %></div>
+          </div>
+        </div>
+        <div class="chips" style="margin-top:14px">
+          <a class="chip <%= data.crm.overdue ? 'on' : '' %>" href="/calling/due">
+            Overdue <strong><%= data.crm.overdue %></strong>
+          </a>
+          <span class="chip">Aaj due <strong><%= data.crm.dueNow %></strong></span>
+          <span class="chip">Total pending <strong><%= data.crm.pendingNow %></strong></span>
+          <span class="chip">Aage rakhe <strong><%= data.crm.snoozed %></strong></span>
+        </div>
+        <p class="muted tiny" style="margin:12px 0 0">
+          <strong><%= data.crm.free %></strong> customers bina caller ke hain — Customers page se assign karein.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('award', 15) %> VIP customers (count se)</h3>
+        <a href="/customers?vip=vip" class="tiny" style="margin-left:auto">Customers →</a>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="margin-bottom:0">
+          <div class="stat ok"><div class="label">VIP</div><div class="value"><%= data.crm.vip %></div><div class="hint">25+ deposits</div></div>
+          <div class="stat warn"><div class="label">Premium VIP</div><div class="value"><%= data.crm.premium %></div><div class="hint">51+ deposits</div></div>
+          <div class="stat"><div class="label">High Value</div><div class="value"><%= data.crm.high %></div><div class="hint">101+ deposits</div></div>
+        </div>
+        <div class="chips" style="margin-top:14px">
+          <span class="chip">New <%= data.crm.new %></span>
+          <span class="chip">Active <%= data.crm.active %></span>
+          <span class="chip">Inactive <%= data.crm.inactive %></span>
+          <span class="chip">Reactivated <%= data.crm.reactivated %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label">Total clients</div>
+    <div class="value"><%= data.totals.total.toLocaleString('en-IN') %></div>
+    <div class="hint">lifetime deposit history</div>
+  </div>
+  <div class="stat ok">
+    <div class="label">Active</div>
+    <div class="value"><%= data.totals.active.toLocaleString('en-IN') %></div>
+    <div class="hint">deposit since <%= helpers.prettyDate(data.cutoff) %></div>
+  </div>
+  <div class="stat bad">
+    <div class="label">Inactive</div>
+    <div class="value"><%= data.totals.inactive.toLocaleString('en-IN') %></div>
+    <div class="hint">follow-up needed</div>
+  </div>
+  <div class="stat warn">
+    <div class="label">Activity</div>
+    <div class="value"><%= data.totals.activityPct %>%</div>
+    <div class="hint">active ÷ total</div>
+  </div>
+  <div class="stat">
+    <div class="label">New clients</div>
+    <div class="value"><%= data.totals.newClients.toLocaleString('en-IN') %></div>
+    <div class="hint">first deposit in window</div>
+  </div>
+  <div class="stat bad">
+    <div class="label">Duplicate mobiles</div>
+    <div class="value"><%= data.totals.duplicates.toLocaleString('en-IN') %></div>
+    <div class="hint">same number, 2+ usernames</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('clock', 15) %> Retention by habit group</h3>
+    <span class="muted tiny" style="margin-left:auto"><%= data.weekPeriod.label %></span>
+  </div>
+  <div class="card-body">
+    <p class="muted tiny" style="margin:0 0 14px">
+      Kitne clients is hafte deposit nahi kiya, unke usual habit ke hisaab se.
+    </p>
+    <%
+      const cohortRows = [
+        { key: 'daily',    label: 'Daily',     hint: 'almost every day' },
+        { key: 'biweekly', label: 'By Weekly', hint: 'a few times a week' },
+        { key: 'weekly',   label: 'Weekly',    hint: 'about once a week' },
+        { key: 'monthly',  label: 'Monthly',   hint: 'a few times a month' }
+      ];
+    %>
+    <div class="stat-grid" style="margin-bottom:0">
+      <% cohortRows.forEach(function (c) {
+           const s = data.cohorts[c.key] || { quiet: 0, total: 0, deposited: 0 };
+           const pct = s.total ? Math.round((s.quiet / s.total) * 100) : 0; %>
+        <div class="stat <%= s.quiet ? 'bad' : 'ok' %>">
+          <div class="label"><%= c.label %></div>
+          <div class="value"><%= s.quiet.toLocaleString('en-IN') %></div>
+          <div class="hint">gone quiet of <%= s.total.toLocaleString('en-IN') %> · <%= pct %>%</div>
+          <div class="bar-track" style="margin-top:9px">
+            <div class="bar-fill <%= pct > 60 ? 'bad' : (pct > 30 ? 'warn' : '') %>" style="width:<%= pct %>%"></div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('list', 15) %> Activity trend</h3>
+      <span class="muted tiny" style="margin-left:auto">last 14 days</span>
+    </div>
+    <div class="card-body">
+      <% if (!data.trend.length) { %>
+        <div class="empty"><span class="big">—</span>Koi deposit data nahi hai.</div>
+      <% } else {
+           const maxClients = Math.max.apply(null, data.trend.map(function (t) { return t.clients; }));
+      %>
+        <div class="trend">
+          <% data.trend.forEach(function (t) {
+               const h = maxClients ? Math.max(3, Math.round((t.clients / maxClients) * 100)) : 3; %>
+            <div class="bar-wrap" title="<%= t.d %> · <%= t.clients %> clients · <%= helpers.moneyExact(t.amount) %>">
+              <div class="bar" style="height:<%= h %>%"></div>
+            </div>
+          <% }); %>
+        </div>
+        <div class="trend-labels">
+          <% data.trend.forEach(function (t) { %>
+            <span title="<%= t.d %>"><%= t.d.slice(8) %></span>
+          <% }); %>
+        </div>
+        <div class="muted tiny" style="margin-top:10px">
+          Peak: <%= maxClients %> clients/day · bar par hover karke amount dekhein
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('phone', 15) %> Follow-up types</h3>
+      <span class="muted tiny" style="margin-left:auto">last 30 days</span>
+    </div>
+    <div class="card-body">
+      <% if (!data.followupTypes.length) { %>
+        <div class="empty"><span class="big">—</span>Abhi koi follow-up log nahi hua.</div>
+      <% } else {
+           const maxF = Math.max.apply(null, data.followupTypes.map(function (f) { return f.c; }));
+      %>
+        <div class="bar-list">
+          <% data.followupTypes.forEach(function (f) { %>
+            <div class="bar-row">
+              <span><%= f.action_type %></span>
+              <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((f.c / maxF) * 100) %>%"></div></div>
+              <span class="num right"><%= f.c %></span>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('money', 15) %> Top clients</h3>
+      <a href="/reports/level" class="tiny" style="margin-left:auto">Full level report →</a>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Username</th><th>Level</th><th class="right">Deposited</th><th class="right">Last</th></tr></thead>
+        <tbody>
+          <% data.topClients.forEach(function (c) { %>
+            <tr>
+              <td class="who"><strong><%= c.username %></strong><div class="muted tiny"><%= mask(c.mobile) %></div></td>
+              <td><span class="badge <%= c.levelClass %>"><%= c.levelName || 'No level' %></span></td>
+              <td class="money right"><%= helpers.money(c.total_deposited) %></td>
+              <td class="right muted tiny"><%= helpers.relativeDays(c.last_deposit, data.today) %></td>
+            </tr>
+          <% }); %>
+          <% if (!data.topClients.length) { %>
+            <tr><td colspan="4"><div class="empty">Koi client nahi.</div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon('phone', 15) %> Recent follow-ups</h3>
+      <a href="/followups" class="tiny" style="margin-left:auto">All →</a>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Username</th><th>Action</th><th>Date</th><th>By</th></tr></thead>
+        <tbody>
+          <% data.recentFollowups.forEach(function (f) { %>
+            <tr>
+              <td class="who"><strong><%= f.username %></strong>
+                <% if (f.response) { %><div class="muted tiny"><%= f.response.slice(0, 44) %></div><% } %>
+              </td>
+              <td><span class="badge badge-neutral"><%= f.action_type %></span></td>
+              <td class="muted tiny nowrap"><%= f.action_date %></td>
+              <td class="muted tiny"><%= f.by_name || '—' %></td>
+            </tr>
+          <% }); %>
+          <% if (!data.recentFollowups.length) { %>
+            <tr><td colspan="4"><div class="empty">Abhi koi follow-up nahi.</div></td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+
+

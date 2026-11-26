@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Approval ka intezaar · Dailyplay7 CRM</title>
+  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
+  <link rel="icon" href="/favicon.png">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="wordmark wordmark--lg">Dailyplay<span class="wordmark-7">7</span></span>
+      <hr class="brand-rule">
+      <div class="auth-title">Retention CRM</div>
+    </div>
+
+    <% if (rejected) { %>
+      <div class="flash flash-error">
+        <span><strong>Admin ne aapka login reject kar diya.</strong><br>
+        Agar ye galti se hua hai to admin se kehiye.</span>
+      </div>
+      <form method="post" action="/login/cancel">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-outline" style="width:100%">Wapas login par jaayein</button>
+      </form>
+
+    <% } else if (stale) { %>
+      <div class="flash flash-error">
+        <span><strong>Request expire ho gayi.</strong><br>
+        Admin ne <%= ttl %> minute ke andar approve nahi kiya. Dobara login karein.</span>
+      </div>
+      <form method="post" action="/login/cancel">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-primary" style="width:100%">Dobara login karein</button>
+      </form>
+
+    <% } else { %>
+      <div class="flash flash-info" style="align-items:flex-start">
+        <span>
+          <strong>Admin ki permission ka intezaar hai.</strong><br>
+          <span class="muted tiny">Admin approve karte hi aapka login khud khul jayega. Ye page band na karein.</span>
+        </span>
+      </div>
+
+      <dl class="kv" style="margin:14px 0 18px">
+        <dt>Login ID</dt><dd><%= request.login_id %></dd>
+        <dt>Naam</dt><dd><%= request.user_name || request.name %></dd>
+        <dt>IP</dt><dd><%= request.ip || '—' %></dd>
+        <dt>Bheja gaya</dt><dd><%= helpers.prettyDateTime(request.requested_at) %></dd>
+        <dt>Time bacha</dt><dd><strong id="ttl"><%= Math.max(0, ttl - ageMin) %> minute</strong></dd>
+      </dl>
+
+      <div class="flash flash-info" id="waitingBox" style="margin-bottom:14px">
+        <span class="muted tiny" id="waitingText">Admin ko approval request chali gayi hai…</span>
+      </div>
+
+      <form method="post" action="/login/cancel">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button class="btn btn-outline" style="width:100%">Cancel karein</button>
+      </form>
+    <% } %>
+
+    <div class="auth-foot">Dailyplay7 · v<%= appVersion %> · internal use only</div>
+  </div>
+</div>
+
+<% if (!rejected && !stale) { %>
+<script>
+  (function () {
+    var started = Date.now();
+    var form = null;
+
+    // 2 second par status poochho
+    var poll = setInterval(function () {
+      fetch('/login/status', { headers: { 'accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.status === 'approved') {
+            clearInterval(poll);
+            document.getElementById('waitingText').textContent = 'Approve ho gaya — andar le ja rahe hain…';
+            // POST se session banta hai
+            form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/login/complete';
+            var t = document.createElement('input');
+            t.type = 'hidden';
+            t.name = 'csrf_token';
+            t.value = '<%= csrfToken %>';
+            form.appendChild(t);
+            document.body.appendChild(form);
+            form.submit();
+          } else if (d.status === 'rejected' || d.status === 'expired' || d.status === 'none') {
+            clearInterval(poll);
+            location.reload();
+          }
+        })
+        .catch(function () { /* network hiccup — agli baar try */ });
+    }, 2000);
+
+    // countdown
+    var ttl = document.getElementById('ttl');
+    if (ttl) {
+      var left = <%= Math.max(0, ttl - ageMin) * 60 %>;
+      setInterval(function () {
+        left = Math.max(0, left - 1);
+        var m = Math.floor(left / 60), s = left % 60;
+        ttl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      }, 1000);
+    }
+  })();
+</script>
+<% } %>
+</body>
+</html>
+
