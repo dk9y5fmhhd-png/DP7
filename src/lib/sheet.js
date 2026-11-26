@@ -267,5 +267,5 @@ async function buildTemplate(kind) {
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { parseSheet, buildTemplate, normaliseDate, normaliseNumber, str };
+module.exports = { parseSheet, buildTemplate, readMatrix, normaliseDate, normaliseNumber, str };
 

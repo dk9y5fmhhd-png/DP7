@@ -760,3 +760,76 @@ Aur agar caller dropdown khali tha, to **saare customers se caller hat jata tha*
 6. **Filter badge** — bar par dikhta hai `filter laga hua` ya
    `koi filter nahi — sab par lagega`
 7. **Unassign data nahi todta** — remarks, follow-ups, deposits, call history sab safe
+
+---
+
+## 26. v4.4 — Excel se manual assignment + naye client ka queue
+
+4,825 customers ko haath se assign karna namumkin tha. Aur roz naye client
+aate hain — unhe bhi kisi ko dena padta hai. Ab dono ek page par.
+
+### Naya page: Assignment (`/assign`, sirf Super Admin)
+
+4 counter:
+
+| Counter | Matlab |
+|---|---|
+| **Naye — assign nahi hue** | pichhle N din me aaye, abhi kisi ke paas nahi |
+| **Purane — bina caller** | N din se purane, phir bhi unassigned |
+| **Total bina caller** | sab mila ke (DNC alag) |
+| **Callers** | kitne retention / acquisition |
+
+Timeout chips: **Aaj · 3 din · 7 din · 15 din · 30 din · Sab**
+
+### 1. Queue se assign
+
+Naye client ki list — username, mobile, pehla deposit, deposits, total, status, VIP.
+Do tareeke:
+
+- **Tick karke** caller chunein → "Chune hue assign"
+- **Poora queue ek caller ko** → "Sab 120 is caller ko"
+
+Tick wala form 2,000+ checkbox bhi le sakta hai (body parser ka `parameterLimit`
+20,000 kar diya — pehle 1,000 par "too many parameters" error deta tha).
+
+### 2. Excel se assign
+
+**Template** ( `/assign/template` ) — do column: `username`, `caller`.
+Doosri sheet me saare callers ke login_id.
+
+**Export** (`/assign/export`) — abhi ka poora assignment, `username` + `caller`
+column ke saath. Ise Excel me khol ke `caller` column badal dein aur wapas upload
+kar dein — bas.
+
+**Upload** — .xlsx ya .csv, 20 MB tak, 5,000 rows tak.
+
+**Preview** — kuch save nahi hota jab tak Apply na dabayein:
+
+```
+File me rows 14 · Lagegi 12 · Badlegi 12
+Username nahi mila 1 · Caller galat 0
+```
+
+Saath me per-caller table (arun 3, kamal 3, Diksha 3, nidhi 3) aur
+skip hui rows ki list line number ke saath.
+
+**Apply** — ek transaction me, phir `assign_imports` me record.
+
+### caller me kya likhein — login_id, naam nahi
+
+`arun` · `kamal` · `dikshadp7` · `nidhi` · ...
+
+Diksha ka login_id **`dikshadp7`** hai — `Diksha` likhne par "caller galat" ho jayega.
+(Backend naam se bhi match karta hai, par login_id hi pakka hai.)
+
+### Header ke bina bhi chalta hai
+
+`username,caller` header ho ya na ho — dono chalega. Header ke mumkin naam:
+`username / user / customer / client` aur `caller / assign to / agent / login id`.
+
+### Suraksha
+
+- `/assign` non-admin ke liye **403** (template, export bhi)
+- Preview session me 30 minute tak valid
+- DNC wale queue me kabhi nahi aate
+- Purani assignment file **badal** deti hai — preview me "Badlegi" column wahi ginti hai

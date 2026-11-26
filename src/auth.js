@@ -21,6 +21,7 @@ const PAGES = [
   { key: 'monthly_report', label: 'Monthly Report', url: '/reports/monthly', icon: 'month', group: 'reports' },
   { key: 'followups', label: 'Follow-ups', url: '/followups', icon: 'phone', group: 'reports' },
   { key: 'cadence', label: 'Cadence', url: '/cadence', icon: 'refresh', group: 'admin', superOnly: true },
+  { key: 'assign', label: 'Assignment', url: '/assign', icon: 'check', group: 'admin', superOnly: true },
   { key: 'callers', label: 'Caller Load', url: '/callers', icon: 'layers', group: 'admin', superOnly: true },
   { key: 'approvals', label: 'Login Approvals', url: '/approvals', icon: 'shield', group: 'admin', superOnly: true },
   { key: 'backup', label: 'Backup & Export', url: '/backup', icon: 'download', group: 'admin', superOnly: true },

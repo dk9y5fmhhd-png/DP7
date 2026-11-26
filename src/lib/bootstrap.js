@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS = {
 
 async function run() {
   const root = path.join(__dirname, '..', '..', 'db');
-  for (const f of ['schema.sql', 'schema-v3.sql', 'schema-v3.2.sql', 'schema-v3.4.sql', 'schema-v3.5.sql', 'schema-v3.8.sql', 'schema-v3.8.1.sql', 'schema-v3.9.sql', 'schema-v4.1.sql', 'schema-v4.2.sql', 'schema-v4.3.sql']) {
+  for (const f of ['schema.sql', 'schema-v3.sql', 'schema-v3.2.sql', 'schema-v3.4.sql', 'schema-v3.5.sql', 'schema-v3.8.sql', 'schema-v3.8.1.sql', 'schema-v3.9.sql', 'schema-v4.1.sql', 'schema-v4.2.sql', 'schema-v4.3.sql', 'schema-v4.4.sql']) {
     const file = path.join(root, f);
     if (!fs.existsSync(file)) continue;
     await db.query(fs.readFileSync(file, 'utf8'));

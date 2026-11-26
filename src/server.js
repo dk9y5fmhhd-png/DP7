@@ -22,8 +22,10 @@ app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 
-app.use(express.urlencoded({ extended: false, limit: '4mb' }));
-app.use(express.json({ limit: '4mb' }));
+// parameterLimit: bulk assign me 2,000+ checkbox ek saath aate hain — default
+// 1,000 par "too many parameters" error deta tha.
+app.use(express.urlencoded({ extended: false, limit: '8mb', parameterLimit: 20000 }));
+app.use(express.json({ limit: '8mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h' }));
 
 const sessionSecret =
@@ -81,6 +83,7 @@ app.use(auth.checkCsrf);
 // Routes
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
+app.use('/assign', require('./routes/assign'));
 app.use('/cadence', require('./routes/cadence'));
 app.use('/callers', require('./routes/callers'));
 app.use('/approvals', require('./routes/approvals'));
@@ -119,6 +122,10 @@ app.use((err, req, res, _next) => {
   const isMissingTable = /relation .* does not exist|does not exist/i.test(err.message || '');
   res.status(500).render('error', {
     title: 'Error',
+    page: null,
+    appVersion: pkg.version,
+    user: (req.session && req.session.user) || null,
+    csrfToken: (req.session && req.session.csrf) || '',
     heading: isMissingTable ? 'Database tayyar nahi hai' : 'Kuch galat ho gaya',
     message: isMissingTable
       ? 'Tables nahi mile. Deploy ke baad ek dafa `npm run migrate` chalayein (start command me pre-deploy).'
