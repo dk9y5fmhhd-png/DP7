@@ -105,7 +105,7 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
       type: 'success',
       message: followUpOn
         ? `${username} ka remark save — agla follow-up ${D.prettyDate(followUpOn)}.`
-        : `${username} ka remark save (koi follow-up nahi).`,
+        : `Remark saved for ${username} (no follow-up).`,
     };
     res.redirect(req.get('referer') || '/followups');
   } catch (err) {

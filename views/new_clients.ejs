@@ -4,13 +4,13 @@
   <div class="titles">
     <h1>New Clients</h1>
     <div class="sub">
-      <strong><%= ymLabel %></strong> — har din kitne naye clients aaye. Mahina badalte hi ye window
-      naya mahina dikhati hai, pichhla mahina apne aap hat jata hai.
+      <strong><%= ymLabel %></strong> — how many new clients arrived each day. When the month changes this window
+      shows the new month and last month drops off automatically.
     </div>
   </div>
   <div class="chips">
-    <a class="chip <%= isCurrent ? 'on' : '' %>" href="/new-clients?m=<%= today.slice(0, 7) %>"><%- icon('day', 13) %> Is mahine</a>
-    <a class="chip" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %> Pichhla mahina</a>
+    <a class="chip <%= isCurrent ? 'on' : '' %>" href="/new-clients?m=<%= today.slice(0, 7) %>"><%- icon('day', 13) %> This month</a>
+    <a class="chip" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %> Last month</a>
     <% if (isAdmin) { %>
       <a class="chip" href="/new-clients/export?m=<%= ym %>"><%- icon('download', 13) %> CSV</a>
     <% } %>
@@ -19,47 +19,47 @@
 
 <div class="stat-grid">
   <div class="stat ok">
-    <div class="label">Is mahine naye clients</div>
+    <div class="label">New clients this month</div>
     <div class="value"><%= totals.month.toLocaleString('en-IN') %></div>
     <div class="hint">
-      <%= totals.prev %> pichhle mahine ·
+      <%= totals.prev %> last mahine ·
       <span style="color:<%= totals.delta >= 0 ? 'var(--success)' : 'var(--danger)' %>">
         <%= totals.delta >= 0 ? '+' : '' %><%= totals.delta %>
       </span>
     </div>
   </div>
   <div class="stat">
-    <div class="label">Aaj</div>
+    <div class="label">Today</div>
     <div class="value"><%= totals.today %></div>
     <div class="hint"><%= helpers.prettyDate(today) %></div>
   </div>
   <div class="stat">
-    <div class="label">Kal</div>
+    <div class="label">Tomorrow</div>
     <div class="value"><%= totals.yesterday %></div>
     <div class="hint"><%= totals.yesterdayLabel %></div>
   </div>
   <div class="stat">
-    <div class="label">Roz ka average</div>
+    <div class="label">Daily average</div>
     <div class="value"><%= totals.avg %></div>
-    <div class="hint">per din</div>
+    <div class="hint">per day</div>
   </div>
   <div class="stat">
-    <div class="label">Sabse achha din</div>
+    <div class="label">Best day</div>
     <div class="value" style="font-size:22px">
       <% if (totals.best) { %><%= totals.best.day %><span style="font-size:13px;color:var(--fg-muted)"> <%= helpers.prettyDate(totals.best.date).split(' ')[1] %></span><% } else { %>—<% } %>
     </div>
-    <div class="hint"><%= totals.best ? totals.best.count + ' clients' : 'koi data nahi' %></div>
+    <div class="hint"><%= totals.best ? totals.best.count + ' clients' : 'no data' %></div>
   </div>
   <div class="stat <%= totals.zeroDays ? 'warn' : 'ok' %>">
-    <div class="label">Zero din</div>
+    <div class="label">Zero days</div>
     <div class="value"><%= totals.zeroDays %></div>
-    <div class="hint">jin din koi naya client nahi</div>
+    <div class="hint">days with no new client</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('day', 15) %> Din-wise count — <%= ymLabel %></h3>
+    <h3><%- icon('day', 15) %>Day-wise count —<%= ymLabel %></h3>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <a class="btn btn-sm" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %></a>
       <% if (canGoNext) { %>
@@ -68,8 +68,7 @@
     </div>
   </div>
   <div class="card-body">
-    <p class="muted tiny" style="margin:0 0 14px">
-      "Naya client" = jiska <strong>pehla deposit</strong> us din hua. Kisi din par click karein to us din ke clients dikhenge.
+    <p class="muted tiny" style="margin:0 0 14px">"New client" = whose<strong>pehla deposit</strong> on that day. Click any day to see that day's clients.
     </p>
 
     <%
@@ -103,9 +102,9 @@
     </div>
 
     <div class="muted tiny" style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap">
-      <span><span class="badge badge-success">Aaj</span> = aaj ka din</span>
-      <span><span class="badge badge-neutral">Grey</span> = aane wale din</span>
-      <span><span class="badge badge-accent">Number</span> = us din ke naye clients</span>
+      <span><span class="badge badge-success">Today</span> = today</span>
+      <span><span class="badge badge-neutral">Grey</span>= upcoming days</span>
+      <span><span class="badge badge-accent">Number</span> = new clients that day</span>
     </div>
   </div>
 </div>
@@ -117,13 +116,13 @@
   %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('team', 15) %> <%= helpers.prettyDateLong(selLabel) %> ke naye clients</h3>
+      <h3><%- icon('team', 15) %> <%= helpers.prettyDateLong(selLabel) %> new clients for</h3>
       <span class="badge badge-accent" style="margin-left:auto"><%= list.length %> clients</span>
     </div>
     <% if (!list.length) { %>
       <div class="card-body"><div class="empty">
         <span class="big">—</span>
-        Is din koi naya client nahi aaya.
+        No new client on this day.
       </div></div>
     <% } else { %>
     <div class="table-wrapper">
@@ -151,28 +150,27 @@
       </table>
     </div>
     <div class="card-footer muted tiny">
-      Is din ke clients ka total deposit: <strong><%= helpers.money(list.reduce(function (a, r) { return a + Number(r.deposit_amount); }, 0)) %></strong>
+      Total deposits from this day's clients: <strong><%= helpers.money(list.reduce(function (a, r) { return a + Number(r.deposit_amount); }, 0)) %></strong>
     </div>
     <% } %>
   </div>
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> Ye window kaise kaam karti hai</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How this window works</h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt>Naya client</dt>
-      <dd>Jiska <strong>pehla deposit</strong> us din hua. Ek hi client dobara aaye to wo naya nahi gina jaata.</dd>
-      <dt>Date kahan se</dt>
-      <dd>
-        Deposit file me date column na ho to <strong>Daily Upload ke "Date" box</strong> wali date lagti hai.
-        Isliye 1 tareekh ka data 2 tareekh ko upload karte waqt Date me <strong>1 tareekh</strong> chuniye —
-        tab wo is window me 1 tareekh par hi dikhega.
+      <dt>New client</dt>
+      <dd>Whose <strong>first deposit</strong> falls that day. A returning client is not counted as new again.</dd>
+      <dt>Where the date comes from</dt>
+      <dd>If the deposit file has no date column<strong>the "Date" box in Daily Upload</strong> date is applied.
+        So when uploading the 1st's data on the 2nd, set Date to <strong>1 tareekh</strong> —
+        then it shows on the 1st in this window.
       </dd>
       <dt>Mahina badla</dt>
-      <dd>Naya mahina shuru hote hi window <strong>khud us mahine</strong> par aa jati hai. Pichhla mahina hat jata hai — par uska data delete nahi hota, "Pichhla mahina" se dekh sakte hain.</dd>
+      <dd>as soon as a new month starts the window<strong>khud us mahine</strong> the current month. Last month drops off — its data is not deleted; use "Last month" to view it.</dd>
       <dt>Purana data</dt>
-      <dd>Kisi mahine ka data dekhna ho to left/right arrows se mahina badal lein.</dd>
+      <dd>To view another month, use the left/right arrows.</dd>
     </dl>
   </div>
 </div>

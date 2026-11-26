@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="titles">
     <h1>Backup &amp; Export</h1>
-    <div class="sub">Data apne paas rakhiye — CSV Excel me seedha khulti hai.</div>
+    <div class="sub">Keep the data with you — the CSV opens straight in Excel.</div>
   </div>
 </div>
 
@@ -44,9 +44,7 @@
       <a class="chip" href="/backup/export/followups"><%- icon('download', 13) %> Follow-ups (CSV)</a>
       <a class="chip" href="/backup/export/settings"><%- icon('download', 13) %> Settings + levels (JSON)</a>
     </div>
-    <p class="muted tiny" style="margin:14px 0 0">
-      Har hafte ek baar "Deposits" CSV download karke apne paas (Drive/pen drive) rakh lijiye.
-    </p>
+    <p class="muted tiny" style="margin:14px 0 0">Download the "Deposits" CSV once a week and keep it on your own drive or pen drive.</p>
   </div>
 </div>
 
@@ -60,7 +58,7 @@
           <% days.forEach(function (d) { %>
             <tr><td class="nowrap"><strong><%= d.d %></strong></td><td class="num right"><%= d.entries %></td><td class="money right"><%= helpers.money(d.amount) %></td></tr>
           <% }); %>
-          <% if (!days.length) { %><tr><td colspan="3"><div class="empty">Koi data nahi.</div></td></tr><% } %>
+          <% if (!days.length) { %><tr><td colspan="3"><div class="empty">No data.</div></td></tr><% } %>
         </tbody>
       </table>
     </div>
@@ -81,7 +79,7 @@
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
-        <button type="submit" class="btn btn-danger" data-confirm="Us din ka poora data delete ho jayega. Confirm?">
+        <button type="submit" class="btn btn-danger" data-confirm="All data for that day will be deleted. Confirm?">
           <%- icon('x', 15) %> Delete day
         </button>
       </div>

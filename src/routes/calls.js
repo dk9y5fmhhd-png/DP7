@@ -20,7 +20,7 @@ router.post('/call', auth.requireLogin, async (req, res, next) => {
     );
     if (!c) throw new Error('Customer nahi mila.');
 
-    if (c.do_not_contact) throw new Error('Is customer ko "Do Not Contact" mark kiya hua hai.');
+    if (c.do_not_contact) throw new Error('This customer is marked "Do Not Contact".');
 
     const out = await telecmi.clickToCall({ customer: c, callerId: req.session.user.id });
     await auth.audit(req, 'call', `${username} provider=${out.provider} ok=${out.ok}`);

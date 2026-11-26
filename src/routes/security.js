@@ -46,7 +46,7 @@ router.post('/password', auth.requireLogin, async (req, res, next) => {
       return res.redirect('/security?tab=password');
     }
     if (next1.length < 6) {
-      req.session.flash = { type: 'error', message: 'Naya password kam se kam 6 character ka hona chahiye.' };
+      req.session.flash = { type: 'error', message: 'Naya password kam se kam 6 character ka hona calls.' };
       return res.redirect('/security?tab=password');
     }
     if (next1 !== next2) {

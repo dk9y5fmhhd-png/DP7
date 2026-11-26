@@ -141,11 +141,11 @@ function parseCsv(text) {
 async function readMatrix(buffer, filename) {
   const ext = String(filename || '').toLowerCase().split('.').pop();
   if (ext === 'csv' || ext === 'txt') return { matrix: parseCsv(buffer.toString('utf8')), sheet: filename };
-  if (ext === 'xls') throw new Error('Purana .xls format support nahi hai — Excel me File → Save As → .xlsx karein.');
+  if (ext === 'xls') throw new Error('Purana .xls format support nahi hai — Excel me File → Save As → .xlsx split it:');
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const ws = wb.worksheets.find((w) => w.rowCount > 1) || wb.worksheets[0];
-  if (!ws) throw new Error('File me koi sheet nahi mili.');
+  if (!ws) throw new Error('No sheet found in the file.');
   const matrix = [];
   ws.eachRow({ includeEmpty: false }, (row) => {
     const cells = [];
@@ -237,9 +237,9 @@ async function buildTemplate(kind) {
     ws.getColumn(2).numFmt = '@';
     ws.addRow([]);
     ws.addRow(['Note:']).font = { bold: true };
-    ws.addRow(['Username unique hai — dobara aaya to sirf mobile/date update hoga.']).font = { size: 10, color: { argb: 'FF666666' } };
-    ws.addRow(['caller khaali chhod dein to customer assign nahi hoga, sirf follow-up queue me aayega.']).font = { size: 10, color: { argb: 'FF666666' } };
-    ws.addRow(['caller me login_id likhein (naam nahi) — jaise dikshadp7, indianteam.']).font = { size: 10, color: { argb: 'FF666666' } };
+    ws.addRow(['Usernames are unique — a repeat only updates mobile/date.']).font = { size: 10, color: { argb: 'FF666666' } };
+    ws.addRow(['Leave caller blank and the customer is not assigned — it only joins the follow-up queue.']).font = { size: 10, color: { argb: 'FF666666' } };
+    ws.addRow(['In caller put the login_id (not the name) — e.g. dikshadp7, indianteam.']).font = { size: 10, color: { argb: 'FF666666' } };
   } else {
     const ws = wb.addWorksheet('Deposits');
     ws.columns = [
@@ -263,10 +263,10 @@ async function buildTemplate(kind) {
     ws.addRow([]);
     ws.addRow(['Note:']).font = { bold: true };
     [
-      'Deposit count khaali = 1 (transaction-wise row). Summary row me kitni deposits hain wo likhein.',
-      'Sirf status = successful wale deposits customer ke count me jaate hain.',
-      'Ek transaction id dobara aaya to woh line reject ho jayegi.',
-      'Ek username ke kai genuine deposits allowed hain.',
+      'Blank deposit count = 1 (transaction-wise row). On a summary row write how many deposits it holds.',
+      'Only status = successful deposits count toward the customer.',
+      'A duplicate transaction id rejects that row.',
+      'Multiple genuine deposits for one username are allowed.',
       'status khaali chhod dein to "successful" maana jayega.',
     ].forEach((t) => ws.addRow([t]).font = { size: 10, color: { argb: 'FF666666' } });
   }

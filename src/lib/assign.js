@@ -112,7 +112,7 @@ async function parse(rowsMatrix) {
     const key = norm(uName);
     if (seen.has(key)) {
       duplicates++;
-      errors.push({ line: lineNo, type: 'duplicate', message: `Line ${lineNo}: ${uName} file me do baar hai — sirf pehli line lagegi.` });
+      errors.push({ line: lineNo, type: 'duplicate', message: `Line ${lineNo}: ${uName} appears twice — only the first line applies.` });
       continue;
     }
     seen.add(key);
@@ -120,14 +120,14 @@ async function parse(rowsMatrix) {
     const cust = found.get(key);
     if (!cust) {
       unmatched++;
-      errors.push({ line: lineNo, type: 'unmatched', message: `Line ${lineNo}: "${uName}" database me nahi mila.` });
+      errors.push({ line: lineNo, type: 'unmatched', message: `Line ${lineNo}: "${uName}" was not found in the database.` });
       continue;
     }
 
     const caller = byKey.get(norm(cName));
     if (!caller) {
       badCaller++;
-      errors.push({ line: lineNo, type: 'bad_caller', message: `Line ${lineNo}: "${cName}" naam ka koi caller nahi.` });
+      errors.push({ line: lineNo, type: 'bad_caller', message: `Line ${lineNo}: "${cName}" is not a caller.` });
       continue;
     }
 
@@ -245,7 +245,7 @@ async function buildTemplate() {
   ws.addRow([sample[1] ? sample[1].username : 'priya_s', b]);
 
   ws.addRow([]);
-  ws.addRow(['Caller ke login_id (yahi file me daalein):']).font = { bold: true };
+  ws.addRow(['Caller login_ids (use these in the file):']).font = { bold: true };
   for (const u of users) {
     ws.addRow([`  ${u.login_id}`, u.name]).font = { size: 10, color: { argb: 'FF666666' } };
   }
@@ -253,11 +253,11 @@ async function buildTemplate() {
   ws.addRow([]);
   ws.addRow(['Note:']).font = { bold: true };
   [
-    'Sirf do column chahiye: username aur caller.',
-    'caller me login_id likhein (naam nahi) — jaise dikshadp7, arun, kamal.',
-    'Jo username database me nahi milega wo skip ho jayega — preview me dikh jayega.',
-    'Ek file me 5,000 rows tak chalti hai.',
-    'Upload karne par pehle PREVIEW aayega — tab tak kuch nahi badalta.',
+    'Only two columns needed: username and caller.',
+    'In caller put the login_id (not the name) — e.g. dikshadp7, arun, kamal.',
+    'Usernames not found in the database are skipped — the preview lists them.',
+    'One file can hold up to 5,000 rows.',
+    'Upload shows a PREVIEW first — nothing changes until then.',
   ].forEach((t) => {
     ws.addRow([t]).font = { size: 10, color: { argb: 'FF666666' } };
   });

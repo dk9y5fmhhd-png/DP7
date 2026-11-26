@@ -9,7 +9,7 @@ const router = express.Router();
 
 const GRANTABLE = auth.PAGES.filter((p) => !p.superOnly && p.key !== 'security');
 
-// Roz ka call target — 0 se 500. 0 = koi limit nahi.
+// Daily call target — 0 se 500. 0 = koi limit nahi.
 function targetOf(v, fallback = 40) {
   const n = Number(v);
   if (!Number.isFinite(n)) return fallback;
@@ -63,7 +63,7 @@ router.post('/create', async (req, res, next) => {
     const access = role === 'super_admin' ? [] : normaliseAccess(req.body);
 
     if (!name || !loginId || password.length < 6) {
-      req.session.flash = { type: 'error', message: 'Naam, login ID aur kam se kam 6 character ka password chahiye.' };
+      req.session.flash = { type: 'error', message: 'Naam, login ID aur kam se kam 6 character ka password calls.' };
       return res.redirect('/users');
     }
     if (await db.value('SELECT 1 FROM users WHERE LOWER(login_id) = LOWER($1)', [loginId])) {
@@ -115,7 +115,7 @@ router.post('/:id/update', async (req, res, next) => {
 
     if (password) {
       if (password.length < 6) {
-        req.session.flash = { type: 'error', message: 'Password kam se kam 6 character ka hona chahiye.' };
+        req.session.flash = { type: 'error', message: 'Password kam se kam 6 character ka hona calls.' };
         return res.redirect('/users');
       }
       await db.query('UPDATE users SET password_hash = $2 WHERE id = $1', [

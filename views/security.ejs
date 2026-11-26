@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="titles">
     <h1>Security</h1>
-    <div class="sub">Apna password, two-factor aur login history.</div>
+    <div class="sub">Your password, two-factor and login history.</div>
   </div>
 </div>
 
@@ -41,18 +41,18 @@
     </div>
     <div class="card-body">
       <% if (me.totp_enabled) { %>
-        <p class="soft">Login par authenticator app ka 6-digit code maanga jayega.</p>
+        <p class="soft">A 6-digit code from your authenticator app is required at login.</p>
         <form method="post" action="/security/2fa/disable">
           <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
           <div class="form-group">
-            <label>Password (confirm karne ke liye)</label>
+            <label>Password (to confirm)</label>
             <input type="password" name="password" required autocomplete="current-password">
           </div>
-          <button type="submit" class="btn btn-danger" data-confirm="2FA band karna hai?">Disable 2FA</button>
+          <button type="submit" class="btn btn-danger" data-confirm="Turn off 2FA?">Disable 2FA</button>
         </form>
 
       <% } else if (qr) { %>
-        <p class="soft">Google Authenticator / Authy me ye QR scan kijiye, phir code daal ke confirm kijiye.</p>
+        <p class="soft">Scan this QR in Google Authenticator or Authy, then enter the code to confirm.</p>
         <div style="text-align:center;margin:14px 0">
           <img src="<%= qr %>" alt="2FA QR" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:8px">
           <div class="muted tiny" style="margin-top:8px">Manual entry: <code><%= secret %></code></div>
@@ -68,7 +68,7 @@
         </form>
 
       <% } else { %>
-        <p class="soft">2FA on karne se password chori hone par bhi account safe rahega.</p>
+        <p class="soft">With 2FA on, your account stays safe even if the password is stolen.</p>
         <form method="post" action="/security/2fa/start">
           <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
           <button type="submit" class="btn btn-primary"><%- icon('shield', 15) %> Enable 2FA</button>
@@ -85,7 +85,7 @@
       <thead><tr><th>Action</th><th>Detail</th><th>IP</th><th class="right">When</th></tr></thead>
       <tbody>
         <% if (!log.length) { %>
-          <tr><td colspan="4"><div class="empty">Koi activity record nahi.</div></td></tr>
+          <tr><td colspan="4"><div class="empty">No activity recorded.</div></td></tr>
         <% } %>
         <% log.forEach(function (l) { %>
           <tr>

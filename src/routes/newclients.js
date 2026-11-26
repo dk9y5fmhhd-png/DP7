@@ -7,7 +7,7 @@
 // ko upload hui wo 1 tareekh ke new clients banate hain.
 //
 // Window hamesha EK mahine ka hota hai — mahina badalte hi naya mahina shuru,
-// pichhla mahina khud window se hat jata hai (uska data mit-ta nahi, bas dikhna band).
+// last month khud window se hat jata hai (uska data mit-ta nahi, bas dikhna band).
 
 const express = require('express');
 const db = require('../db');
@@ -90,7 +90,7 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
     const bestDay = days.reduce((a, d) => (d.count > (a ? a.count : -1) ? d : a), null);
     const maxCount = Math.max(1, ...days.map((d) => d.count));
 
-    // Pichhla mahina — comparison ke liye
+    // Last month — comparison ke liye
     const prevYm = shiftMonth(ym, -1);
     const prevTotal = Number(
       await db.value(
@@ -102,7 +102,7 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
     );
     const prevCounts = await dailyCounts(prevYm, scopeSql, scopeParams);
 
-    // Selected din ke clients
+    // Selected days clients
     let list = [];
     if (day) {
       const dateStr = `${ym}-${String(day).padStart(2, '0')}`;

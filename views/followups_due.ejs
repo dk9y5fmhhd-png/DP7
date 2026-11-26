@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="titles">
     <h1>Follow-ups Due</h1>
-    <div class="sub">Kis caller ka kitna pending hai, aur kaun overdue ho gaya — ek nazar me.</div>
+    <div class="sub">How much each caller has pending, and who has gone overdue — at a glance.</div>
   </div>
   <div class="chips">
     <a class="chip" href="/calls"><%- icon('clock', 13) %> Call Log</a>
@@ -15,14 +15,14 @@
   <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
     <div class="label">Overdue</div>
     <div class="value"><%= totals.overdue %></div>
-    <div class="hint">date nikal gayi — sabse zaroori</div>
+    <div class="hint">date passed — most urgent</div>
   </div>
-  <div class="stat"><div class="label">Aaj due</div><div class="value"><%= totals.due %></div><div class="hint">aaj ki date wale</div></div>
-  <div class="stat"><div class="label">Total pending</div><div class="value"><%= totals.pending %></div><div class="hint">overdue + aaj</div></div>
+  <div class="stat"><div class="label">Due today</div><div class="value"><%= totals.due %></div><div class="hint">dated today</div></div>
+  <div class="stat"><div class="label">Total pending</div><div class="value"><%= totals.pending %></div><div class="hint">overdue + today</div></div>
   <div class="stat ok">
-    <div class="label">Aaj ka kaam</div>
+    <div class="label">Today's work</div>
     <div class="value"><%= totals.done %> <span style="font-size:15px;color:var(--fg-muted)">/ <%= totals.target %></span></div>
-    <div class="hint"><%= totals.left %> customers baaki (sab callers)</div>
+    <div class="hint"><%= totals.left %> customers left across all callers</div>
   </div>
 </div>
 
@@ -31,11 +31,11 @@
   <div class="table-wrapper">
     <table>
       <thead>
-        <tr><th>Caller</th><th>Target</th><th class="right">Overdue</th><th class="right">Aaj due</th><th class="right">Total pending</th><th class="right">Aage rakhe</th><th class="right">Assigned</th></tr>
+        <tr><th>Caller</th><th>Target</th><th class="right">Overdue</th><th class="right">Due today</th><th class="right">Total pending</th><th class="right">Scheduled ahead</th><th class="right">Assigned</th></tr>
       </thead>
       <tbody>
         <% if (!perCaller.length) { %>
-          <tr><td colspan="7"><div class="empty">Koi caller ko customer assign nahi hua.</div></td></tr>
+          <tr><td colspan="7"><div class="empty">No customers assigned to a caller yet.</div></td></tr>
         <% } %>
         <% perCaller.forEach(function (c) { %>
           <tr>
@@ -43,15 +43,15 @@
             <td style="min-width:150px">
               <div style="display:flex;align-items:center;gap:8px">
                 <span class="num" style="font-size:12.5px;min-width:52px">
-                  <strong><%= c.done_today %></strong><span class="muted">/<%= c.daily_target %></span>
+                  <strong><%= c.done_today %></strong> <span class="muted">/<%= c.daily_target %></span>
                 </span>
                 <div class="progress-track" style="flex:1;height:7px">
                   <div class="progress-fill <%= c.done_today >= c.daily_target ? 'done' : '' %>"
                        style="width:<%= c.daily_target ? Math.min(100, Math.round((c.done_today / c.daily_target) * 100)) : 0 %>%"></div>
                 </div>
                 <span class="tiny <%= c.done_today >= c.daily_target ? '' : 'muted' %>" style="min-width:44px;text-align:right">
-                  <% if (c.done_today >= c.daily_target) { %><span class="badge badge-success">poora</span>
-                  <% } else { %><%= c.left_today %> baaki<% } %>
+                  <% if (c.done_today >= c.daily_target) { %><span class="badge badge-success">complete</span>
+                  <% } else { %><%= c.left_today %> left<% } %>
                 </span>
               </div>
             </td>
@@ -83,18 +83,18 @@
 <div class="card" style="<%= totals.overdue ? 'border-color:rgba(255,107,116,0.35)' : '' %>">
   <div class="card-header">
     <h3><%- icon('alert', 15) %> Overdue customers</h3>
-    <span class="muted tiny" style="margin-left:auto">sabse zyada late sabse upar</span>
+    <span class="muted tiny" style="margin-left:auto">most overdue first</span>
   </div>
   <div class="table-wrapper">
     <table>
       <thead>
-        <tr><th>Customer</th><th>Mobile</th><th>Caller</th><th>Priority</th><th>Last remark</th><th>Follow-up tha</th><th class="right">Late</th><th class="right">Deposits</th></tr>
+        <tr><th>Customer</th><th>Mobile</th><th>Caller</th><th>Priority</th><th>Last remark</th><th>Follow-up was</th><th class="right">Late</th><th class="right">Deposits</th></tr>
       </thead>
       <tbody>
         <% if (!overdueRows.length) { %>
           <tr><td colspan="8"><div class="empty">
             <span class="big"><%- icon('check', 26) %></span>
-            Koi follow-up overdue nahi hai. Sab time par chal raha hai. 🎉
+            No follow-up is overdue. Everything is on time. 🎉
           </div></td></tr>
         <% } %>
         <% overdueRows.forEach(function (r) { %>
@@ -105,7 +105,7 @@
             <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : 'badge-neutral' %>"><%= r.priority %></span></td>
             <td class="muted tiny"><%= r.action_type %></td>
             <td class="nowrap muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></td>
-            <td class="right num"><span class="badge badge-danger"><%= r.days_late %> din</span></td>
+            <td class="right num"><span class="badge badge-danger"><%= r.days_late %>days</span></td>
             <td class="right num"><%= r.deposit_count %></td>
           </tr>
         <% }); %>
@@ -113,12 +113,12 @@
     </table>
   </div>
   <% if (overdueRows.length >= 100) { %>
-    <div class="card-footer muted tiny">Sirf pehle 100 dikha rahe hain.</div>
+    <div class="card-footer muted tiny">Showing the first 100 only.</div>
   <% } %>
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('check', 15) %> Aaj kiska kaam hua</h3></div>
+  <div class="card-header"><h3><%- icon('check', 15) %> Who worked today</h3></div>
   <div class="table-wrapper">
     <table>
       <thead><tr><th>Caller</th><th class="right">Remarks</th><th class="right">Customers</th></tr></thead>
@@ -130,7 +130,7 @@
             <td class="right num"><%= d.customers %></td>
           </tr>
         <% }); %>
-        <% if (!doneToday.length) { %><tr><td colspan="3"><div class="empty">Aaj koi remark nahi hua.</div></td></tr><% } %>
+        <% if (!doneToday.length) { %><tr><td colspan="3"><div class="empty">No remark logged today.</div></td></tr><% } %>
       </tbody>
     </table>
   </div>

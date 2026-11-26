@@ -4,7 +4,7 @@
   <div class="titles">
     <h1>Call Log</h1>
     <div class="sub">
-      <% if (isAdmin) { %>Kaun, kab, kisko call kiya — TeleCMI ya manual.<% } else { %>Aapki apni calls ka record.<% } %>
+      <% if (isAdmin) { %>Who called whom and when — TeleCMI or manual.<% } else { %>Your own call record.<% } %>
     </div>
   </div>
   <div class="chips">
@@ -12,7 +12,7 @@
     <% if (cfg.enabled) { %>
       <span class="chip on"><%- icon('check', 13) %> TeleCMI connected</span>
     <% } else { %>
-      <span class="chip"><%- icon('alert', 13) %> TeleCMI set nahi</span>
+      <span class="chip"><%- icon('alert', 13) %>TeleCMI not set up</span>
     <% } %>
   </div>
 </div>
@@ -20,14 +20,12 @@
 <% if (!cfg.enabled) { %>
   <div class="flash flash-info">
     <span>
-      <strong>TeleCMI keys set nahi hain.</strong> Call button abhi call ko log karta hai aur number dikhata hai —
-      auto-dial ke liye <a href="/settings?tab=telecmi">Settings → TeleCMI</a> me App ID, Secret aur Agent number daalein.
-    </span>
+      <strong>TeleCMI keys are not set.</strong> The Call button only logs the call and shows the number — to auto-dial, add<a href="/settings?tab=telecmi">Settings → TeleCMI</a>App ID, Secret and Agent number.</span>
   </div>
 <% } %>
 
 <div class="stat-grid">
-  <div class="stat"><div class="label">Calls</div><div class="value"><%= rows.length %></div><div class="hint">is range me</div></div>
+  <div class="stat"><div class="label">Calls</div><div class="value"><%= rows.length %></div><div class="hint">in this range</div></div>
   <% byCaller.slice(0, 3).forEach(function (c) { %>
     <div class="stat">
       <div class="label"><%= c.caller_name || '—' %></div>
@@ -52,7 +50,7 @@
       </select>
     </div>
     <% } %>
-    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %>View</button></div>
   </form>
 
   <div class="table-wrapper">
@@ -60,7 +58,7 @@
       <thead><tr><th>Kab</th><th>Customer</th><th>Caller</th><th>Provider</th><th>Status</th><th class="right">Duration</th><th>Note</th></tr></thead>
       <tbody>
         <% if (!rows.length) { %>
-          <tr><td colspan="7"><div class="empty"><span class="big">—</span>Is range me koi call nahi.</div></td></tr>
+          <tr><td colspan="7"><div class="empty"><span class="big">—</span>No calls in this range.</div></td></tr>
         <% } %>
         <% rows.forEach(function (k) { %>
           <tr>

@@ -43,13 +43,13 @@ async function clickToCall({ customer, callerId }) {
     const log = await db.row(
       `INSERT INTO calls (customer_id, username, caller_id, provider, status, note)
        VALUES ($1,$2,$3,'manual','initiated',$4) RETURNING id, called_at`,
-      [customer.id, customer.username, callerId, 'TeleCMI keys set nahi hain — manual dial']
+      [customer.id, customer.username, callerId, 'TeleCMI keys not set — manual dial']
     );
     return {
       ok: true,
       provider: 'manual',
       callId: log.id,
-      message: 'TeleCMI set nahi hai — number dikha diya, manually dial karein.',
+      message: 'TeleCMI not set up — number shown, dial manually:',
       dial: to,
     };
   }
@@ -84,7 +84,7 @@ async function clickToCall({ customer, callerId }) {
       ok,
       provider: 'telecmi',
       callId: log.id,
-      message: ok ? 'Call laga diya — phone uthaiye.' : 'TeleCMI ne call reject kiya. Settings me keys check karein.',
+      message: ok ? 'Call laga diya — phone uthaiye.' : 'TeleCMI ne call reject kiya. Settings me keys check split it:',
     };
   } catch (err) {
     await db.query(

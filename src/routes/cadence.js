@@ -1,7 +1,7 @@
 'use strict';
 
 // Retention Cadence — admin dekhta hai har tier ka coverage, aur 7 din ka
-// rollout progress (kitne customers touch hue, kitne bhoole gaye).
+// rollout progress (kitne customers touch hue, kitne untouched).
 
 const express = require('express');
 const db = require('../db');
@@ -43,7 +43,7 @@ router.get('/', async (req, res, next) => {
       c.need_per_day = days ? Math.ceil(c.stale / days) : 0;
     }
 
-    // Rollout — poore base par ek round kitne din me
+    // Rollout — poore base par one round kitne days
     const totals = perCaller.reduce((a, c) => ({
       assigned: a.assigned + c.assigned,
       covered: a.covered + c.covered,
@@ -93,7 +93,7 @@ router.post('/refresh', async (req, res, next) => {
     await auth.audit(req, 'cadence_refresh', `rows=${n}`);
     req.session.flash = {
       type: 'success',
-      message: n ? `${n} customers ka cadence update ho gaya.` : 'Sab pehle se up to date hai.',
+      message: n ? `Cadence updated for ${n} customers.` : 'Everything is already up to date.',
     };
     res.redirect('/cadence');
   } catch (err) {

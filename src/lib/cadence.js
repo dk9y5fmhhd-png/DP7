@@ -20,7 +20,7 @@ const db = require('../db');
 const GAPS = { N: 1, A: 5, B: 12, C: 30, D: null };
 
 const TIERS = {
-  N: { key: 'N', label: 'ID bana, deposit nahi', gap: 1, tone: 'warn', hint: 'pehla call 1 din me' },
+  N: { key: 'N', label: 'ID bana, deposit nahi', gap: 1, tone: 'warn', hint: 'pehla call 1 days' },
   A: { key: 'A', label: 'VIP / high value', gap: 5, tone: 'accent', hint: 'har 5 din' },
   B: { key: 'B', label: 'Normal / active', gap: 12, tone: 'info', hint: 'har 12 din' },
   C: { key: 'C', label: 'Purana dormant', gap: 30, tone: 'neutral', hint: 'har 30 din' },
@@ -138,7 +138,7 @@ function addDays(dateLike, n) {
 
 /**
  * Coverage — asli health metric.
- * Kitne customers cycle ke andar touch hue, kitne bhoole gaye.
+ * Kitne customers cycle ke andar touch hue, kitne untouched.
  */
 async function coverage({ days = 7, callerId = null } = {}) {
   const params = [days];

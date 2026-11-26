@@ -127,7 +127,7 @@ router.post('/apply', async (req, res, next) => {
 
     req.session.flash = {
       type: 'success',
-      message: `${applied} customers ${saved.callerIds.length} callers me baant diye — har ek ko ~${plan.perCaller}.`,
+      message: `${applied} customers split across ${saved.callerIds.length} callers — about ${plan.perCaller} each.`,
     };
     res.redirect('/callers');
   } catch (err) {
@@ -156,7 +156,7 @@ router.post('/:id/team', async (req, res, next) => {
     }
     await db.query('UPDATE users SET team = $2 WHERE id = $1', [target.id, team]);
     await auth.audit(req, 'team_change', `${target.login_id} → ${team}`);
-    req.session.flash = { type: 'success', message: `${target.login_id} ab ${team} team me hai.` };
+    req.session.flash = { type: 'success', message: `${target.login_id} is now on the ${team} team.` };
     res.redirect('/callers');
   } catch (err) {
     next(err);

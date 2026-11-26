@@ -3,10 +3,10 @@
 <div class="page-head">
   <div class="titles">
     <h1>Follow-ups</h1>
-    <div class="sub">Sab calls ka log — kaun, kab, kya hua.</div>
+    <div class="sub">Full call log — who, when, what happened.</div>
   </div>
   <div class="chips">
-    <button class="chip" type="button" onclick="openFollowup('')"><%- icon('plus', 13) %> Naya follow-up</button>
+    <button class="chip" type="button" onclick="openFollowup('')"><%- icon('plus', 13) %>New follow-up</button>
   </div>
 </div>
 
@@ -19,7 +19,7 @@
     </div>
   <% }); %>
   <% if (!byType.length) { %>
-    <div class="stat"><div class="label">Follow-ups</div><div class="value">0</div><div class="hint">abhi tak koi nahi</div></div>
+    <div class="stat"><div class="label">Follow-ups</div><div class="value">0</div><div class="hint">nobody yet</div></div>
   <% } %>
 </div>
 
@@ -47,7 +47,7 @@
       <thead><tr><th>Date</th><th>Username</th><th>Action</th><th>Response / Notes</th><th>Logged by</th><th class="right">—</th></tr></thead>
       <tbody>
         <% if (!rows.length) { %>
-          <tr><td colspan="6"><div class="empty"><span class="big">—</span>Koi follow-up nahi mila.</div></td></tr>
+          <tr><td colspan="6"><div class="empty"><span class="big">—</span>No follow-up found.</div></td></tr>
         <% } %>
         <% rows.forEach(function (f) { %>
           <tr>
@@ -60,7 +60,7 @@
               <% if (user.role === 'super_admin') { %>
                 <form method="post" action="/followups/<%= f.id %>/delete" style="margin:0">
                   <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                  <button class="btn btn-danger btn-sm" data-confirm="Ye follow-up delete karna hai?" title="Delete"><%- icon('x', 13) %></button>
+                  <button class="btn btn-danger btn-sm" data-confirm="Delete this follow-up?" title="Delete"><%- icon('x', 13) %></button>
                 </form>
               <% } %>
             </td>

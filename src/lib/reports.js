@@ -71,15 +71,15 @@ function decorate(rows, { levels, followups, dupes }) {
 function quietRange(key, date) {
   switch (key) {
     case 'today':
-      return { from: D.addDays(date, -1), label: 'Naye quiet (kal tak active)' };
+      return { from: D.addDays(date, -1), label: 'Newly quiet (active until yesterday)' };
     case 'd3':
-      return { from: D.addDays(date, -3), label: '3 din me quiet' };
+      return { from: D.addDays(date, -3), label: '3 days quiet' };
     case 'd7':
-      return { from: D.addDays(date, -7), label: '7 din me quiet' };
+      return { from: D.addDays(date, -7), label: '7 days quiet' };
     case 'all':
       return null;
     default:
-      return { from: D.addDays(date, -1), label: 'Naye quiet (kal tak active)' };
+      return { from: D.addDays(date, -1), label: 'Newly quiet (active until yesterday)' };
   }
 }
 

@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="titles">
     <h1>Users</h1>
-    <div class="sub">Staff accounts, roles aur page-level access.</div>
+    <div class="sub">Staff accounts, roles and page-level access.</div>
   </div>
 </div>
 
@@ -28,14 +28,14 @@
         <div class="form-group">
           <label>Team</label>
           <select name="team">
-            <option value="retention">Retention — purane client ka follow-up</option>
-            <option value="acquisition">Acquisition — naye client laana</option>
+            <option value="retention">Retention — follow-up on existing clients</option>
+            <option value="acquisition">Acquisition — bringing in new clients</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Roz ka call target</label>
+          <label>Daily call target</label>
           <input type="number" name="daily_target" value="150" min="0" max="500" step="1">
-          <span class="muted tiny">My Calls par itna kaam dikhega. 150 = standard.</span>
+          <span class="muted tiny">This is how much work My Calls shows. 150 = standard.</span>
         </div>
         <div class="form-group">
           <label>Role</label>
@@ -108,7 +108,7 @@
                 <% if (u.id !== user.id) { %>
                   <form method="post" action="/users/<%= u.id %>/delete" style="display:inline;margin:0">
                     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                    <button class="btn btn-sm btn-danger" type="submit" data-confirm="User '<%= u.login_id %>' delete karna hai?">×</button>
+                    <button class="btn btn-sm btn-danger" type="submit" data-confirm="User '<%= u.login_id %>' — delete?">×</button>
                   </form>
                 <% } %>
               </td>
@@ -145,9 +145,9 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Roz ka call target</label>
+          <label>Daily call target</label>
           <input type="number" name="daily_target" value="<%= u.daily_target != null ? u.daily_target : 40 %>" min="0" max="500" step="1">
-          <span class="muted tiny">0 = koi limit nahi (poori list dikhegi)</span>
+          <span class="muted tiny">0 = no limit (full list shown)</span>
         </div>
         <div class="form-group">
           <label>Role</label>

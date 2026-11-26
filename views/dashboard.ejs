@@ -5,8 +5,7 @@
     <h1>Dashboard</h1>
     <div class="sub">
       <%= helpers.prettyDateLong(data.today) %> ·
-      active window <%= data.windowDays %> din
-    </div>
+      active window <%= data.windowDays %>days</div>
   </div>
   <div class="chips">
     <a class="chip" href="/add-data"><%- icon('plus', 13) %> Add data</a>
@@ -21,7 +20,7 @@
   <div class="grid-2">
     <div class="card">
       <div class="card-header">
-        <h3><%- icon('alert', 15) %> Aaj ki calling queue</h3>
+        <h3><%- icon('alert', 15) %> Today's calling queue</h3>
         <a href="/calling" class="tiny" style="margin-left:auto">Calling list →</a>
       </div>
       <div class="card-body">
@@ -36,10 +35,10 @@
           </div>
           <div class="stat">
             <div class="label">P3</div><div class="value"><%= data.crm.p3 %></div>
-            <div class="hint">callback pending</div>
+            <div class="hint">reactivated</div>
           </div>
           <div class="stat ok">
-            <div class="label">Aaj call</div><div class="value"><%= data.crm.callsToday %></div>
+            <div class="label">Call today</div><div class="value"><%= data.crm.callsToday %></div>
             <div class="hint"><%= data.crm.remarksToday %> remark<%= data.crm.remarksToday === 1 ? '' : 's' %></div>
           </div>
         </div>
@@ -47,19 +46,19 @@
           <a class="chip <%= data.crm.overdue ? 'on' : '' %>" href="/calling/due">
             Overdue <strong><%= data.crm.overdue %></strong>
           </a>
-          <span class="chip">Aaj due <strong><%= data.crm.dueNow %></strong></span>
+          <span class="chip">Due today <strong><%= data.crm.dueNow %></strong></span>
           <span class="chip">Total pending <strong><%= data.crm.pendingNow %></strong></span>
-          <span class="chip">Aage rakhe <strong><%= data.crm.snoozed %></strong></span>
+          <span class="chip">Scheduled ahead <strong><%= data.crm.snoozed %></strong></span>
         </div>
         <p class="muted tiny" style="margin:12px 0 0">
-          <strong><%= data.crm.free %></strong> customers bina caller ke hain — Customers page se assign karein.
+          <strong><%= data.crm.free %></strong> customers have no caller — assign them from the Customers page.
         </p>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3><%- icon('award', 15) %> VIP customers (count se)</h3>
+        <h3><%- icon('award', 15) %>VIP customers (by count)</h3>
         <a href="/customers?vip=vip" class="tiny" style="margin-left:auto">Customers →</a>
       </div>
       <div class="card-body">
@@ -119,7 +118,7 @@
   </div>
   <div class="card-body">
     <p class="muted tiny" style="margin:0 0 14px">
-      Kitne clients is hafte deposit nahi kiya, unke usual habit ke hisaab se.
+      How many clients did not deposit this week, against their usual habit.
     </p>
     <%
       const cohortRows = [
@@ -154,7 +153,7 @@
     </div>
     <div class="card-body">
       <% if (!data.trend.length) { %>
-        <div class="empty"><span class="big">—</span>Koi deposit data nahi hai.</div>
+        <div class="empty"><span class="big">—</span>No deposit data yet.</div>
       <% } else {
            const maxClients = Math.max.apply(null, data.trend.map(function (t) { return t.clients; }));
       %>
@@ -172,7 +171,7 @@
           <% }); %>
         </div>
         <div class="muted tiny" style="margin-top:10px">
-          Peak: <%= maxClients %> clients/day · bar par hover karke amount dekhein
+          Peak: <%= maxClients %> clients/day · hover a bar to see the amount
         </div>
       <% } %>
     </div>
@@ -185,7 +184,7 @@
     </div>
     <div class="card-body">
       <% if (!data.followupTypes.length) { %>
-        <div class="empty"><span class="big">—</span>Abhi koi follow-up log nahi hua.</div>
+        <div class="empty"><span class="big">—</span>No follow-up logged yet.</div>
       <% } else {
            const maxF = Math.max.apply(null, data.followupTypes.map(function (f) { return f.c; }));
       %>
@@ -222,7 +221,7 @@
             </tr>
           <% }); %>
           <% if (!data.topClients.length) { %>
-            <tr><td colspan="4"><div class="empty">Koi client nahi.</div></td></tr>
+            <tr><td colspan="4"><div class="empty">No clients.</div></td></tr>
           <% } %>
         </tbody>
       </table>
@@ -249,7 +248,7 @@
             </tr>
           <% }); %>
           <% if (!data.recentFollowups.length) { %>
-            <tr><td colspan="4"><div class="empty">Abhi koi follow-up nahi.</div></td></tr>
+            <tr><td colspan="4"><div class="empty">No follow-up yet.</div></td></tr>
           <% } %>
         </tbody>
       </table>

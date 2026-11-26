@@ -4,31 +4,31 @@
   <div class="titles">
     <h1>My Calls</h1>
     <div class="sub">
-      <%= helpers.prettyDateLong(today) %> · sirf <strong>aaj due</strong> wale customers.
-      Jo aage ke liye rakhe hain wo apne din par khud wapas aayenge.
+      <%= helpers.prettyDateLong(today) %>· only<strong>due today</strong> customers.
+      Anything scheduled ahead returns on its own day.
     </div>
   </div>
   <div class="chips">
-    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my?tab=<%= tab %>"><%- icon('phone', 13) %> Aaj due</a>
-    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?tab=<%= tab %>&all=1"><%- icon('list', 13) %> Poori list</a>
+    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my?tab=<%= tab %>"><%- icon('phone', 13) %> Due today</a>
+    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?tab=<%= tab %>&all=1"><%- icon('list', 13) %> Full list</a>
   </div>
 </div>
 
 <%# Do alag queue — naya ID aur deposit wala customer kabhi mila-jula na dikhe %>
 <div class="tab-switch">
   <a class="tab-btn <%= tab === 'nodep' ? 'on' : '' %>" href="/calling/my?tab=nodep<%= showAll ? '&all=1' : '' %>">
-    <span class="tab-name">Bina deposit</span>
+    <span class="tab-name">No deposit</span>
     <span class="tab-meta">
       <strong><%= tabCounts.nodep_due %></strong> due · <%= tabCounts.nodep %> total
     </span>
-    <span class="tab-note">ID bana, pehla deposit baaki</span>
+    <span class="tab-note">ID created, first deposit pending</span>
   </a>
   <a class="tab-btn <%= tab === 'dep' ? 'on' : '' %>" href="/calling/my?tab=dep<%= showAll ? '&all=1' : '' %>">
-    <span class="tab-name">Deposit wale</span>
+    <span class="tab-name">Deposited</span>
     <span class="tab-meta">
       <strong><%= tabCounts.dep_due %></strong> due · <%= tabCounts.dep %> total
     </span>
-    <span class="tab-note">Purane customer ka follow-up</span>
+    <span class="tab-note">Follow-up on existing customers</span>
   </a>
 </div>
 
@@ -37,23 +37,23 @@
     <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
       <div style="flex:1 1 240px">
         <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700">
-          Aaj ka target
+          Today's target
         </div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
           <span style="font-size:34px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;<%= target.complete ? 'color:var(--success)' : '' %>"><%= target.done %></span>
           <span style="font-size:18px;color:var(--fg-muted);font-weight:600">/ <%= target.target %></span>
           <% if (target.unlimited) { %>
-            <span class="badge badge-neutral" style="margin-left:4px">koi limit nahi</span>
+            <span class="badge badge-neutral" style="margin-left:4px">no limit</span>
           <% } else if (target.complete) { %>
-            <span class="badge badge-success" style="margin-left:4px"><%- icon('check', 12) %> Target poora</span>
+            <span class="badge badge-success" style="margin-left:4px"><%- icon('check', 12) %>Target complete</span>
           <% } else { %>
-            <span class="badge badge-neutral" style="margin-left:4px"><%= target.remaining %> baaki</span>
+            <span class="badge badge-neutral" style="margin-left:4px"><%= target.remaining %> left</span>
           <% } %>
         </div>
       </div>
       <div style="flex:0 0 220px;text-align:right">
-        <div class="muted tiny">Aaj kitne customer touch kiye</div>
-        <div class="muted tiny">Queue me due: <strong><%= queueCount %></strong></div>
+        <div class="muted tiny">Customers touched today</div>
+        <div class="muted tiny">Due in queue:<strong><%= queueCount %></strong></div>
       </div>
     </div>
 
@@ -62,8 +62,8 @@
       <div class="progress-fill <%= target.complete ? 'done' : '' %>" style="width:<%= target.pct %>%"></div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:6px" class="muted tiny">
-      <span><%= target.pct %>% poora</span>
-      <span><%= target.complete ? 'Shaabaash — aaj ka kaam khatam' : target.remaining + ' customers baaki' %></span>
+      <span><%= target.pct %>% complete</span>
+      <span><%= target.complete ? 'Well done — today\'s work is finished' : target.remaining + ' customers left' %></span>
     </div>
     <% } %>
   </div>
@@ -71,17 +71,17 @@
 
 <div class="stat-grid">
   <div class="stat">
-    <div class="label">Aaj due</div>
+    <div class="label">Due today</div>
     <div class="value"><%= stats.due + stats.overdue %></div>
-    <div class="hint">aaj + overdue · P1: <strong><%= stats.due_p1 %></strong></div>
+    <div class="hint">today + overdue · P1:<strong><%= stats.due_p1 %></strong></div>
   </div>
   <div class="stat <%= stats.overdue ? 'bad' : 'ok' %>">
     <div class="label">Overdue</div>
     <div class="value"><%= stats.overdue %></div>
-    <div class="hint"><%= stats.overdue ? 'date nikal gayi — pehle inhe karein' : 'kuch pending nahi' %></div>
+    <div class="hint"><%= stats.overdue ? 'date passed — clear these first' : 'nothing pending' %></div>
   </div>
   <div class="stat">
-    <div class="label">Aaj due — tier</div>
+    <div class="label">Due today — tier</div>
     <div class="value" style="font-size:17px;letter-spacing:0">
       <span style="color:var(--accent-2)">N <%= stats.due_n %></span>
       <span class="muted" style="font-size:12px"> · </span>
@@ -91,41 +91,39 @@
       <span class="muted" style="font-size:12px"> · </span>
       <span class="muted">C <%= stats.due_c %></span>
     </div>
-    <div class="hint">VIP pehle, phir normal, phir purane</div>
+    <div class="hint">VIP first, then normal, then dormant</div>
   </div>
   <div class="stat ok">
-    <div class="label">Aaj ho gaya</div>
+    <div class="label">Done today</div>
     <div class="value"><%= doneToday.remarks %></div>
     <div class="hint"><%= doneToday.customers %> customers</div>
   </div>
   <div class="stat">
-    <div class="label">Aage ke liye rakhe</div>
+    <div class="label">Scheduled ahead</div>
     <div class="value"><%= stats.snoozed %></div>
-    <div class="hint">apne din par list me aayenge</div>
+    <div class="hint">they return on their scheduled day</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('phone', 15) %> <%= tab === 'nodep' ? 'Bina deposit — naye ID' : 'Deposit wale customers' %> · <%= showAll ? 'poori list' : 'aaj ki list' %></h3>
+    <h3><%- icon('phone', 15) %> <%= tab === 'nodep' ? 'No deposit — new IDs' : 'Deposited customers' %> · <%= showAll ? 'full list' : "today's list" %></h3>
     <span class="muted tiny" style="margin-left:auto">
       <% if (showAll || forceAll) { %>
-        <%= rows.length %> customers · overdue → VIP → normal → purane
-      <% } else { %>
-        <%= rows.length %> dikha rahe hain (target ke hisaab se)
-      <% } %>
+        <%= rows.length %> customers · overdue → VIP → normal → dormant<% } else { %>
+        <%= rows.length %>shown (by today's target)<% } %>
     </span>
   </div>
 
   <% if (!showAll && !forceAll && target.complete) { %>
     <div class="card-body" style="padding:26px 18px;text-align:center">
       <div style="font-size:30px;line-height:1">✅</div>
-      <h3 style="margin:10px 0 6px">Aaj ka target poora — <%= target.done %> / <%= target.target %></h3>
+      <h3 style="margin:10px 0 6px">Today's target complete —<%= target.done %> / <%= target.target %></h3>
       <p class="muted" style="margin:0 0 14px">
-        Aapne aaj ke liye poora kaam kar liya. Kal wale customers aaj hi call karne ho to neeche se kholein —
-        par pehle thoda aaram bhi kariye.
+        You have finished today's work. If you still want to call ahead, open the full list below —
+        but do take a break first.
       </p>
-      <a class="btn btn-primary" href="/calling/my?full=1">Phir bhi poori list dekhein (<%= queueCount %>)</a>
+      <a class="btn btn-primary" href="/calling/my?full=1">Show the full list anyway (<%= queueCount %>)</a>
     </div>
   <% } %>
   <div class="table-wrapper">
@@ -147,23 +145,23 @@
           <tr><td colspan="8"><div class="empty">
             <span class="big"><%- icon('check', 26) %></span>
             <% if (showAll) { %>
-              <%= tab === 'nodep' ? 'Abhi koi bina-deposit customer nahi hai.' : 'Abhi koi deposit wala customer assign nahi hua.' %>
+              <%= tab === 'nodep' ? 'No no-deposit customers right now.' : 'No deposited customers assigned yet.' %>
             <% } else if (target.complete) { %>
-              Target poora — upar se "poori list" khol sakte hain.
+              Target complete — open the full list above.
             <% } else if (tab === 'nodep') { %>
-              Koi naya ID aaj due nahi hai. Shaabaash! 🎉
-              <div class="muted tiny" style="margin-top:8px">Naya ID upload hone par yahan apne aap aa jayega.</div>
+              No new ID is due today. Well done! 🎉
+              <div class="muted tiny" style="margin-top:8px">New IDs appear here automatically once uploaded.</div>
             <% } else { %>
-              Aaj ka koi follow-up pending nahi. Shaabaash! 🎉
-              <div class="muted tiny" style="margin-top:8px">Jo aage ke liye rakhe hain wo apne din par khud yahan aayenge.</div>
+              No follow-up pending today. Well done! 🎉
+              <div class="muted tiny" style="margin-top:8px">Anything scheduled ahead returns here on its own day.</div>
             <% } %>
           </div></td></tr>
         <% } %>
         <% if (hiddenCount > 0) { %>
           <tr><td colspan="8" style="text-align:center;background:rgba(245,197,66,0.05)">
             <span class="muted tiny">
-              <strong><%= hiddenCount %></strong> customers aur due hain, par ye aaj ke target se bahar hain —
-              kal ki list me sabse upar aayenge.
+              <strong><%= hiddenCount %></strong> more customers are due, but they fall outside today's target —
+              they sit at the top of tomorrow's list.
             </span>
           </td></tr>
         <% } %>
@@ -172,7 +170,7 @@
           <tr style="<%= overdue ? 'background:rgba(255,107,116,0.06)' : '' %>">
             <td class="who">
               <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
-              <% if (r.status === 'no_deposit') { %><span class="badge badge-warn">ID bana · deposit nahi</span><% } %>
+              <% if (r.status === 'no_deposit') { %><span class="badge badge-warn">ID created · no deposit</span><% } %>
               <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= r.calls_today %> call</span><% } %>
             </td>
             <td class="num nowrap"><%= r.mobile_shown %></td>
@@ -188,18 +186,18 @@
             </td>
             <td class="nowrap">
               <% if (r.days_late > 0) { %>
-                <span class="badge badge-danger"><%= r.days_late %> din late</span>
+                <span class="badge badge-danger"><%= r.days_late %> days late</span>
                 <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
               <% } else if (r.never_scheduled) { %>
-                <span class="badge badge-warn">kabhi schedule nahi hua</span>
+                <span class="badge badge-warn">never scheduled</span>
               <% } else if (r.days_late < 0) { %>
-                <span class="badge badge-neutral"><%= -r.days_late %> din baad</span>
+                <span class="badge badge-neutral"><%= -r.days_late %>days later</span>
                 <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
               <% } else { %>
-                <span class="badge badge-success">Aaj</span>
+                <span class="badge badge-success">Today</span>
               <% } %>
               <% if (r.last_touched_at) { %>
-                <div class="muted tiny"><%= r.days_since_touch %> din se touch nahi</div>
+                <div class="muted tiny"><%= r.days_since_touch %> days since last touch</div>
               <% } %>
             </td>
             <td class="right num"><strong><%= r.deposit_count %></strong></td>
@@ -228,18 +226,18 @@
 <% if (upcoming.length) { %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('clock', 15) %> Aage ke follow-ups</h3>
-      <span class="muted tiny" style="margin-left:auto">agla din aate hi aaj ki list me aa jayenge</span>
+      <h3><%- icon('clock', 15) %> Upcoming follow-ups</h3>
+      <span class="muted tiny" style="margin-left:auto">they move into today's list on their day</span>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Customer</th><th>Agla follow-up</th><th>Kitne din baad</th><th>Last remark</th></tr></thead>
+        <thead><tr><th>Customer</th><th>Next follow-up</th><th>In how many days</th><th>Last remark</th></tr></thead>
         <tbody>
           <% upcoming.forEach(function (u) { %>
             <tr>
               <td><a href="/customers/<%= encodeURIComponent(u.username) %>"><strong><%= u.username %></strong></a></td>
               <td class="nowrap"><strong><%= helpers.prettyDate(u.next_touch_on) %></strong></td>
-              <td class="num"><%= u.in_days %> din</td>
+              <td class="num"><%= u.in_days %>days</td>
               <td class="muted tiny"><%= u.last_remark || '—' %></td>
             </tr>
           <% }); %>
@@ -263,16 +261,16 @@
       <div class="form-group">
         <label>Remark</label>
         <select name="action_type" id="rm_action" required onchange="guessDate()">
-          <option value="">— chunein —</option>
+          <option value="">— choose —</option>
           <% remarks.forEach(function (r) { %>
             <option value="<%= r.key %>" data-days="<%= r.days %>"><%= r.key %></option>
           <% }); %>
         </select>
-        <span class="muted tiny" id="rm_hint">Remark chunne par agla follow-up khud lag jayega.</span>
+        <span class="muted tiny" id="rm_hint">Picking a remark schedules the next follow-up automatically.</span>
       </div>
 
       <div class="form-group">
-        <label>Agla follow-up <span class="muted tiny">(badalna ho to)</span></label>
+        <label>Next follow-up <span class="muted tiny">(change if needed)</span></label>
         <div class="chips" style="margin-bottom:8px">
           <% quickDates.forEach(function (q) { %>
             <button type="button" class="chip" onclick="setGap(<%= q.days %>, this)"><%= q.label %></button>
@@ -283,12 +281,12 @@
       </div>
 
       <div class="form-group">
-        <label>Date (aaj)</label>
+        <label>Date (today)</label>
         <input type="date" name="action_date" value="<%= today %>" required>
       </div>
       <div class="form-group">
         <label>Note</label>
-        <textarea name="response" rows="3" style="min-height:76px" placeholder="jaise: 2 din me deposit karega"></textarea>
+        <textarea name="response" rows="3" style="min-height:76px" placeholder="jaise: 2 days deposit karega"></textarea>
       </div>
     </div>
     <div class="dialog-foot">
@@ -306,7 +304,7 @@
     document.getElementById('rm_fu').value = '';
     document.getElementById('rm_gap').value = '';
     document.querySelectorAll('#remarkDialog .chip').forEach(function (c) { c.classList.remove('on'); });
-    document.getElementById('rm_hint').textContent = 'Remark chunne par agla follow-up khud lag jayega.';
+    document.getElementById('rm_hint').textContent = 'Picking a remark schedules the next follow-up automatically.';
     document.getElementById('remarkDialog').showModal();
   }
 
@@ -339,10 +337,10 @@
 
     if (key === 'Do Not Contact') {
       setDateIso('');
-      document.getElementById('rm_hint').textContent = 'Is customer ko list se hata diya jayega — koi follow-up nahi.';
+      document.getElementById('rm_hint').textContent = 'This customer is removed from the list — no follow-up.';
     } else if (Number.isFinite(days)) {
       setDateIso(addDays(todayISO(), days));
-      document.getElementById('rm_hint').textContent = 'Agla follow-up: ' + days + ' din baad. Neeche se badal sakte hain.';
+      document.getElementById('rm_hint').textContent = 'Next follow-up: ' + days + ' days later. You can change it below.';
     }
   }
 </script>

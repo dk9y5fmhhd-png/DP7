@@ -76,7 +76,7 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       labels: { VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
       today,
       roleWeights: {
-        PD: 'ID bana par ek bhi deposit nahi — sabse pehle',
+        PD: 'ID created with no deposit yet — first in queue',
         P1: 'VIP inactive + recently inactive (14 din)',
         P2: 'Normal inactive + naya customer',
         P3: 'Reactivated — dobara active hua',
@@ -194,7 +194,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const queueCount = rows.length;
     const visibleRows = limit === null ? rows : rows.slice(0, limit);
 
-    // Stats bhi sirf current tab ke — warna "Aaj due 10" dikhta tha jabki
+    // Stats bhi sirf current tab ke — warna "Due today 10" dikhta tha jabki
     // list me 5 rows hoti thin. Ab counter aur list hamesha match karte hain.
     const stats = await db.row(
       `${base}
@@ -368,7 +368,7 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: nextTouch
-        ? `Remark save — ${username}: ${action}. Agla touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
+        ? `Remark save — ${username}: ${action}. Next touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
         : `Remark save — ${username}: ${action}. Cycle se hata diya.`,
     };
     res.redirect(req.get('referer') || '/calling/my');

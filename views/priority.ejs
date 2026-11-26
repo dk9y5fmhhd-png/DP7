@@ -5,15 +5,15 @@
     <h1>Calling List</h1>
     <div class="sub">
       <% if (isAdmin) { %>
-        Priority ke hisaab se aaj kisko call karna hai — <strong>PD</strong> (ID bana, deposit nahi) sabse pehle.
-        Ek customer sirf ek caller ke paas.
+        Who to call today, in priority order — <strong>PD</strong> (ID created, no deposit) comes first.
+        Each customer belongs to one caller only.
       <% } else { %>
-        Aapko assign hue customers, priority ke hisaab se.
+        Your assigned customers, in priority order.
       <% } %>
     </div>
   </div>
   <div class="chips">
-    <a class="chip" href="/calling/my"><%- icon('phone', 13) %> Aaj ka kaam</a>
+    <a class="chip" href="/calling/my"><%- icon('phone', 13) %> Today's work</a>
     <a class="chip" href="/customers"><%- icon('team', 13) %> Customers</a>
   </div>
 </div>
@@ -46,12 +46,12 @@
     <div>
       <label>Assignment</label>
       <select name="free" data-autosubmit>
-        <option value="">Sab</option>
-        <option value="1" <%= filters.free ? 'selected' : '' %>>Sirf bina caller</option>
+        <option value="">All</option>
+        <option value="1" <%= filters.free ? 'selected' : '' %>>Unassigned only</option>
       </select>
     </div>
     <% } %>
-    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %>View</button></div>
     <div style="margin-left:auto" class="muted tiny align-self-center"><strong><%= rows.length %></strong> customers</div>
   </form>
 
@@ -59,17 +59,17 @@
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <% if (isAdmin) { %>
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny">Chune hue customers ko:</span>
+      <span class="muted tiny">Assign selected customers to:</span>
       <select name="caller_id" style="min-width:170px">
         <option value="">— caller hatao —</option>
         <% callers.forEach(function (c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
       </select>
       <button class="btn btn-sm btn-primary" type="submit">Assign</button>
-      <span class="muted tiny" style="margin-left:auto">Mobile masked hai — call button se dial karein</span>
+      <span class="muted tiny" style="margin-left:auto">Mobile is masked — use the Call button to dial</span>
     </div>
     <% } else { %>
     <div class="card-body" style="padding:10px 18px;border-bottom:1px solid var(--border)">
-      <span class="muted tiny">Aapke assigned customers · number masked hai — Call button se dial karein</span>
+      <span class="muted tiny">Your assigned customers · number masked — use the Call button to dial</span>
     </div>
     <% } %>
 
@@ -92,7 +92,7 @@
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="11"><div class="empty"><span class="big"><%- icon('check', 26) %></span>Is list me koi customer nahi.</div></td></tr>
+            <tr><td colspan="11"><div class="empty"><span class="big"><%- icon('check', 26) %></span>No customers in this list.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>

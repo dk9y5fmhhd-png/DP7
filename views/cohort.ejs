@@ -14,7 +14,7 @@
       <strong><%= data.period.label %></strong> ·
       <%= data.meta.blurb %>
       <% if (minDays !== null) { %>— <%= minDays %>+ days per week<% } else { %>— under <%= th.weekly %> days per week<% } %>
-      (pichhle <%= data.weeks %> hafte, <%= helpers.prettyDate(data.lookbackStart) %> – <%= helpers.prettyDate(data.lookbackEnd) %>)
+      (last <%= data.weeks %> hafte, <%= helpers.prettyDate(data.lookbackStart) %> – <%= helpers.prettyDate(data.lookbackEnd) %>)
     </div>
   </div>
   <div class="chips">
@@ -31,22 +31,22 @@
   <div class="stat bad">
     <div class="label">Gone quiet</div>
     <div class="value"><%= data.summary.quiet.toLocaleString('en-IN') %></div>
-    <div class="hint">is period me deposit nahi kiya</div>
+    <div class="hint">did not deposit in this period</div>
   </div>
   <div class="stat">
     <div class="label">In this group</div>
     <div class="value"><%= data.summary.total.toLocaleString('en-IN') %></div>
-    <div class="hint">habit ke hisaab se</div>
+    <div class="hint">against their usual habit</div>
   </div>
   <div class="stat ok">
     <div class="label">Deposited</div>
     <div class="value"><%= data.summary.deposited.toLocaleString('en-IN') %></div>
-    <div class="hint">list se hidden</div>
+    <div class="hint">hidden from the list</div>
   </div>
   <div class="stat <%= data.dupes.size ? 'warn' : '' %>">
     <div class="label">Duplicate numbers</div>
     <div class="value"><%= data.dupes.size.toLocaleString('en-IN') %></div>
-    <div class="hint">is list me</div>
+    <div class="hint">in this list</div>
   </div>
 </div>
 
@@ -87,9 +87,7 @@
         <% if (!data.rows.length) { %>
           <tr><td colspan="8">
             <div class="empty">
-              <span class="big"><%- icon('check', 30) %></span>
-              Is period me is group ka koi client quiet nahi hua — sab deposit kar rahe hain.
-            </div>
+              <span class="big"><%- icon('check', 30) %></span>No client in this group went quiet — everyone is depositing.</div>
           </td></tr>
         <% } %>
         <% data.grouped.forEach(function (g) { %>

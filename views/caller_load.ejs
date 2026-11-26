@@ -4,12 +4,12 @@
   <div class="titles">
     <h1>Caller Load</h1>
     <div class="sub">
-      Kis caller ke paas kitna kaam hai — aur yahan se <strong>barabar auto-split</strong> karein.
-      Har caller ko har priority ka hissa milta hai, isliye VIP sab ek ke paas nahi jaate.
+      How much work each caller holds — and from here you can <strong>barabar auto-split</strong> split it:
+      Every caller gets a share of each priority, so VIP customers never pile up with one caller.
     </div>
   </div>
   <div class="chips">
-    <a class="chip <%= team === '' ? 'on' : '' %>" href="/callers">Sab</a>
+    <a class="chip <%= team === '' ? 'on' : '' %>" href="/callers">All</a>
     <a class="chip <%= team === 'retention' ? 'on' : '' %>" href="/callers?team=retention">Retention</a>
     <a class="chip <%= team === 'acquisition' ? 'on' : '' %>" href="/callers?team=acquisition">Acquisition</a>
   </div>
@@ -19,7 +19,7 @@
   <div class="stat">
     <div class="label">Assigned</div>
     <div class="value"><%= totals.assigned.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= totals.callers %> callers me</div>
+    <div class="hint"><%= totals.callers %>callers</div>
   </div>
   <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
     <div class="label">Overdue</div>
@@ -29,20 +29,20 @@
   <div class="stat">
     <div class="label">Total pending</div>
     <div class="value"><%= totals.pending.toLocaleString('en-IN') %></div>
-    <div class="hint">overdue + aaj due</div>
+    <div class="hint">overdue + due today</div>
   </div>
   <div class="stat ok">
-    <div class="label">Aaj kiya</div>
+    <div class="label">Done today</div>
     <div class="value"><%= totals.done.toLocaleString('en-IN') %></div>
     <div class="hint">customers touch kiye</div>
   </div>
   <div class="stat <%= unassigned.total ? 'warn' : 'ok' %>">
-    <div class="label">Bina caller</div>
+    <div class="label">Unassigned</div>
     <div class="value"><%= unassigned.total.toLocaleString('en-IN') %></div>
     <div class="hint">P1: <%= unassigned.p1 %> · P2: <%= unassigned.p2 %> · P3: <%= unassigned.p3 %></div>
   </div>
   <div class="stat <%= totals.empty ? 'warn' : 'ok' %>">
-    <div class="label">Khaali callers</div>
+    <div class="label">Empty callers</div>
     <div class="value"><%= totals.empty %></div>
     <div class="hint"><%= totals.over %> callers overloaded</div>
   </div>
@@ -51,9 +51,7 @@
 <div class="card">
   <div class="card-header">
     <h3><%- icon('users', 15) %> Callers</h3>
-    <span class="muted tiny" style="margin-left:auto">
-      Load health = assigned ÷ (target × 4 din)
-    </span>
+    <span class="muted tiny" style="margin-left:auto">Load health = assigned ÷ (target × 4 days)</span>
   </div>
   <div class="table-wrapper">
     <table>
@@ -67,16 +65,14 @@
           <th class="right">P2</th>
           <th class="right">Pending</th>
           <th class="right">Overdue</th>
-          <th class="right">Aaj kiya</th>
+          <th class="right">Done today</th>
           <th>Last login</th>
         </tr>
       </thead>
       <tbody>
         <% if (!rows.length) { %>
           <tr><td colspan="10"><div class="empty">
-            <span class="big">—</span>
-            Koi caller account nahi. <a href="/users">Users</a> page se banayein.
-          </div></td></tr>
+            <span class="big">—</span>No caller accounts.<a href="/users">Users</a>page to create one.</div></td></tr>
         <% } %>
         <% rows.forEach(function (c) {
              const healthLabel = {
@@ -123,7 +119,7 @@
               <% if (c.overdue) { %><span class="badge badge-danger"><%= c.overdue %></span><% } else { %><span class="muted">0</span><% } %>
             </td>
             <td class="right num"><%= c.done_today %></td>
-            <td class="muted tiny nowrap"><%= c.last_login_at ? helpers.prettyDateTime(c.last_login_at) : 'kabhi nahi' %></td>
+            <td class="muted tiny nowrap"><%= c.last_login_at ? helpers.prettyDateTime(c.last_login_at) : 'never' %></td>
           </tr>
         <% }); %>
       </tbody>
@@ -134,15 +130,14 @@
 <% if (preview) { %>
   <div class="card" id="preview" style="border-color:rgba(245,197,66,0.45)">
     <div class="card-header" style="background:rgba(245,197,66,0.06)">
-      <h3><%- icon('alert', 15) %> Preview — kuch save nahi hua</h3>
+      <h3><%- icon('alert', 15) %> Preview — nothing saved yet</h3>
       <span class="badge badge-warn" style="margin-left:auto"><%= preview.total %> customers</span>
     </div>
     <div class="card-body">
       <p class="soft" style="margin-top:0">
-        <%= preview.scope === 'all' ? 'Sab customers dobara' : 'Bina caller wale' %>
+        <%= preview.scope === 'all' ? 'All customers (re-split)' : 'Unassigned' %>
         <%= preview.priority ? '· sirf ' + preview.priority : '' %>
-        · total available <strong><%= preview.available %></strong>
-        · har caller ko ~<strong><%= preview.perCaller %></strong>
+        · total available <strong><%= preview.available %></strong>· about<strong><%= preview.perCaller %></strong>
       </p>
       <div class="table-wrapper" style="border:1px solid var(--border);border-radius:10px">
         <table>
@@ -177,8 +172,8 @@
       <form method="post" action="/callers/apply" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <button class="btn btn-primary" type="submit"
-                data-confirm="<%= preview.total %> customers assign ho jayenge. Pakka?">
-          <%- icon('check', 15) %> Assign karein
+                data-confirm="<%= preview.total %> customers will be assigned. Confirm?">
+          <%- icon('check', 15) %> Assign
         </button>
       </form>
     </div>
@@ -192,42 +187,41 @@
   <form method="post" action="/callers/preview">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
-      <p class="muted tiny" style="margin:0 0 14px">
-        Ek click me customers barabar baant dein. Pehle <strong>Preview</strong> dikhega — jab tak aap
-        Assign na dabayein, kuch nahi badalta.
+      <p class="muted tiny" style="margin:0 0 14px">Split customers evenly in one click. A<strong>Preview</strong> is shown first — until you press
+        Assign, nothing changes.
       </p>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Kaun se customers</label>
+          <label>Which customers</label>
           <select name="scope">
-            <option value="unassigned">Bina caller wale (<%= unassigned.total.toLocaleString('en-IN') %>)</option>
-            <option value="all">Sab customers (dobara baant)</option>
+            <option value="unassigned">Unassigned wale (<%= unassigned.total.toLocaleString('en-IN') %>)</option>
+            <option value="all">All customers (re-split)</option>
           </select>
         </div>
         <div class="form-group">
           <label>Priority <span class="muted tiny">(optional)</span></label>
           <select name="priority">
-            <option value="">Sab priorities</option>
-            <option value="P1">Sirf P1 — VIP inactive</option>
-            <option value="P2">Sirf P2</option>
-            <option value="P3">Sirf P3</option>
+            <option value="">All priorities</option>
+            <option value="P1">P1 only — inactive VIP</option>
+            <option value="P2">P2 only</option>
+            <option value="P3">P3 only</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Har caller ko kitne <span class="muted tiny">(khaali = barabar)</span></label>
+          <label>How many per caller<span class="muted tiny">(khaali = barabar)</span></label>
           <input type="number" name="per_caller" min="0" step="1" placeholder="auto">
         </div>
         <div class="form-group">
-          <label>Total kitne baantne hain <span class="muted tiny">(khaali = sab)</span></label>
+          <label>How many to distribute in total <span class="muted tiny">(blank = all)</span></label>
           <input type="number" name="take" min="0" step="1" placeholder="sab">
         </div>
       </div>
 
       <div class="form-group" style="margin-top:6px">
-        <label>Kis-kis caller me baantna hai</label>
+        <label>Which callers to distribute to</label>
         <div class="check-row" data-check-scope>
-          <label class="check-pill"><input type="checkbox" data-check-all> <span>Sab chunein</span></label>
+          <label class="check-pill"><input type="checkbox" data-check-all> <span>Select all</span></label>
           <% const previewIds = preview ? preview.rows.map(function (r) { return r.id; }) : []; %>
           <% callers.forEach(function (c) {
                const ticked = preview
@@ -239,11 +233,11 @@
             </label>
           <% }); %>
         </div>
-        <span class="muted tiny">Khaali callers pehle se tick hain.</span>
+        <span class="muted tiny">Empty callers are pre-selected.</span>
       </div>
     </div>
     <div class="card-footer" style="text-align:right">
-      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Preview banayein</button>
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Build preview</button>
     </div>
   </form>
 </div>
@@ -253,13 +247,13 @@
     <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle splits</h3></div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Kab</th><th>Kisne</th><th>Scope</th><th class="right">Total</th><th class="right">Callers</th><th class="right">Per caller</th></tr></thead>
+        <thead><tr><th>Kab</th><th>By</th><th>Scope</th><th class="right">Total</th><th class="right">Callers</th><th class="right">Per caller</th></tr></thead>
         <tbody>
           <% lastRuns.forEach(function (r) { %>
             <tr>
               <td class="nowrap muted tiny"><%= helpers.prettyDateTime(r.run_at) %></td>
               <td class="tiny"><%= r.by_name || '—' %></td>
-              <td class="tiny"><%= r.scope === 'all' ? 'Sab customers' : 'Bina caller' %></td>
+              <td class="tiny"><%= r.scope === 'all' ? 'Sab customers' : 'Unassigned' %></td>
               <td class="right num"><strong><%= r.total %></strong></td>
               <td class="right num"><%= r.callers %></td>
               <td class="right num">~<%= r.per_caller %></td>
@@ -272,20 +266,20 @@
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> Auto-split kaise kaam karta hai</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How auto-split works</h3></div>
   <div class="card-body">
     <dl class="kv">
       <dt>Barabar</dt>
-      <dd>Har caller ko lagbhag same number — 2,786 ko 8 me baantne par 348-348</dd>
-      <dt>Priority ka mix</dt>
-      <dd>Har priority (P1, P2, P3, P4) <strong>alag-alag</strong> round-robin hoti hai —
-        isliye VIP sab ek caller ke paas nahi jaate, sabko barabar milte hain</dd>
+      <dd>Every caller gets roughly the same count — 2,786 across 8 callers is 348 each</dd>
+      <dt>Priority mix</dt>
+      <dd>Har priority (P1, P2, P3, P4) <strong>alag-alag</strong> is round-robin —
+        so VIP customers do not all land on one caller; each gets an equal share</dd>
       <dt>P0 skip</dt>
-      <dd>"Do Not Contact" wale kabhi assign nahi hote</dd>
+      <dd>"Do Not Contact" customers are never assigned</dd>
       <dt>Load health</dt>
-      <dd>assigned ÷ (target × 4 din) — 100% ke aas-paas theek, 130% se upar zyada</dd>
+      <dd>assigned ÷ (target × 4 days) — around 100% is healthy, above 130% is heavy</dd>
       <dt>Team</dt>
-      <dd><strong>Retention</strong> = purane client ka follow-up · <strong>Acquisition</strong> = naye client laana</dd>
+      <dd><strong>Retention</strong> = follow-up on existing clients · <strong>Acquisition</strong>= bringing in new clients</dd>
     </dl>
   </div>
 </div>

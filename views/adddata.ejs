@@ -3,7 +3,7 @@
 <div class="page-head">
   <div class="titles">
     <h1>Add Data</h1>
-    <div class="sub">Excel / CSV file upload karein — ya seedha paste kar dein. Ek file me kai dates bhi chal sakti hain.</div>
+    <div class="sub">Upload an Excel / CSV file — or paste the rows directly. One file can hold several dates.</div>
   </div>
   <div class="chips">
     <a class="chip" href="/add-data/template"><%- icon('download', 13) %> Excel template</a>
@@ -15,29 +15,25 @@
     <%- icon(result.dryRun ? 'alert' : 'check', 15) %>
     <span>
       <% if (result.empty) { %>
-        <strong>Koi valid line nahi mili.</strong>
+        <strong>No valid row found.</strong>
         <% if (result.mode === 'file') { %>
-          File me data samajh nahi aaya. Template download karke usi format me daalein
-          (columns: <code>date, username, mobile, amount</code>).
+          Could not read the data in this file. Download the template and use that format (columns: <code>date, username, mobile, amount</code>).
         <% } else { %>
-          Format check kijiye: <code>username mobile amount</code>
+          Check the format: <code>username mobile amount</code>
         <% } %>
       <% } else if (result.dryRun) { %>
-        <strong>Preview</strong> — <%= result.totalRows %> valid row<%= result.totalRows === 1 ? '' : 's' %> mil<%= result.totalRows === 1 ? 'a' : 'e' %><%= result.dates && result.dates.length > 1 ? ', ' + result.dates.length + ' alag dates ke' : '' %>.
-        Abhi kuch save nahi hua. Neeche check karke <strong>Save</strong> dabayein.
-      <% } else { %>
-        <strong><%= result.inserted %></strong> row<%= result.inserted === 1 ? '' : 's' %> save ho ga<%= result.inserted === 1 ? 'ya' : 'ye' %>
-        <%= result.dates && result.dates.length > 1 ? '(' + result.dates.length + ' dates)' : '— ' + result.playDate %><%= result.skipped ? ', ' + result.skipped + ' skip hue (pehle se the)' : '' %>.
+        <strong>Preview</strong> — <%= result.totalRows %> valid row<%= result.totalRows === 1 ? '' : 's' %> found<%= result.dates && result.dates.length > 1 ? ', across ' + result.dates.length + ' different dates' : '' %>. Nothing has been saved yet. Review the list below and press <strong>Save</strong> to save.<% } else { %>
+        <strong><%= result.inserted %></strong> row<%= result.inserted === 1 ? '' : 's' %>will be saved<%= result.inserted === 1 ? 'ya' : 'ye' %>
+        <%= result.dates && result.dates.length > 1 ? '(' + result.dates.length + ' dates)' : '— ' + result.playDate %><%= result.skipped ? ', ' + result.skipped + ' skipped (already existed)' : '' %>.
       <% } %>
       <% if (result.errors && result.errors.length) { %>
-        · <strong><%= result.errors.length %></strong> line<%= result.errors.length === 1 ? '' : 's' %> skip hui.
-      <% } %>
+        · <strong><%= result.errors.length %></strong> line<%= result.errors.length === 1 ? '' : 's' %>skipped.<% } %>
     </span>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('file', 15) %> File samajh me aayi</h3>
+      <h3><%- icon('file', 15) %>File read</h3>
       <span class="muted tiny" style="margin-left:auto">
         <% if (result.fileName) { %><%= result.fileName %><% } %>
         <% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %>
@@ -48,10 +44,7 @@
         <dt>Valid rows</dt><dd><%= result.totalRows || 0 %></dd>
         <dt>Date</dt>
         <dd>
-          <% if (result.usedDateColumn) { %>
-            File ke date column se (<%= (result.dates || []).length %> alag din)
-          <% } else { %>
-            Form ki date — <%= result.playDate %>
+          <% if (result.usedDateColumn) { %>From the file's date column (<%= (result.dates || []).length %>different days)<% } else { %>The form date —<%= result.playDate %>
           <% } %>
         </dd>
         <% if (result.headerMap) { %>
@@ -63,7 +56,7 @@
             <% }); %>
           </dd>
         <% } else if (result.mode === 'file') { %>
-          <dt>Columns</dt><dd class="muted">Header nahi mila — pehla column username, doosra mobile, teesra amount maana gaya.</dd>
+          <dt>Columns</dt><dd class="muted">No header found — first column is treated as username, second as mobile, third as amount.</dd>
         <% } %>
         <% if (result.perDate && result.perDate.length) { %>
           <dt>Saved</dt>
@@ -91,7 +84,7 @@
         </table>
       </div>
       <% if (result.errors.length > 50) { %>
-        <div class="card-footer muted tiny">Sirf pehli 50 errors dikh rahi hain.</div>
+        <div class="card-footer muted tiny">Showing only the first 50 errors.</div>
       <% } %>
     </div>
   <% } %>
@@ -134,22 +127,18 @@
         <label class="dropzone" id="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" id="fileInput" required>
           <span class="dz-icon"><%- icon('file', 26) %></span>
-          <span class="dz-title" id="dzTitle">Excel file yahan chhod dein</span>
-          <span class="dz-sub">ya click karke chunein · .xlsx ya .csv · max 20 MB</span>
+          <span class="dz-title" id="dzTitle">Drop the Excel file here</span>
+          <span class="dz-sub">or click to choose · .xlsx or .csv · max 20 MB</span>
         </label>
 
         <div class="filter-bar" style="padding:16px 0 0;border:0;background:none">
           <div>
-            <label>Play date <span class="muted tiny">(sirf tab use hogi jab file me date column na ho)</span></label>
+            <label>Play date <span class="muted tiny">(only used when the file has no date column)</span></label>
             <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>">
           </div>
         </div>
 
-        <p class="muted tiny" style="margin:12px 0 0">
-          Column ke naam <code>date</code>, <code>username</code>, <code>mobile</code>, <code>amount</code> ho to sabse aasan.
-          Order badal bhi dein to chalega — header padh liya jaata hai.
-          Template chahiye to upar <strong>Excel template</strong> dabayein.
-        </p>
+        <p class="muted tiny" style="margin:12px 0 0">Column names<code>date</code>, <code>username</code>, <code>mobile</code>, <code>amount</code> is easiest. Column order can change — the header is read automatically. Need the template? Use the link above<strong>Excel template</strong> to save.</p>
       </div>
       <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
         <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
@@ -175,7 +164,7 @@
             </tr>
           <% }); %>
           <% if (!days.length) { %>
-            <tr><td colspan="4"><div class="empty">Abhi koi data nahi.</div></td></tr>
+            <tr><td colspan="4"><div class="empty">No data yet.</div></td></tr>
           <% } %>
         </tbody>
       </table>
@@ -185,8 +174,8 @@
 
 <details class="card" style="padding:0">
   <summary class="card-header" style="cursor:pointer;list-style:none">
-    <h3 style="display:inline-flex"><%- icon('plus', 15) %> Ya seedha paste karein</h3>
-    <span class="muted tiny" style="margin-left:auto">chhoti list ke liye</span>
+    <h3 style="display:inline-flex"><%- icon('plus', 15) %>Or paste directly</h3>
+    <span class="muted tiny" style="margin-left:auto">for a short list</span>
   </summary>
   <form method="post" action="/add-data" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
@@ -201,8 +190,7 @@
         <label>Rows</label>
         <textarea name="rows" placeholder="username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200"><%= draft %></textarea>
         <span class="muted tiny">
-          Format: <code>username mobile amount</code> — comma, tab ya space se separated. Amount optional (blank = 0).
-        </span>
+          Format: <code>username mobile amount</code>— separated by comma, tab or space. Amount is optional (blank = 0).</span>
       </div>
     </div>
     <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
@@ -214,7 +202,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('alert', 15) %> Danger zone — ek din ka data delete</h3>
+    <h3><%- icon('alert', 15) %> Danger zone — delete one day's data</h3>
   </div>
   <form method="post" action="/add-data/delete-day">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
@@ -229,12 +217,12 @@
           <input type="password" name="pin" placeholder="••••••" required autocomplete="off">
         </div>
         <div class="form-group" style="margin:0">
-          <button type="submit" class="btn btn-danger" data-confirm="Is din ka poora data delete ho jayega. Confirm?">
+          <button type="submit" class="btn btn-danger" data-confirm="All data for this day will be deleted. Confirm?">
             <%- icon('x', 15) %> Delete day
           </button>
         </div>
       </div>
-      <p class="muted tiny" style="margin:12px 0 0">Ye action permanent hai. Pehle Backup se CSV export kar lijiye.</p>
+      <p class="muted tiny" style="margin:12px 0 0">This action is permanent. Export a CSV from Backup first.</p>
     </div>
   </form>
 </div>

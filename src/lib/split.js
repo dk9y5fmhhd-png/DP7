@@ -13,7 +13,7 @@ const PRIORITY_ORDER = ['PD', 'P1', 'P2', 'P3', 'P4'];
 
 const SCOPES = {
   unassigned: {
-    label: 'Bina caller wale',
+    label: 'Unassigned wale',
     where: 'b.assigned_to IS NULL',
     params: () => [],
   },
@@ -29,7 +29,7 @@ const SCOPES = {
  * @returns {Promise<{plan: Map<number, string[]>, counts: Object, total: number, perCaller: number}>}
  */
 async function buildPlan({ callerIds, scope = 'unassigned', priority = '', perCaller = 0, take = 0 }) {
-  if (!Array.isArray(callerIds) || !callerIds.length) throw new Error('Kam se kam ek caller chunein.');
+  if (!Array.isArray(callerIds) || !callerIds.length) throw new Error('Choose at least one caller.');
 
   const ids = [...new Set(callerIds.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
   if (!ids.length) throw new Error('Caller IDs galat hain.');
@@ -199,7 +199,7 @@ async function callerLoad({ team = '' } = {}) {
     params
   );
 
-  // Load health — 4 din ke cycle par 150/din
+  // Load health — 4 days cycle par 150/din
   const CYCLE_DAYS = 4;
   for (const r of rows) {
     const capacity = Number(r.daily_target || 40) * CYCLE_DAYS;

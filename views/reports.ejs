@@ -4,8 +4,8 @@
   <div class="titles">
     <h1>Client Reports</h1>
     <div class="sub">
-      Jin clients ne <%= helpers.prettyDateLong(filters.date) %> ko deposit nahi kiya (us se pehle active the) —
-      yehi aaj ki follow-up list hai.
+      Jin clients ne <%= helpers.prettyDateLong(filters.date) %> did not deposit (they were active before) —
+      this is today's follow-up list.
     </div>
   </div>
   <div class="chips">
@@ -52,7 +52,7 @@
 
   <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border)">
     <div class="chips">
-      <% [['today', 'Naye quiet (kal tak active)'], ['d3', '3 din me'], ['d7', '7 din me'], ['all', 'Poora backlog']].forEach(function (opt) { %>
+      <% [['today', 'Newly quiet (active until yesterday)'], ['d3', '3 days'], ['d7', '7 days'], ['all', 'Poora backlog']].forEach(function (opt) { %>
         <a class="chip <%= filters.quiet === opt[0] ? 'on' : '' %>"
            href="/reports?date=<%= filters.date %>&quiet=<%= opt[0] %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
           <%= opt[1] %>
@@ -85,7 +85,7 @@
           <tr><td colspan="9">
             <div class="empty">
               <span class="big"><%- icon('check', 30) %></span>
-              Is filter par koi client nahi mila. Date ya chip badal ke dekhiye.
+              No client matches this filter. Try a different date or chip.
             </div>
           </td></tr>
         <% } %>
@@ -97,14 +97,14 @@
             </td>
             <td class="num nowrap">
               <%= mask(r.mobile) %>
-              <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="Ye number <%= r.dupeCount %> clients par hai">×<%= r.dupeCount %></span><% } %>
+              <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="Ye number <%= r.dupeCount %> clients share this number">×<%= r.dupeCount %></span><% } %>
             </td>
             <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>
             <td class="nowrap muted"><%= filters.date %></td>
             <td class="nowrap"><%= r.last_deposit %></td>
             <td>
               <span class="badge badge-danger">Inactive</span>
-              <span class="muted tiny" style="display:block;margin-top:3px"><%= daysInactive %> din se</span>
+              <span class="muted tiny" style="display:block;margin-top:3px"><%= daysInactive %>days</span>
             </td>
             <td><div class="note <%= r.followup && r.followup.response ? '' : 'muted' %>" title="<%= r.followup && r.followup.response ? r.followup.response : '' %>"><%= r.followup && r.followup.response ? r.followup.response : '—' %></div></td>
             <td>

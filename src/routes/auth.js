@@ -122,8 +122,8 @@ router.post('/login', async (req, res, next) => {
       );
       return fail(
         lock
-          ? `Galat password ${MAX_ATTEMPTS} dafa — account ${LOCK_MINUTES} minute ke liye lock hai.`
-          : `Login ID ya password galat hai. ${MAX_ATTEMPTS - attempts} try baaki.`
+          ? `Wrong password ${MAX_ATTEMPTS} times — account locked for ${LOCK_MINUTES} minutes.`
+          : `Wrong login ID or password. ${MAX_ATTEMPTS - attempts} tries left.`
       );
     }
 

@@ -139,8 +139,8 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
     if (!admin && c.assigned_to !== me.id) {
       return res.status(403).render('error', {
         title: 'Access denied',
-        heading: 'Ye customer aapka nahi hai',
-        message: 'Sirf apne assigned customers dekh sakte hain. Admin se kehiye.',
+        heading: 'This customer is not yours',
+        message: 'You can only see customers assigned to you. Ask your admin.',
       });
     }
 
@@ -216,7 +216,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
     if (!unassign && callerId === null) {
       req.session.flash = {
         type: 'error',
-        message: 'Pehle caller chunein. Kisi se caller hatana ho to "Bina caller karein" dabayein.',
+        message: 'Choose a caller first. To remove a caller use "Clear caller".',
       };
       return res.redirect(back);
     }
@@ -237,7 +237,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       if (where === 'TRUE' && req.body.confirm_all !== '1') {
         req.session.flash = {
           type: 'error',
-          message: `Filter khali hai — ye SAARE ${total} customers par lagega. Pehle filter lagayein.`,
+          message: `No filter set — this would apply to ALL ${total} customers. Set a filter first.`,
         };
         return res.redirect(back);
       }
@@ -252,7 +252,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       req.session.flash = {
         type: 'success',
         message: unassign
-          ? `${out.rowCount} customers se caller hata diya (ab bina caller).`
+          ? `${out.rowCount} customers se caller hata diya (ab unassigned).`
           : `${out.rowCount} customers assign ho gaye.`,
       };
       return res.redirect(back);
@@ -283,7 +283,7 @@ router.post('/:id/flags', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'customer_flag', `id=${req.params.id} dnc=${dnc}`);
     req.session.flash = {
       type: 'success',
-      message: dnc ? 'Customer "Do Not Contact" me daal diya.' : 'Customer ko dobara call list me daal diya.',
+      message: dnc ? 'Customer "Do Not Contact" me daal diya.' : 'Customer put back in the call list.',
     };
     res.redirect(req.get('referer') || '/customers');
   } catch (err) {
@@ -323,7 +323,7 @@ router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) =
 
     const usernames = [].concat(req.body.username || []).filter(Boolean);
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Pehle customers ke checkbox tick karein.' };
+      req.session.flash = { type: 'error', message: 'Pehle customers ke checkbox tick split it:' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
@@ -370,8 +370,8 @@ router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: scope === 'all'
-        ? `Sab saaf — ${customers} customers aur ${deposits} deposits delete.`
-        : `${customers} customers delete. (Deposits bache hue hain — "Sync from deposits" dabane par wapas ban jayenge.)`,
+        ? `All clear — ${customers} customers and ${deposits} deposits deleted.`
+        : `${customers} customers deleted. (Deposits are kept — pressing "Sync from deposits" rebuilds them.)`,
     };
     res.redirect('/customers');
   } catch (err) {
@@ -385,7 +385,7 @@ router.post('/sync', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'customer_sync', JSON.stringify(r));
     req.session.flash = {
       type: 'success',
-      message: `Sync ho gaya — ${r.total} customers, ${r.created} naye, ${r.updated} update, ${r.cleared} clear.`,
+      message: `Synced — ${r.total} customers, ${r.created} new, ${r.updated} updated, ${r.cleared} cleared.`,
     };
     res.redirect('/customers');
   } catch (err) {

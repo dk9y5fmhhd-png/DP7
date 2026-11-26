@@ -4,11 +4,7 @@
   <div class="titles">
     <h1>Customers</h1>
     <div class="sub">
-      <% if (isAdmin) { %>
-        Customer master — status 7-din ke niyam se, VIP deposit ke <strong>count</strong> se (amount se nahi).
-      <% } else { %>
-        Sirf <strong>aapko assign hue</strong> customers. Status 7-din ke niyam se, VIP deposit ke count se.
-      <% } %>
+      <% if (isAdmin) { %>Customer master — status follows the 7-day rule, VIP comes from the deposit <strong>count</strong> (not from the amount).<% } else { %>Only <strong>assigned to you</strong> customers. Status follows the 7-day rule, VIP from the deposit count.<% } %>
     </div>
   </div>
   <div class="chips">
@@ -26,10 +22,10 @@
 
 <div class="stat-grid">
   <div class="stat"><div class="label">Total customers</div><div class="value"><%= totals.total.toLocaleString('en-IN') %></div><div class="hint">master records</div></div>
-  <div class="stat"><div class="label">New</div><div class="value"><%= totals.new_c.toLocaleString('en-IN') %></div><div class="hint">repeat deposit ka wait</div></div>
-  <div class="stat ok"><div class="label">Active</div><div class="value"><%= totals.active_c.toLocaleString('en-IN') %></div><div class="hint">7 din me deposit</div></div>
-  <div class="stat bad"><div class="label">Inactive</div><div class="value"><%= totals.inactive_c.toLocaleString('en-IN') %></div><div class="hint">7 din se zyada</div></div>
-  <div class="stat warn"><div class="label">Reactivated</div><div class="value"><%= totals.reactivated_c.toLocaleString('en-IN') %></div><div class="hint">wapas aaye</div></div>
+  <div class="stat"><div class="label">New</div><div class="value"><%= totals.new_c.toLocaleString('en-IN') %></div><div class="hint">waiting for a repeat deposit</div></div>
+  <div class="stat ok"><div class="label">Active</div><div class="value"><%= totals.active_c.toLocaleString('en-IN') %></div><div class="hint">deposit within 7 days</div></div>
+  <div class="stat bad"><div class="label">Inactive</div><div class="value"><%= totals.inactive_c.toLocaleString('en-IN') %></div><div class="hint">more than 7 days</div></div>
+  <div class="stat warn"><div class="label">Reactivated</div><div class="value"><%= totals.reactivated_c.toLocaleString('en-IN') %></div><div class="hint">returned</div></div>
   <div class="stat"><div class="label">VIP customers</div><div class="value"><%= totals.vip_c.toLocaleString('en-IN') %></div><div class="hint">25+ deposits</div></div>
 </div>
 
@@ -37,7 +33,7 @@
   <form method="get" action="/customers" class="filter-bar">
     <div style="flex:1 1 200px">
       <label>Search</label>
-      <input type="search" name="q" value="<%= filters.q %>" placeholder="username ya mobile…" style="width:100%">
+      <input type="search" name="q" value="<%= filters.q %>" placeholder="username or mobile…" style="width:100%">
     </div>
     <div>
       <label>Status</label>
@@ -71,14 +67,14 @@
       <label>Caller</label>
       <select name="caller" data-autosubmit>
         <option value="">All</option>
-        <option value="none" <%= filters.caller === 'none' ? 'selected' : '' %>>— bina caller —</option>
+        <option value="none" <%= filters.caller === 'none' ? 'selected' : '' %>>— unassigned —</option>
         <% callers.forEach(function (c) { %>
           <option value="<%= c.id %>" <%= filters.caller === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
         <% }); %>
       </select>
     </div>
     <% } %>
-    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Dekhein</button></div>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %>View</button></div>
     <div><a href="/customers" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a></div>
   </form>
 
@@ -91,16 +87,15 @@
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <span class="muted tiny">
-        <strong><%= count.toLocaleString('en-IN') %></strong> customers filter me
-        <% if (filters.caller || filters.status || filters.vip || filters.priority || filters.q) { %>
-          <span class="badge badge-warn" style="margin-left:6px">filter laga hua</span>
+        <strong><%= count.toLocaleString('en-IN') %></strong> customers in this filter<% if (filters.caller || filters.status || filters.vip || filters.priority || filters.q) { %>
+          <span class="badge badge-warn" style="margin-left:6px">filter applied</span>
         <% } else { %>
-          <span class="badge badge-danger" style="margin-left:6px">koi filter nahi — sab par lagega</span>
+          <span class="badge badge-danger" style="margin-left:6px">no filter — applies to everything</span>
         <% } %>
       </span>
       <% if (isAdmin) { %>
       <span class="muted tiny">·</span>
-      <span class="muted tiny"><%= (totals.unassigned || 0).toLocaleString('en-IN') %> bina caller</span>
+      <span class="muted tiny"><%= (totals.unassigned || 0).toLocaleString('en-IN') %> unassigned</span>
       <% } %>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <% if (isAdmin) { %>
@@ -111,26 +106,26 @@
         <input type="hidden" name="f_caller" value="<%= filters.caller %>">
         <input type="hidden" name="f_q" value="<%= filters.q %>">
         <select name="caller_id" style="min-width:160px" required>
-          <option value="">— caller chunein —</option>
+          <option value="">— choose caller —</option>
           <% callers.forEach(function (c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
         </select>
         <button class="btn btn-sm" type="submit" name="assign_filter" value="1"
-                data-confirm="Is filter ke SAB <%= count %> customers ko chune hue caller ko de dein?">
-          Poora filter assign karein
+                data-confirm="ALL <%= count %> customers in this filter to the chosen caller?">
+          Assign the whole filter
         </button>
-        <button class="btn btn-sm btn-primary" type="submit">Chune hue assign karein</button>
+        <button class="btn btn-sm btn-primary" type="submit">Assign selected</button>
         <button class="btn btn-sm" type="submit" name="unassign" value="1"
-                data-confirm="Is filter ke <%= count %> customers se caller hata dein? (data safe rehta hai)">
-          <%- icon('x', 13) %> Bina caller karein
+                data-confirm="Clear the caller for <%= count %> customers in this filter? (data is kept)">
+          <%- icon('x', 13) %> Clear caller
         </button>
         <span style="width:1px;height:22px;background:var(--border)"></span>
         <button class="btn btn-sm btn-danger" type="submit"
                 formaction="/customers/delete-selected" name="confirm" value="DELETE"
-                data-confirm="Chune hue customers delete ho jayenge (remarks bhi). Pakka?">
+                data-confirm="Selected customers will be deleted (remarks too). Confirm?">
           <%- icon('trash', 13) %> Delete
         </button>
       <% } else { %>
-        <span class="muted tiny">Aapke assigned customers · number masked hai</span>
+        <span class="muted tiny">Your assigned customers · number masked</span>
       <% } %>
       </div>
     </div>
@@ -155,7 +150,7 @@
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="<%= isAdmin ? 12 : 10 %>"><div class="empty"><span class="big">—</span>Is filter par koi customer nahi.</div></td></tr>
+            <tr><td colspan="<%= isAdmin ? 12 : 10 %>"><div class="empty"><span class="big">—</span>No customers match this filter.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>
@@ -191,7 +186,7 @@
               <% if (isAdmin) { %><td class="right">
                 <button class="btn btn-sm btn-danger btn-icon" type="submit" form="delOne"
                         name="username" value="<%= r.username %>"
-                        data-confirm="<%= r.username %> ko delete karein? Iske remarks aur calls bhi hat jayenge.">
+                        data-confirm="<%= r.username %> will be deleted. Their remarks and calls go too.">
                   <%- icon('trash', 12) %>
                 </button>
               </td><% } %>
@@ -213,7 +208,7 @@
 <% if (isAdmin) { %>
 <div class="card" style="border-color:rgba(255,90,118,0.35)">
   <div class="card-header" style="background:rgba(255,90,118,0.07)">
-    <h3><%- icon('trash', 15) %> Customer data delete</h3>
+    <h3><%- icon('trash', 15) %> Customer data</h3>
     <span class="badge badge-danger" style="margin-left:auto"><%= totals.total.toLocaleString('en-IN') %> records</span>
   </div>
   <form method="post" action="/customers/clear">
@@ -221,48 +216,45 @@
     <div class="card-body">
       <div class="form-row" style="align-items:flex-end">
         <div class="form-group" style="margin:0">
-          <label>Kya delete karein</label>
+          <label>What to delete</label>
           <select name="scope">
-            <option value="customers">Sirf customer master (deposits bache rahenge)</option>
-            <option value="all">Sab kuch — customers + deposits + remarks + calls</option>
+            <option value="customers">Customer master only (deposits are kept)</option>
+            <option value="all">Everything — customers + deposits + remarks + calls</option>
           </select>
         </div>
         <div class="form-group" style="margin:0">
-          <label>Confirm ke liye <code>DELETE</code> likhein</label>
+          <label>To confirm type<code>DELETE</code></label>
           <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
         </div>
         <div class="form-group" style="margin:0">
           <button class="btn btn-danger" type="submit"
-                  data-confirm="Ye action permanent hai. Aage badhein?">
-            <%- icon('trash', 15) %> Delete karein
+                  data-confirm="This action is permanent. Continue?">
+            <%- icon('trash', 15) %> Delete
           </button>
         </div>
       </div>
       <p class="muted tiny" style="margin:12px 0 0">
-        <strong>Sirf customer master</strong> delete karne par deposits bache rehte hain —
-        <strong>Sync from deposits</strong> dabane par customers wapas ban jayenge.
-        Poora saaf karna ho to <strong>Sab kuch</strong> chunein, phir nayi file upload karein.
-      </p>
+        <strong>Customer master only</strong> deleting keeps the deposits — pressing<strong>Sync from deposits</strong> rebuilds the customers. To wipe everything use<strong>Everything</strong> then upload the new file. To split:</p>
     </div>
   </form>
 </div>
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> Rules kaise lagte hain</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How the rules apply</h3></div>
   <div class="card-body">
     <dl class="kv">
       <dt>Status</dt>
-      <dd>Pehla deposit → <strong>New</strong> · 7 din me dobara → <strong>Active</strong> · 7 din koi deposit nahi → <strong>Inactive</strong> · Inactive ne dobara kiya → <strong>Reactivated</strong></dd>
+      <dd>First deposit → <strong>New</strong> · again within 7 days → <strong>Active</strong> · no deposit for 7 days → <strong>Inactive</strong> · Inactive ne dobara kiya → <strong>Reactivated</strong></dd>
       <dt>VIP</dt>
-      <dd>Sirf <strong>successful deposit ke count</strong> se: 25+ VIP · 51+ Premium VIP · 101+ High Value VIP. Amount se nahi. Ek baar VIP bana to hamesha VIP rahega.</dd>
+      <dd>Only<strong>count of successful deposits</strong> from: 25+ VIP · 51+ Premium VIP · 101+ High Value VIP. Not by amount. Once VIP, always VIP.</dd>
       <dt>Priority</dt>
-      <dd><strong>PD</strong> ID bana par ek bhi deposit nahi — sabse pehle · <strong>P1</strong> VIP inactive / recently inactive · <strong>P2</strong> normal inactive + naya customer · <strong>P3</strong> reactivated (dobara active hua) · <strong>P4</strong> active (call ki zaroorat nahi)</dd>
+      <dd><strong>PD</strong> ID created with no deposit yet — first in queue · <strong>P1</strong> VIP inactive / recently inactive · <strong>P2</strong> normal inactive + new customer ·<strong>P3</strong> reactivated (became active again) ·<strong>P4</strong> active (no call needed)</dd>
       <dt>Deposits (count)</dt>
-      <dd>Ek deposit = ek row. Summary file (ek row me lifetime total) upload karne par count <strong>1</strong> hi rahega —
-        VIP ke liye transaction-wise rows chahiye.</dd>
+      <dd>One deposit = one row. If a summary file (one row holding the lifetime total) is uploaded, the count <strong>1</strong> hi rahega —
+        VIP needs transaction-wise rows.</dd>
       <dt>DNC</dt>
-      <dd>"Do Not Contact" — aage koi calling list me nahi aayega</dd>
+      <dd>"Do Not Contact" — will never appear in any calling list again</dd>
     </dl>
   </div>
 </div>

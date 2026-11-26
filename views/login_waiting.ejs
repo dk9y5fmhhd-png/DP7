@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Approval ka intezaar · Dailyplay7 CRM</title>
+  <title>Waiting for approval · Dailyplay7 CRM</title>
   <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
   <link rel="icon" href="/favicon.png">
 </head>
@@ -19,29 +19,29 @@
 
     <% if (rejected) { %>
       <div class="flash flash-error">
-        <span><strong>Admin ne aapka login reject kar diya.</strong><br>
-        Agar ye galti se hua hai to admin se kehiye.</span>
+        <span><strong>Admin rejected your login.</strong><br>
+        If this was a mistake, tell your admin.</span>
       </div>
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-outline" style="width:100%">Wapas login par jaayein</button>
+        <button class="btn btn-outline" style="width:100%">Back to login</button>
       </form>
 
     <% } else if (stale) { %>
       <div class="flash flash-error">
-        <span><strong>Request expire ho gayi.</strong><br>
-        Admin ne <%= ttl %> minute ke andar approve nahi kiya. Dobara login karein.</span>
+        <span><strong>The request expired.</strong><br>
+        Admin ne <%= ttl %> minutes. Log in again.</span>
       </div>
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-primary" style="width:100%">Dobara login karein</button>
+        <button class="btn btn-primary" style="width:100%">Log in again</button>
       </form>
 
     <% } else { %>
       <div class="flash flash-info" style="align-items:flex-start">
         <span>
-          <strong>Admin ki permission ka intezaar hai.</strong><br>
-          <span class="muted tiny">Admin approve karte hi aapka login khud khul jayega. Ye page band na karein.</span>
+          <strong>Waiting for admin approval.</strong><br>
+          <span class="muted tiny">Your login opens automatically once approved. Do not close this page.</span>
         </span>
       </div>
 
@@ -54,12 +54,12 @@
       </dl>
 
       <div class="flash flash-info" id="waitingBox" style="margin-bottom:14px">
-        <span class="muted tiny" id="waitingText">Admin ko approval request chali gayi hai…</span>
+        <span class="muted tiny" id="waitingText">Approval request sent to admin…</span>
       </div>
 
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-outline" style="width:100%">Cancel karein</button>
+        <button class="btn btn-outline" style="width:100%">Cancel</button>
       </form>
     <% } %>
 
@@ -80,7 +80,7 @@
         .then(function (d) {
           if (d.status === 'approved') {
             clearInterval(poll);
-            document.getElementById('waitingText').textContent = 'Approve ho gaya — andar le ja rahe hain…';
+            document.getElementById('waitingText').textContent = 'Approved — signing you in…';
             // POST se session banta hai
             form = document.createElement('form');
             form.method = 'POST';

@@ -22,7 +22,7 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
     if (/\.(xlsx|xlsm|xls|csv|txt)$/i.test(file.originalname || '')) return cb(null, true);
-    cb(new Error('Sirf .xlsx ya .csv file chalti hai.'));
+    cb(new Error('Only .xlsx or .csv files are supported.'));
   },
 });
 
@@ -78,7 +78,7 @@ router.get('/template/:kind', auth.requirePage('upload'), async (req, res, next)
 });
 
 /* ------------------------------ clear uploaded data ------------------------------ */
-// Galat file upload ho jaye (jaise summary ki jagah transaction) to pehle saaf karein.
+// Galat file upload ho jaye (jaise summary ki jagah transaction) to pehle saaf split it:
 router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
@@ -99,7 +99,7 @@ router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'clear_deposits', `scope=${scope} removed=${removed}`);
     req.session.flash = {
       type: 'success',
-      message: `${removed} deposit rows delete — customer master dobara sync (${sync.total} customers). Ab sahi file upload karein.`,
+      message: `${removed} deposit rows delete — customer master dobara sync (${sync.total} customers). Ab sahi file upload split it:`,
     };
     res.redirect('/upload');
   } catch (err) {
@@ -121,7 +121,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
     try {
       if (!auth.verifyCsrf(req)) return auth.rejectCsrf(res);
       if (!req.file) {
-        req.session.flash = { type: 'error', message: 'File chunein.' };
+        req.session.flash = { type: 'error', message: 'Choose a file.' };
         return res.redirect('/upload');
       }
 
@@ -349,7 +349,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       req.session.flash = {
         type: 'error',
         message: /xlsx|zip|corrupt|End of data|Invalid/i.test(err.message || '')
-          ? 'File padhi nahi ja saki. Excel me "Save As → .xlsx" karke dobara bhejein.'
+          ? 'Could not read the file. In Excel use "Save As → .xlsx" and send it again.'
           : err.message,
       };
       res.redirect('/upload');

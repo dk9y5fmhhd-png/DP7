@@ -3,26 +3,23 @@
 <div class="page-head">
   <div class="titles">
     <h1>Daily Upload</h1>
-    <div class="sub">Roz ka do data — naye customers ki list, aur deposit transactions. Upload ke baad customer master khud update ho jaata hai.</div>
+    <div class="sub">Two daily files — the new-customer list and deposit transactions. The customer master updates itself after upload.</div>
   </div>
 </div>
 
 <% if (result && result.blocked) { %>
   <div class="flash flash-error">
     <span>
-      <strong>Ye file pehle upload ho chuki hai.</strong>
-      Is file ki <strong><%= result.batchRows %></strong> rows pehle se database me hain —
-      dobara upload karne par count double ho jata, isliye rok diya.
-      <br>Phir se upload karna ho to pehle neeche <strong>"Galat upload hatayein"</strong> se
-      purana data hatayein, phir file upload karein.
-    </span>
+      <strong>This file was already uploaded.</strong> Its <strong><%= result.batchRows %></strong> rows already exist in the database —
+      uploading again would double the count, so it was blocked.
+      <br>To upload again, first clear the old data with <strong>"Remove bad upload"</strong> below, then upload the file.</span>
   </div>
 <% } %>
 
 <% if (perUser && perUser.length) { %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('users', 15) %> Is file ka hisaab — customer-wise</h3>
+      <h3><%- icon('users', 15) %>Result for this file — per customer</h3>
       <span class="muted tiny" style="margin-left:auto">
         <%= perUserTotal.users %> customers · <%= perUserTotal.rows %> rows ·
         <%= helpers.money(perUserTotal.amount) %> total
@@ -44,7 +41,7 @@
       </table>
     </div>
     <% if (perUserTotal.users > perUser.length) { %>
-      <div class="card-footer muted tiny">Top <%= perUser.length %> dikha rahe hain (total <%= perUserTotal.users %> customers).</div>
+      <div class="card-footer muted tiny">Top <%= perUser.length %>shown (total<%= perUserTotal.users %> customers).</div>
     <% } %>
   </div>
 <% } %>
@@ -52,14 +49,12 @@
 <% if (result && result.kind === 'deposits' && hasDateCol === false) { %>
   <div class="card" style="border-color:rgba(255,176,32,0.4)">
     <div class="card-header" style="background:rgba(255,176,32,0.07)">
-      <h3><%- icon('alert', 15) %> File me "deposit date" column nahi hai</h3>
+      <h3><%- icon('alert', 15) %> The file has no "deposit date" column</h3>
     </div>
     <div class="card-body">
-      <p class="soft" style="margin:0">
-        Sab rows <strong><%= result.playDate %></strong> par save hongi. Isse
-        <strong>count aur total sahi</strong> aayega, lekin "last deposit" aur
-        "kitne din inactive" galat dikhega — kyunki asli date pata nahi.
-        Sahi chahiye to Excel me ek <code>deposit date</code> column jodein.
+      <p class="soft" style="margin:0">All rows<strong><%= result.playDate %></strong> will be saved. That keeps<strong>the count and total correct</strong> will be set, but "last deposit" and
+        "days inactive" will be wrong — the real date is unknown.
+        For accuracy add a <code>deposit date</code> column jodein.
       </p>
     </div>
   </div>
@@ -69,14 +64,13 @@
   <div class="flash flash-<%= result.errors && result.errors.length ? 'info' : 'success' %>">
     <span>
       <% if (result.empty) { %>
-        <strong>Koi valid row nahi mili.</strong> Template download karke usi format me daalein.
+        <strong>No valid row found.</strong> Download the template and use that format.
       <% } else if (result.dryRun) { %>
-        <strong>Preview</strong> — <%= result.count %> rows valid hain. Kuch save nahi hua; neeche dekh ke <strong>Save</strong> dabayein.
-      <% } else { %>
+        <strong>Preview</strong> — <%= result.count %> rows are valid. Nothing saved yet; review the list below and <strong>Save</strong> to save.<% } else { %>
         <strong><%= result.inserted %></strong> rows save<%= result.skipped ? ', ' + result.skipped + ' skip' : '' %>.
-        <% if (result.sync) { %> Customer master sync: <strong><%= result.sync.total %></strong> total, <%= result.sync.created %> naye, <%= result.sync.updated %> update.<% } %>
+        <% if (result.sync) { %> Customer master sync: <strong><%= result.sync.total %></strong> total, <%= result.sync.created %>new,<%= result.sync.updated %> update.<% } %>
       <% } %>
-      <% if (result.errors && result.errors.length) { %> · <strong><%= result.errors.length %></strong> lines skip hui.<% } %>
+      <% if (result.errors && result.errors.length) { %> · <strong><%= result.errors.length %></strong> lines skipped.<% } %>
     </span>
   </div>
 
@@ -89,10 +83,10 @@
       <dl class="kv">
         <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers / ID bane (username + mobile + caller)' : 'Deposit transactions' %></dd>
         <% if (result.kind === 'customers' && result.autoAssigned) { %>
-          <dt>Caller ko assign</dt><dd><strong><%= result.autoAssigned %></strong> customers seedha caller ko gaye</dd>
+          <dt>Assigned to caller</dt><dd><strong><%= result.autoAssigned %></strong> customers went straight to the caller</dd>
         <% } %>
         <% if (result.kind === 'customers' && result.badCaller) { %>
-          <dt>Caller nahi mila</dt><dd><strong><%= result.badCaller %></strong> rows — caller ka login_id galat tha</dd>
+          <dt>Caller not found</dt><dd><strong><%= result.badCaller %></strong> rows — the caller login_id was wrong</dd>
         <% } %>
         <dt>Valid rows</dt><dd><%= result.count %></dd>
         <dt>Saved</dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
@@ -166,25 +160,25 @@
 <div class="grid-2 grid-equal">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('team', 15) %> A. Naye customers</h3>
+      <h3><%- icon('team', 15) %>A. New customers</h3>
       <span class="muted tiny" style="margin-left:auto">username · mobile · reg date · caller</span>
     </div>
     <form method="post" action="/upload/customers" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <p class="muted tiny" style="margin:0 0 10px">
-          <strong>ID bana par deposit nahi hua</strong> — aise customers yahan se aate hain. Ye turant
-          follow-up queue me lag jaate hain (tier N, har 2 din), chahe ek bhi deposit na ho.
+          <strong>ID created, no deposit yet</strong> — this is how such customers arrive. They join the
+          follow-up queue immediately (tier N, every day), even with zero deposits.
           <br><br>
-          <code>caller</code> column optional hai — usme login_id likhein (<%= callerLogins %>) to customer
-          seedha usi caller ko assign ho jayega aur usi ka follow-up ban jayega.
+          <code>caller</code> column is optional — put the login_id there (<%= callerLogins %>) and the customer
+          is assigned straight to that caller and their follow-up is created.
           <br>
-          Username unique hai: dobara aaya to sirf mobile/date update hoga, naya record nahi banega.
+          Usernames are unique: a repeat only updates mobile/date, it does not create a new record.
         </p>
         <label class="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
           <span class="dz-icon"><%- icon('upload', 22) %></span>
-          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-title">Choose Excel or CSV</span>
           <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
         </label>
       </div>
@@ -207,22 +201,22 @@
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <p class="muted tiny" style="margin:0 0 10px">
-          <strong>Sirf successful</strong> deposits customer ke count me jaate hain. Duplicate transaction ID reject hoti hai.
-          Ek username ke kai genuine deposits allowed hain.
+          <strong>Successful only</strong> deposits count toward the customer. Duplicate transaction IDs are rejected.
+          Multiple genuine deposits for one username are allowed.
         </p>
         <label class="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
           <span class="dz-icon"><%- icon('upload', 22) %></span>
-          <span class="dz-title">Excel ya CSV chunein</span>
+          <span class="dz-title">Choose Excel or CSV</span>
           <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
         </label>
         <div class="form-group" style="margin-top:10px">
-          <label>Date <span class="muted tiny">(file me date na ho to)</span></label>
+          <label>Date <span class="muted tiny">(if the file has no date)</span></label>
           <input type="date" name="play_date" value="<%= today %>">
           <span class="muted tiny">
-            ⚠️ <strong>Yahan wo din chuniye jis din client aaya tha.</strong>
-            1 tareekh ka data 2 tareekh ko upload kar rahe hain to date <strong>1 tareekh</strong> rakhein —
-            warna wo "New Clients" window me galat din par ginega.
+            ⚠️ <strong>Pick the day the client actually arrived.</strong>
+            Uploading the 1st's data on the 2nd? Set the date to <strong>the 1st</strong> —
+            otherwise it counts on the wrong day in New Clients.
           </span>
         </div>
       </div>
@@ -239,56 +233,50 @@
 
 <div class="grid-2 grid-equal">
   <div class="card">
-    <div class="card-header"><h3><%- icon('alert', 15) %> Deposit count kaise banta hai</h3></div>
+    <div class="card-header"><h3><%- icon('alert', 15) %> How deposit count is calculated</h3></div>
     <div class="card-body">
       <p class="soft" style="margin-top:0">
-        <strong>Deposits</strong> column = us customer ki kitni <strong>rows</strong> hain. Ek row = ek deposit.
-        Isliye <strong>total amount</strong> alag cheez hai aur <strong>count</strong> alag.
+        <strong>Deposits</strong> count = how many deposits that customer holds. One row = one deposit. <strong>Total amount</strong> is a separate thing from <strong>count</strong>.
       </p>
       <dl class="kv">
-        <dt>Galat file</dt>
-        <dd>Ek customer ki ek hi row, jisme lifetime total likha ho <strong>aur count column na ho</strong> →
-          count <strong>1</strong>, level total se banega (jaise ₹30,000 → Level 4)</dd>
+        <dt>Wrong file</dt>
+        <dd>One row per customer holding the lifetime total, <strong>with no count column</strong> →
+          count <strong>1</strong>, the level comes from the total (e.g. ₹30,000 → Level 4)</dd>
         <dt>Summary + count</dt>
-        <dd>Wahi summary file, par ek extra column <code>deposit count</code> = 25 →
-          level total se, VIP count se. Dono sahi</dd>
-        <dt>Sahi file</dt>
-        <dd>Har deposit ki alag row (₹500, ₹700, ₹900…) → <strong>count 3</strong>,
-          aur 25+ hone par VIP</dd>
+        <dd>Same summary file with one extra column — <code>deposit count</code> = 25 →
+          level from total, VIP from count. Both correct</dd>
+        <dt>Correct file</dt>
+        <dd>A separate row per deposit (₹500, ₹700, ₹900…) → <strong>count 3</strong>, and VIP from 25+</dd>
       </dl>
       <p class="muted tiny" style="margin:12px 0 0">
-        <strong>Same din ki do deposits bhi alag rows hongi</strong> — system ab dono ginata hai (pehle ek merge ho jati thi).
-        VIP count sirf <strong>successful</strong> rows se banta hai.
+        <strong>Two deposits on the same day are separate rows</strong> — the system now counts both (previously one merged away).
+        VIP count only <strong>successful</strong> rows.
       </p>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('trash', 15) %> Galat upload hatayein</h3></div>
+    <div class="card-header"><h3><%- icon('trash', 15) %> Remove a bad upload</h3></div>
     <form method="post" action="/upload/clear">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
-        <p class="muted tiny" style="margin:0 0 10px">
-          Summary file galti se chali gayi ho to pehle use hataayein, phir transaction-wise file upload karein.
-          Ye delete karne ke baad customer master khud dobara ban jayega.
-        </p>
+        <p class="muted tiny" style="margin:0 0 10px">If a summary file went in by mistake, remove it first, then upload the transaction-wise file. After this delete the customer master rebuilds itself.</p>
         <div class="form-group">
-          <label>Kya delete karein</label>
+          <label>What to delete</label>
           <select name="scope">
-            <option value="excel">Sirf Excel upload wala data</option>
-            <option value="all">Sab deposits (manual + demo bhi)</option>
+            <option value="excel">Excel-uploaded data only</option>
+            <option value="all">All deposits (manual and demo included)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Confirm karne ke liye <code>DELETE</code> likhein</label>
+          <label>To confirm type <code>DELETE</code></label>
           <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
         <button class="btn btn-danger" type="submit"
-                data-confirm="Deposits delete ho jayenge aur customer master dobara banega. Pakka?">
-          <%- icon('trash', 15) %> Delete aur re-sync
-        </button>
+                data-confirm="Deposits will be deleted and the customer master rebuilt. Confirm?">
+          <%- icon('trash', 15) %>Delete and re-sync</button>
       </div>
     </form>
   </div>
@@ -296,7 +284,7 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %> Kis source se data aaya</h3></div>
+    <div class="card-header"><h3><%- icon('clock', 15) %>Where the data came from</h3></div>
     <div class="table-wrapper">
       <table>
         <thead><tr><th>Source</th><th class="right">Rows</th><th class="right">Last upload</th></tr></thead>
@@ -308,24 +296,24 @@
               <td class="right muted tiny"><%= r.last_at ? helpers.prettyDateTime(r.last_at) : '—' %></td>
             </tr>
           <% }); %>
-          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty">Abhi koi data nahi.</div></td></tr><% } %>
+          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty">No data yet.</div></td></tr><% } %>
         </tbody>
       </table>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('alert', 15) %> Upload ke rules</h3></div>
+    <div class="card-header"><h3><%- icon('alert', 15) %>Upload rules</h3></div>
     <div class="card-body">
       <dl class="kv">
-        <dt>Column order</dt><dd>Koi bhi — header padh liya jaata hai</dd>
+        <dt>Column order</dt><dd>Any of these — the header is detected</dd>
         <dt>Dates</dt><dd><code>2026-11-20</code>, <code>20/11/2026</code>, <code>20 Nov 2026</code></dd>
-        <dt>Duplicate txn</dt><dd>Wahi transaction ID dobara → line reject</dd>
-        <dt>Same username</dt><dd>Kai deposits allowed (genuine hai to)</dd>
+        <dt>Duplicate txn</dt><dd>Same transaction ID again → row rejected</dd>
+        <dt>Same username</dt><dd>Multiple deposits allowed (if genuine)</dd>
         <dt>Status</dt><dd>successful / failed / pending / reversed — khaali = successful</dd>
-        <dt>Deposit count</dt><dd><strong>Optional.</strong> Transaction-wise rows me khaali chhod dein (=1).
-          Summary row me (ek row = lifetime total) us row me kitni deposits hain wo likhein — VIP isi se banega</dd>
-        <dt>Upload ke baad</dt><dd>Customer master khud sync ho jaata hai</dd>
+        <dt>Deposit count</dt><dd><strong>Optional.</strong> Leave blank on transaction-wise rows (=1).
+          On a summary row (one row = lifetime total) write how many deposits it holds — VIP comes from this</dd>
+        <dt>After upload</dt><dd>The customer master syncs itself</dd>
       </dl>
     </div>
   </div>

@@ -4,9 +4,7 @@
   <div class="titles">
     <h1>Level Report</h1>
     <div class="sub">
-      Lifetime deposits ke hisaab se ranking. Active = <%= helpers.prettyDate(data.cutoff) %> ke baad deposit.
-      · <strong>Deposits</strong> = kitni rows, <strong>Level</strong> = total amount se
-    </div>
+      Ranked by lifetime deposits. Active = <%= helpers.prettyDate(data.cutoff) %>deposit after. ·<strong>Deposits</strong> = kitni rows, <strong>Level</strong>= by total amount</div>
   </div>
   <div class="chips">
     <% if (user.role === 'super_admin') { %>
@@ -20,12 +18,12 @@
   <div class="stat">
     <div class="label">Clients</div>
     <div class="value"><%= data.total.toLocaleString('en-IN') %></div>
-    <div class="hint">is filter me</div>
+    <div class="hint">in this filter</div>
   </div>
   <div class="stat <%= data.unbanded ? 'warn' : 'ok' %>">
     <div class="label">Unbanded</div>
     <div class="value"><%= data.unbanded.toLocaleString('en-IN') %></div>
-    <div class="hint">kisi level me nahi aate</div>
+    <div class="hint">fall in no level</div>
   </div>
   <div class="stat bad">
     <div class="label">Duplicate mobiles</div>
@@ -86,7 +84,7 @@
       </thead>
       <tbody>
         <% if (!data.rows.length) { %>
-          <tr><td colspan="9"><div class="empty"><span class="big">—</span>Koi client nahi mila.</div></td></tr>
+          <tr><td colspan="9"><div class="empty"><span class="big">—</span>No client found.</div></td></tr>
         <% } %>
         <% data.rows.forEach(function (r, i) { %>
           <tr>

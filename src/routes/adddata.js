@@ -16,7 +16,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const ok = /\.(xlsx|xlsm|xls|csv|txt)$/i.test(file.originalname || '');
     if (!ok) {
-      return cb(new Error('Sirf .xlsx, .csv ya .txt file chalti hai.'));
+      return cb(new Error('Only .xlsx, .csv or .txt files are supported.'));
     }
     cb(null, true);
   },
@@ -52,7 +52,7 @@ function parseBulk(text, fallbackDate) {
       return;
     }
     if (parsed.username.length > 60) {
-      errors.push({ line: i + 1, text: trimmed, reason: 'Username 60 characters se bada hai' });
+      errors.push({ line: i + 1, text: trimmed, reason: 'Username is longer than 60 characters' });
       return;
     }
     if (!parsed.mobile || parsed.mobile.length < 10) {
@@ -153,7 +153,7 @@ router.post('/', auth.requirePage('adddata'), (req, res, next) => {
         type: 'error',
         message:
           uploadErr.code === 'LIMIT_FILE_SIZE'
-            ? 'File 20 MB se badi hai — chhote hisson me upload karein.'
+            ? 'The file is over 20 MB — upload it in smaller parts:'
             : uploadErr.message,
       };
       return res.redirect('/add-data');
@@ -237,7 +237,7 @@ router.post('/', auth.requirePage('adddata'), (req, res, next) => {
         req.session.flash = {
           type: 'error',
           message:
-            'File padhi nahi ja saki. Excel me File → Save As → "Excel Workbook (.xlsx)" karke dobara upload karein.',
+            'Could not read the file. In Excel use File → Save As → "Excel Workbook (.xlsx)" and upload again:',
         };
         return res.redirect('/add-data');
       }
@@ -263,7 +263,7 @@ router.post('/delete-day', auth.requirePage('adddata'), async (req, res, next) =
     }
     const out = await db.query('DELETE FROM deposits WHERE play_date = $1', [playDate]);
     await auth.audit(req, 'delete_day', `date=${playDate} rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: `${playDate} ke ${out.rowCount} entries delete ho gaye.` };
+    req.session.flash = { type: 'success', message: `Deleted ${out.rowCount} entries from ${playDate}.` };
     res.redirect('/add-data');
   } catch (err) {
     next(err);

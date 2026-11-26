@@ -21,7 +21,7 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
     if (/\.(xlsx|xlsm|xls|csv|txt)$/i.test(file.originalname || '')) return cb(null, true);
-    cb(new Error('Sirf .xlsx ya .csv file chalti hai.'));
+    cb(new Error('Only .xlsx or .csv files are supported.'));
   },
 });
 
@@ -47,7 +47,7 @@ router.get('/', async (req, res, next) => {
 
     const callers = await callerList();
 
-    // Naye client — pehla deposit `days` din ke andar, aur bina caller
+    // Naye client — pehla deposit `days` days andar, aur unassigned
     const from = D.addDays(today, -(days - 1));
     const fresh = await db.rows(
       `SELECT b.id, b.username, b.mobile, b.first_deposit::text AS first_deposit,
@@ -120,7 +120,7 @@ router.post('/manual', async (req, res, next) => {
       return res.redirect(back);
     }
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Pehle customers tick karein.' };
+      req.session.flash = { type: 'error', message: 'Pehle customers tick split it:' };
       return res.redirect(back);
     }
 
@@ -169,7 +169,7 @@ router.post('/all-fresh', async (req, res, next) => {
 
     req.session.flash = {
       type: 'success',
-      message: `${out.rowCount} naye clients assign ho gaye.`,
+      message: `${out.rowCount} new clients assigned.`,
     };
     res.redirect(back);
   } catch (err) {
@@ -209,7 +209,7 @@ router.get('/export', async (req, res, next) => {
 router.post('/import', upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
-      req.session.flash = { type: 'error', message: 'File chunein.' };
+      req.session.flash = { type: 'error', message: 'Choose a file.' };
       return res.redirect('/assign');
     }
 
@@ -240,7 +240,7 @@ router.post('/import', upload.single('file'), async (req, res, next) => {
     req.session.flash = {
       type: 'error',
       message: /xlsx|zip|corrupt|End of data|Invalid/i.test(err.message || '')
-        ? 'File padhi nahi ja saki. Excel me "Save As → .xlsx" karke dobara bhejein.'
+        ? 'Could not read the file. In Excel use "Save As → .xlsx" and send it again.'
         : err.message,
     };
     res.redirect('/assign');
@@ -251,7 +251,7 @@ router.post('/apply', async (req, res, next) => {
   try {
     const prev = req.session.assignPreview;
     if (!prev || Date.now() - prev.at > 30 * 60 * 1000) {
-      req.session.flash = { type: 'error', message: 'Preview purana ho gaya. File dobara upload karein.' };
+      req.session.flash = { type: 'error', message: 'Preview purana ho gaya. File dobara upload split it:' };
       return res.redirect('/assign');
     }
 

@@ -4,7 +4,7 @@
 //
 // 1. Status (7-din ka niyam)
 //    - pehla deposit            → New
-//    - 7 din me dobara deposit  → Active
+//    - 7 days dobara deposit  → Active
 //    - 7 din tak koi deposit nahi → Inactive
 //    - Inactive ne dobara kiya  → Reactivated
 //    Har naye deposit par 7 din ka countdown phir se shuru.
@@ -15,8 +15,8 @@
 // 3. Priority
 //    P1 = VIP inactive, ya recently inactive (<=14 din)
 //    P2 = normal inactive, ya new customer jiska repeat nahi hua
-//    P3 = callback pending (no answer / not reachable)
-//    P4 = active (call ki zaroorat nahi)
+//    P3 = reactivated (became active again)
+//    P4 = active (no call needed)
 
 const db = require('../db');
 
@@ -36,10 +36,10 @@ const STATUS_LABEL = {
 };
 const PRIORITY_LABEL = {
   P0: 'P0 — Do not contact',
-  PD: 'PD — Pehla deposit baaki',
+  PD: 'PD — First deposit baaki',
   P1: 'P1 — Sabse pehle',
   P2: 'P2 — Regular',
-  P3: 'P3 — Callback',
+  P3: 'P3 — Reactivated',
   P4: 'P4 — Active',
 };
 
@@ -205,7 +205,7 @@ async function thresholds() {
 
 function priorityFor(c, cfg) {
   if (c.do_not_contact) return 'P0';
-  // ID bana par ek bhi deposit nahi — sabse pehle
+  // ID created with no deposit yet — first in queue
   if (c.status === 'no_deposit') return 'PD';
   if (c.status === 'inactive' && c.vip_category !== 'normal') return 'P1';
   if (c.status === 'inactive' && Number(c.days_inactive) <= (cfg ? cfg.recent_inactive_days : 14)) return 'P1';

@@ -92,8 +92,8 @@ router.post('/:id/approve', async (req, res, next) => {
     req.session.flash = {
       type: out.rowCount ? 'success' : 'error',
       message: out.rowCount
-        ? `${out.rows[0].login_id} ko login ki permission de di.`
-        : 'Ye request pehle hi decide ho chuki hai ya expire ho gayi.',
+        ? `Login permitted for ${out.rows[0].login_id}.`
+        : 'This request was already decided or has expired.',
     };
     res.redirect('/approvals');
   } catch (err) {
@@ -114,8 +114,8 @@ router.post('/:id/reject', async (req, res, next) => {
     req.session.flash = {
       type: out.rowCount ? 'success' : 'error',
       message: out.rowCount
-        ? `${out.rows[0].login_id} ka login reject ho gaya.`
-        : 'Ye request pehle hi decide ho chuki hai.',
+        ? `Login rejected for ${out.rows[0].login_id}.`
+        : 'This request was already decided.',
     };
     res.redirect('/approvals');
   } catch (err) {
@@ -158,8 +158,8 @@ router.post('/user/:id/toggle', async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: target.require_approval
-        ? `${target.login_id} ab bina approval login kar sakta hai.`
-        : `${target.login_id} ko ab har login par approval chahiye.`,
+        ? `${target.login_id} can now log in without approval.`
+        : `${target.login_id} now needs approval on every login.`,
     };
     res.redirect('/approvals');
   } catch (err) {

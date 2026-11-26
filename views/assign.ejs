@@ -4,30 +4,29 @@
   <div class="titles">
     <h1>Assignment</h1>
     <div class="sub">
-      Naye client ka queue, aur Excel se bulk assign — dono ek jagah.
-      Pehle <strong>Preview</strong> dikhega, tab tak kuch nahi badalta.
-    </div>
+      New client queue and bulk Excel assignment, in one place.
+      <strong>Preview</strong> is shown first; nothing changes until then.</div>
   </div>
   <div class="chips">
     <a class="chip" href="/assign/template"><%- icon('download', 13) %> Template</a>
-    <a class="chip" href="/assign/export"><%- icon('download', 13) %> Sab export</a>
-    <a class="chip" href="/assign/export?only=unassigned"><%- icon('download', 13) %> Bina caller export</a>
+    <a class="chip" href="/assign/export"><%- icon('download', 13) %> Export all</a>
+    <a class="chip" href="/assign/export?only=unassigned"><%- icon('download', 13) %> Export unassigned</a>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat <%= totals.fresh ? 'warn' : 'ok' %>">
-    <div class="label">Naye — assign nahi hue</div>
+    <div class="label">New — not assigned</div>
     <div class="value"><%= totals.fresh.toLocaleString('en-IN') %></div>
-    <div class="hint">pichhle <%= days %> din ke</div>
+    <div class="hint">last <%= days %> days</div>
   </div>
   <div class="stat <%= totals.older ? 'bad' : 'ok' %>">
-    <div class="label">Purane — bina caller</div>
+    <div class="label">Older — unassigned</div>
     <div class="value"><%= totals.older.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= days %> din se purane</div>
+    <div class="hint"><%= days %> days old</div>
   </div>
   <div class="stat">
-    <div class="label">Total bina caller</div>
+    <div class="label">Total unassigned</div>
     <div class="value"><%= totals.unassigned.toLocaleString('en-IN') %></div>
     <div class="hint">Do Not Contact <%= totals.dnc %> alag</div>
   </div>
@@ -45,16 +44,16 @@
 <% if (preview) { %>
   <div class="card" id="preview" style="border-color:rgba(245,197,66,0.5);margin-bottom:18px">
     <div class="card-header" style="background:rgba(245,197,66,0.08)">
-      <h3><%- icon('file', 15) %> Preview — kuch save nahi hua</h3>
+      <h3><%- icon('file', 15) %> Preview — nothing saved yet</h3>
       <span class="badge badge-warn" style="margin-left:auto"><%= preview.fileName %></span>
     </div>
     <div class="card-body">
       <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:16px">
-        <div><div class="muted tiny">File me rows</div><div style="font-size:20px;font-weight:800"><%= preview.stats.total %></div></div>
-        <div><div class="muted tiny">Lagegi</div><div style="font-size:20px;font-weight:800;color:var(--success)"><%= preview.stats.valid %></div></div>
+        <div><div class="muted tiny">Rows in file</div><div style="font-size:20px;font-weight:800"><%= preview.stats.total %></div></div>
+        <div><div class="muted tiny">Will apply</div><div style="font-size:20px;font-weight:800;color:var(--success)"><%= preview.stats.valid %></div></div>
         <div><div class="muted tiny">Badlegi</div><div style="font-size:20px;font-weight:800"><%= preview.stats.changes %></div></div>
         <% if (preview.stats.unmatched) { %>
-          <div><div class="muted tiny">Username nahi mila</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.unmatched %></div></div>
+          <div><div class="muted tiny">Username not found</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.unmatched %></div></div>
         <% } %>
         <% if (preview.stats.badCaller) { %>
           <div><div class="muted tiny">Caller galat</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.badCaller %></div></div>
@@ -78,14 +77,13 @@
       <% if (preview.errors.length) { %>
         <details style="margin-bottom:6px">
           <summary class="tiny" style="cursor:pointer;color:var(--danger)">
-            <strong><%= preview.errorTotal %></strong> rows skip hongi — dekhein
-          </summary>
+            <strong><%= preview.errorTotal %></strong> rows will be skipped — view</summary>
           <div style="max-height:220px;overflow:auto;margin-top:10px;font-family:monospace;font-size:11.5px;line-height:1.75">
             <% preview.errors.forEach(function (e) { %>
               <div class="<%= e.type === 'duplicate' ? 'muted' : '' %>"><%= e.message %></div>
             <% }); %>
             <% if (preview.errorTotal > preview.errors.length) { %>
-              <div class="muted">… aur <%= preview.errorTotal - preview.errors.length %> errors</div>
+              <div class="muted">… and<%= preview.errorTotal - preview.errors.length %> errors</div>
             <% } %>
           </div>
         </details>
@@ -99,9 +97,8 @@
       <form method="post" action="/assign/apply" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <button class="btn btn-primary" type="submit"
-                data-confirm="<%= preview.stats.valid %> customers assign ho jayenge. Pakka?">
-          <%- icon('check', 15) %> <%= preview.stats.valid %> assign karein
-        </button>
+                data-confirm="<%= preview.stats.valid %> customers will be assigned. Confirm?">
+          <%- icon('check', 15) %> <%= preview.stats.valid %>assign</button>
       </form>
     </div>
   </div>
@@ -110,11 +107,11 @@
 <!-- ==================== NAYE CLIENT KA QUEUE ==================== -->
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('day', 15) %> Naye client — assign nahi hue</h3>
+    <h3><%- icon('day', 15) %> New clients — not assigned</h3>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <% [1, 3, 7, 15, 30, 365].forEach(function (d) { %>
         <a class="chip <%= days === d ? 'on' : '' %>" href="/assign?days=<%= d %>">
-          <%= d === 1 ? 'Aaj' : (d === 365 ? 'Sab' : d + ' din') %>
+          <%= d === 1 ? 'Today' : (d === 365 ? 'All' : d + ' days') %>
         </a>
       <% }); %>
     </div>
@@ -123,18 +120,17 @@
   <form method="post" action="/assign/manual">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny"><strong><%= fresh.length %></strong> customers · <%= days %> din me aaye</span>
+      <span class="muted tiny"><strong><%= fresh.length %></strong> customers · <%= days %>-day window</span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select name="caller_id" style="min-width:170px">
-          <option value="">— caller chunein —</option>
+          <option value="">— choose caller —</option>
           <% callers.forEach(function (c) { %>
             <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>) · <%= c.assigned %></option>
           <% }); %>
         </select>
         <button class="btn btn-sm btn-primary" type="submit"
-                data-confirm="Chune hue customers ko is caller ko de dein?">
-          <%- icon('check', 13) %> Chune hue assign
-        </button>
+                data-confirm="Assign the selected customers to this caller?">
+          <%- icon('check', 13) %>Assign selected</button>
       </div>
     </div>
 
@@ -145,7 +141,7 @@
             <th style="width:36px"><input type="checkbox" data-check-all></th>
             <th>Username</th>
             <th>Mobile</th>
-            <th>Pehla deposit</th>
+            <th>First deposit</th>
             <th class="right">Deposits</th>
             <th class="right">Total</th>
             <th>Status</th>
@@ -156,8 +152,7 @@
           <% if (!fresh.length) { %>
             <tr><td colspan="8"><div class="empty">
               <span class="big"><%- icon('check', 26) %></span>
-              <%= days %> din ke saare naye client assign ho gaye. 🎉
-              <div class="muted tiny" style="margin-top:8px">Naya data upload karein — yahan apne aap aa jayega.</div>
+              <%= days %>days — every new client is assigned. 🎉<div class="muted tiny" style="margin-top:8px">Upload new data — it appears here automatically.</div>
             </div></td></tr>
           <% } %>
           <% fresh.forEach(function (r) { %>
@@ -183,20 +178,18 @@
 
   <% if (fresh.length) { %>
     <div class="card-footer" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny">Poora queue ek caller ko dena ho to:</span>
+      <span class="muted tiny">To give the whole queue to one caller:</span>
       <form method="post" action="/assign/all-fresh" style="margin:0;display:flex;gap:8px;align-items:center">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <input type="hidden" name="days" value="<%= days %>">
         <select name="caller_id" style="min-width:170px" required>
-          <option value="">— caller chunein —</option>
+          <option value="">— choose caller —</option>
           <% callers.forEach(function (c) { %>
             <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>)</option>
           <% }); %>
         </select>
         <button class="btn btn-sm" type="submit"
-                data-confirm="Saare <%= fresh.length %> naye client is caller ko de dein?">
-          Sab <%= fresh.length %> is caller ko
-        </button>
+                data-confirm="Give all <%= fresh.length %> new clients to this caller?">All<%= fresh.length %>to this caller</button>
       </form>
     </div>
   <% } %>
@@ -205,32 +198,28 @@
 <!-- ==================== EXCEL IMPORT ==================== -->
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('upload', 15) %> Excel se assign</h3>
-    <span class="muted tiny" style="margin-left:auto">username + caller · .xlsx ya .csv</span>
+    <h3><%- icon('upload', 15) %>Assign with Excel</h3>
+    <span class="muted tiny" style="margin-left:auto">username + caller · .xlsx or .csv</span>
   </div>
   <form method="post" action="/assign/import" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
       <p class="muted tiny" style="margin:0 0 14px">
-        Do column wali file: <code>username</code> aur <code>caller</code>.
-        caller me <strong>login_id</strong> likhein (naam nahi) —
-        <%= callers.map(function (c) { return c.login_id; }).join(', ') %>.
-        Upload par pehle preview aayega, phir Apply.
-      </p>
+        A two-column file: <code>username</code> and<code>caller</code>. In the caller<strong>login_id</strong> column put the login_id (not the name) —<%= callers.map(function (c) { return c.login_id; }).join(', ') %>. Upload shows a preview first, then Apply.</p>
 
       <label class="dropzone" for="assignFile" style="display:block">
         <input type="file" name="file" id="assignFile" accept=".xlsx,.xlsm,.csv,.txt" required
                style="display:none" onchange="this.closest('label').querySelector('.dz-name').textContent = this.files[0] ? this.files[0].name : ''">
         <div style="text-align:center;padding:26px 16px">
           <%- icon('upload', 26) %>
-          <div style="margin-top:10px"><strong>File chunein</strong> ya yahan drag karein</div>
-          <div class="muted tiny" style="margin-top:5px">.xlsx ya .csv · max 20 MB · 5,000 rows tak</div>
+          <div style="margin-top:10px"><strong>Choose a file</strong> or drag it here</div>
+          <div class="muted tiny" style="margin-top:5px">.xlsx or .csv · max 20 MB · up to 5,000 rows</div>
           <div class="dz-name" style="margin-top:9px;color:var(--accent-2);font-size:12.5px;font-weight:700"></div>
         </div>
       </label>
     </div>
     <div class="card-footer" style="text-align:right">
-      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Preview banayein</button>
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Build preview</button>
     </div>
   </form>
 </div>
@@ -241,7 +230,7 @@
     <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle imports</h3></div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Kab</th><th>File</th><th>Kisne</th><th class="right">Rows</th><th class="right">Lage</th><th class="right">Skip</th></tr></thead>
+        <thead><tr><th>Kab</th><th>File</th><th>By</th><th class="right">Rows</th><th class="right">Lage</th><th class="right">Skip</th></tr></thead>
         <tbody>
           <% history.forEach(function (h) { %>
             <tr>
@@ -260,23 +249,21 @@
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> Kaise kaam karta hai</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How it works</h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt>Naya client kaun</dt>
-      <dd>Jiska <strong>pehla deposit</strong> us din hua aur abhi kisi caller ke paas nahi hai.
-        Daily Upload ke baad ye list apne aap bhar jaati hai.</dd>
-      <dt>Queue se assign</dt>
-      <dd>Tick karke caller chunein — 200 bhi ek baar me. Ya poora queue ek caller ko.</dd>
-      <dt>Excel se</dt>
-      <dd>Export lein → Excel me <code>caller</code> column bharein → upload → Preview → Apply.
-        Jo username database me nahi milega wo skip, preview me dikh jayega.</dd>
-      <dt>caller me kya likhein</dt>
-      <dd><strong>login_id</strong>, naam nahi. <%= callers.map(function (c) { return c.login_id + ' (' + c.name + ')'; }).join(' · ') %></dd>
+      <dt>Who counts as a new client</dt>
+      <dd>Whose <strong>first deposit</strong> falls on that day and is not assigned to any caller yet. This list fills itself after Daily Upload.</dd>
+      <dt>Assign from queue</dt>
+      <dd>Tick and choose a caller — 200 at a time. Or give the whole queue to one caller.</dd>
+      <dt>From Excel</dt>
+      <dd>Export → in Excel fill the<code>caller</code> column → upload → Preview → Apply. Usernames not found in the database are skipped and listed in the preview.</dd>
+      <dt>What to put in caller</dt>
+      <dd><strong>login_id</strong>, not the name.<%= callers.map(function (c) { return c.login_id + ' (' + c.name + ')'; }).join(' · ') %></dd>
       <dt>Purani assignment</dt>
-      <dd>Jo customer pehle se kisi ke paas hai, file usse <strong>badal</strong> degi. Preview me "Badlegi" column wahi ginti hai.</dd>
+      <dd>If a customer already belongs to someone, the file will <strong>change</strong> them. The "Will change" column counts exactly those.</dd>
       <dt>Do Not Contact</dt>
-      <dd>DNC wale kabhi assign nahi hote — queue me bhi nahi aate.</dd>
+      <dd>DNC customers are never assigned — they do not appear in the queue either.</dd>
     </dl>
   </div>
 </div>

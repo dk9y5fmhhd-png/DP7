@@ -237,7 +237,7 @@ async function parseFile(buffer, filename, fallbackDate) {
     sheetName = filename;
   } else {
     if (ext === 'xls') {
-      throw new Error('Purana .xls format support nahi hai — Excel me File → Save As → .xlsx karke upload karein.');
+      throw new Error('Old .xls format is not supported — in Excel use File → Save As → .xlsx and upload that:');
     }
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
@@ -245,7 +245,7 @@ async function parseFile(buffer, filename, fallbackDate) {
     // pehli aisi sheet chuno jisme data ho
     const sheet =
       workbook.worksheets.find((w) => w.rowCount > 1) || workbook.worksheets[0];
-    if (!sheet) throw new Error('Excel file me koi sheet nahi mili.');
+    if (!sheet) throw new Error('No sheet found in the Excel file.');
     sheetName = sheet.name;
     sheet.eachRow({ includeEmpty: false }, (row) => {
       const cells = [];
@@ -299,7 +299,7 @@ async function parseFile(buffer, filename, fallbackDate) {
     }
     // sirf number wala username (jaise total row) skip
     if (/^\d+$/.test(username) && !mobile) {
-      errors.push({ line: lineNo, text: username, reason: 'Username sirf number hai — skip' });
+      errors.push({ line: lineNo, text: username, reason: 'Username is only digits — skipped' });
       continue;
     }
     if (!mobile || mobile.length < 10) {
@@ -365,10 +365,10 @@ async function buildTemplate() {
   const help = ws.addRow(['Note:']);
   help.font = { bold: true };
   [
-    'Har line me ek client. Column ka order badal sakte hain, header naam rakh dein.',
-    'date column optional hai — na ho to "Play date" jo form me chuni hai wahi lagega.',
-    'Ek hi username ek hi date par do baar ho to doosra skip ho jayega.',
-    'amount blank chhod dein to 0 maana jayega.',
+    'One client per line. Column order can change as long as the header names stay.',
+    'The date column is optional — if missing, the "Play date" chosen in the form is used.',
+    'The same username twice on one date — the second is skipped.',
+    'Leave amount blank and it counts as 0.',
   ].forEach((t) => {
     const r = ws.addRow([t]);
     r.font = { size: 10, color: { argb: 'FF666666' } };

@@ -80,7 +80,7 @@ function showPickedFile(dz, file) {
   var title = dz.querySelector('.dz-title');
   var sub = dz.querySelector('.dz-sub');
   if (title) title.textContent = file.name;
-  if (sub) sub.textContent = humanSize(file.size) + ' · save karne ke liye neeche button dabayein';
+  if (sub) sub.textContent = humanSize(file.size) + ' · press the button below to save';
   dz.classList.add('has-file');
 }
 
@@ -127,7 +127,7 @@ document.addEventListener('submit', function (e) {
   var btn = form.querySelector('button[type="submit"]:focus');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Upload ho raha hai…';
+    btn.textContent = 'Uploading…';
   }
 });
 
