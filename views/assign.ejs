@@ -2,37 +2,41 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Assignment') %></h1>
-    <div class="sub"> <%- _th('New client queue and bulk Excel assignment, in one place. <strong>Preview</strong> is shown first; nothing changes until then.') %></div>
+    <h1>Assignment</h1>
+    <div class="sub">
+      New client queue and bulk Excel assignment, in one place.
+      <strong>Preview</strong> is shown first; nothing changes until then.</div>
   </div>
   <div class="chips">
-    <a class="chip" href="/assign/template"><%- icon('download', 13) %> <%= _t('Template') %></a>
-    <a class="chip" href="/assign/export"><%- icon('download', 13) %> <%= _t('Export all') %></a>
-    <a class="chip" href="/assign/export?only=unassigned"><%- icon('download', 13) %> <%= _t('Export unassigned') %></a>
+    <a class="chip" href="/assign/template"><%- icon('download', 13) %> Template</a>
+    <a class="chip" href="/assign/export"><%- icon('download', 13) %> Export all</a>
+    <a class="chip" href="/assign/export?only=unassigned"><%- icon('download', 13) %> Export unassigned</a>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat <%= totals.fresh ? 'warn' : 'ok' %>">
-    <div class="label"><%= _t('New — not assigned') %></div>
+    <div class="label">New — not assigned</div>
     <div class="value"><%= totals.fresh.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('last {days} days', { days: (days) }) %></div>
+    <div class="hint">last <%= days %> days · <strong><%= (totals.no_dep || 0).toLocaleString('en-IN') %></strong> never deposited</div>
   </div>
   <div class="stat <%= totals.older ? 'bad' : 'ok' %>">
-    <div class="label"><%= _t('Older — unassigned') %></div>
+    <div class="label">Older — unassigned</div>
     <div class="value"><%= totals.older.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('{days} days old', { days: (days) }) %></div>
+    <div class="hint"><%= days %> days old</div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('Total unassigned') %></div>
+    <div class="label">Total unassigned</div>
     <div class="value"><%= totals.unassigned.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('excluding {dnc} Do Not Contact', { dnc: (totals.dnc) }) %></div>
+    <div class="hint">Do Not Contact <%= totals.dnc %> alag</div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('Callers') %></div>
+    <div class="label">Callers</div>
     <div class="value"><%= callers.length %></div>
     <div class="hint">
-      <%= _t('{n} retention · {n2} acquisition', { n: (callers.filter(function (c) { return c.team === 'retention'; }).length), n2: (callers.filter(function (c) { return c.team === 'acquisition'; }).length) }) %> </div>
+      <%= callers.filter(function (c) { return c.team === 'retention'; }).length %> retention ·
+      <%= callers.filter(function (c) { return c.team === 'acquisition'; }).length %> acquisition
+    </div>
   </div>
 </div>
 
@@ -40,25 +44,25 @@
 <% if (preview) { %>
   <div class="card" id="preview" style="border-color:rgba(245,197,66,0.5);margin-bottom:18px">
     <div class="card-header" style="background:rgba(245,197,66,0.08)">
-      <h3><%- icon('file', 15) %> <%= _t('Preview — nothing saved yet') %></h3>
+      <h3><%- icon('file', 15) %> Preview — nothing saved yet</h3>
       <span class="badge badge-warn" style="margin-left:auto"><%= preview.fileName %></span>
     </div>
     <div class="card-body">
       <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:16px">
-        <div><div class="muted tiny"><%= _t('Rows in file') %></div><div style="font-size:20px;font-weight:800"><%= preview.stats.total %></div></div>
-        <div><div class="muted tiny"><%= _t('Will apply') %></div><div style="font-size:20px;font-weight:800;color:var(--success)"><%= preview.stats.valid %></div></div>
-        <div><div class="muted tiny"><%= _t('Will change') %></div><div style="font-size:20px;font-weight:800"><%= preview.stats.changes %></div></div>
+        <div><div class="muted tiny">Rows in file</div><div style="font-size:20px;font-weight:800"><%= preview.stats.total %></div></div>
+        <div><div class="muted tiny">Will apply</div><div style="font-size:20px;font-weight:800;color:var(--success)"><%= preview.stats.valid %></div></div>
+        <div><div class="muted tiny">Badlegi</div><div style="font-size:20px;font-weight:800"><%= preview.stats.changes %></div></div>
         <% if (preview.stats.unmatched) { %>
-          <div><div class="muted tiny"><%= _t('Username not found') %></div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.unmatched %></div></div>
+          <div><div class="muted tiny">Username not found</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.unmatched %></div></div>
         <% } %>
         <% if (preview.stats.badCaller) { %>
-          <div><div class="muted tiny"><%= _t('Wrong caller') %></div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.badCaller %></div></div>
+          <div><div class="muted tiny">Caller galat</div><div style="font-size:20px;font-weight:800;color:var(--danger)"><%= preview.stats.badCaller %></div></div>
         <% } %>
       </div>
 
       <div class="table-wrapper" style="border:1px solid var(--border);border-radius:10px;margin-bottom:14px">
         <table>
-          <thead><tr><th><%= _t('Caller') %></th><th class="right"><%= _t('Will get') %></th></tr></thead>
+          <thead><tr><th>Caller</th><th class="right">Milenge</th></tr></thead>
           <tbody>
             <% preview.perCaller.forEach(function (c) { %>
               <tr>
@@ -73,13 +77,13 @@
       <% if (preview.errors.length) { %>
         <details style="margin-bottom:6px">
           <summary class="tiny" style="cursor:pointer;color:var(--danger)">
-            <%- _th('<strong>{errorTotal}</strong> rows will be skipped — view', { errorTotal: (preview.errorTotal) }) %></summary>
+            <strong><%= preview.errorTotal %></strong> rows will be skipped — view</summary>
           <div style="max-height:220px;overflow:auto;margin-top:10px;font-family:monospace;font-size:11.5px;line-height:1.75">
             <% preview.errors.forEach(function (e) { %>
-              <div class="<%= e.type === 'duplicate' ? 'muted' : '' %>"><%= _tm(e.message) %></div>
+              <div class="<%= e.type === 'duplicate' ? 'muted' : '' %>"><%= e.message %></div>
             <% }); %>
             <% if (preview.errorTotal > preview.errors.length) { %>
-              <div class="muted"><%= _t('… and {n} more errors', { n: (preview.errorTotal - preview.errors.length) }) %></div>
+              <div class="muted">… and<%= preview.errorTotal - preview.errors.length %> errors</div>
             <% } %>
           </div>
         </details>
@@ -88,13 +92,13 @@
     <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
       <form method="post" action="/assign/cancel" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-ghost" type="submit"><%= _t('Cancel') %></button>
+        <button class="btn btn-ghost" type="submit">Cancel</button>
       </form>
       <form method="post" action="/assign/apply" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <button class="btn btn-primary" type="submit"
-                data-confirm="<%= _t('{valid} customers will be assigned. Confirm?', { valid: (preview.stats.valid) }) %>">
-          <%- icon('check', 15) %> <%= _t('Assign {valid}', { valid: (preview.stats.valid) }) %></button>
+                data-confirm="<%= preview.stats.valid %> customers will be assigned. Confirm?">
+          <%- icon('check', 15) %> <%= preview.stats.valid %>assign</button>
       </form>
     </div>
   </div>
@@ -103,11 +107,11 @@
 <!-- ==================== NAYE CLIENT KA QUEUE ==================== -->
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('day', 15) %> <%= _t('New clients — not assigned') %></h3>
+    <h3><%- icon('day', 15) %> New clients — not assigned</h3>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <% [1, 3, 7, 15, 30, 365].forEach(function (d) { %>
         <a class="chip <%= days === d ? 'on' : '' %>" href="/assign?days=<%= d %>">
-          <%= d === 1 ? _t('Today') : (d === 365 ? _t('All') : _t('{d} days', { d: d })) %>
+          <%= d === 1 ? 'Today' : (d === 365 ? 'All' : d + ' days') %>
         </a>
       <% }); %>
     </div>
@@ -116,17 +120,17 @@
   <form method="post" action="/assign/manual">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny"><%- _th('<strong>{n}</strong> customers · {days}-day window', { n: (fresh.length), days: (days) }) %></span>
+      <span class="muted tiny"><strong><%= fresh.length %></strong> customers · <%= days %>-day window</span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select name="caller_id" style="min-width:170px">
-          <option value=""><%= _t('— choose caller —') %></option>
+          <option value="">— choose caller —</option>
           <% callers.forEach(function (c) { %>
             <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>) · <%= c.assigned %></option>
           <% }); %>
         </select>
         <button class="btn btn-sm btn-primary" type="submit"
-                data-confirm="<%= _t('Assign the selected customers to this caller?') %>">
-          <%- icon('check', 13) %><%= _t('Assign selected') %></button>
+                data-confirm="Assign the selected customers to this caller?">
+          <%- icon('check', 13) %>Assign selected</button>
       </div>
     </div>
 
@@ -135,12 +139,12 @@
         <thead>
           <tr>
             <th style="width:36px"><input type="checkbox" data-check-all></th>
-            <th><%= _t('Username') %></th>
-            <th><%= _t('Mobile') %></th>
-            <th><%= _t('First deposit') %></th>
-            <th class="right"><%= _t('Deposits') %></th>
-            <th class="right"><%= _t('Total') %></th>
-            <th><%= _t('Status') %></th>
+            <th>Username</th>
+            <th>Mobile</th>
+            <th>Joined</th>
+            <th class="right">Deposits</th>
+            <th class="right">Total</th>
+            <th>Status</th>
             <th>VIP</th>
           </tr>
         </thead>
@@ -148,7 +152,7 @@
           <% if (!fresh.length) { %>
             <tr><td colspan="8"><div class="empty">
               <span class="big"><%- icon('check', 26) %></span>
-              <%= _t('{days} days — every new client is assigned. 🎉', { days: (days) }) %><div class="muted tiny" style="margin-top:8px"><%= _t('Upload new data — it appears here automatically.') %></div>
+              <%= days %> days' worth of clients are all assigned. 🎉<div class="muted tiny" style="margin-top:8px">Upload new data — it appears here automatically.</div>
             </div></td></tr>
           <% } %>
           <% fresh.forEach(function (r) { %>
@@ -156,10 +160,16 @@
               <td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td>
               <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
               <td class="num nowrap"><%= r.mobile ? mask(r.mobile) : '—' %></td>
-              <td class="nowrap tiny"><%= r.first_deposit ? helpers.prettyDate(r.first_deposit) : '—' %></td>
+              <td class="nowrap tiny"><%= r.joined_on ? helpers.prettyDate(r.joined_on) : '—' %></td>
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
-              <td><span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= _t(r.status) %></span></td>
+              <td>
+                <% if (r.status === 'no_deposit') { %>
+                  <span class="badge badge-warn">No deposit</span>
+                <% } else { %>
+                  <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= r.status %></span>
+                <% } %>
+              </td>
               <td>
                 <% if (r.vip_category !== 'normal') { %>
                   <span class="badge badge-accent"><%= r.vip_category === 'high_value_vip' ? 'HV' : (r.vip_category === 'premium_vip' ? 'Prem' : 'VIP') %></span>
@@ -174,18 +184,18 @@
 
   <% if (fresh.length) { %>
     <div class="card-footer" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny"><%= _t('To give the whole queue to one caller:') %></span>
+      <span class="muted tiny">To give the whole queue to one caller:</span>
       <form method="post" action="/assign/all-fresh" style="margin:0;display:flex;gap:8px;align-items:center">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <input type="hidden" name="days" value="<%= days %>">
         <select name="caller_id" style="min-width:170px" required>
-          <option value=""><%= _t('— choose caller —') %></option>
+          <option value="">— choose caller —</option>
           <% callers.forEach(function (c) { %>
             <option value="<%= c.id %>"><%= c.name %> (<%= c.login_id %>)</option>
           <% }); %>
         </select>
         <button class="btn btn-sm" type="submit"
-                data-confirm="<%= _t('Give all {n} new clients to this caller?', { n: (fresh.length) }) %>"><%= _t('All {n} to this caller', { n: (fresh.length) }) %></button>
+                data-confirm="Give all <%= fresh.length %> new clients to this caller?">All<%= fresh.length %>to this caller</button>
       </form>
     </div>
   <% } %>
@@ -194,27 +204,28 @@
 <!-- ==================== EXCEL IMPORT ==================== -->
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('upload', 15) %><%= _t('Assign with Excel') %></h3>
-    <span class="muted tiny" style="margin-left:auto"><%= _t('username + caller · .xlsx or .csv') %></span>
+    <h3><%- icon('upload', 15) %>Assign with Excel</h3>
+    <span class="muted tiny" style="margin-left:auto">username + caller · .xlsx or .csv</span>
   </div>
   <form method="post" action="/assign/import" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
-      <p class="muted tiny" style="margin:0 0 14px"> <%- _th('A two-column file: <code>username</code> and <code>caller</code>. In the caller column put the <strong>login_id</strong> (not the name) — {n}. Upload shows a preview first, then Apply.', { n: (callers.map(function (c) { return c.login_id; }).join(', ')) }) %></p>
+      <p class="muted tiny" style="margin:0 0 14px">
+        A two-column file: <code>username</code> and<code>caller</code>. In the caller<strong>login_id</strong> column put the login_id (not the name) —<%= callers.map(function (c) { return c.login_id; }).join(', ') %>. Upload shows a preview first, then Apply.</p>
 
       <label class="dropzone" for="assignFile" style="display:block">
         <input type="file" name="file" id="assignFile" accept=".xlsx,.xlsm,.csv,.txt" required
                style="display:none" onchange="this.closest('label').querySelector('.dz-name').textContent = this.files[0] ? this.files[0].name : ''">
         <div style="text-align:center;padding:26px 16px">
           <%- icon('upload', 26) %>
-          <div style="margin-top:10px"><%- _th('<strong>Choose a file</strong> or drag it here') %></div>
-          <div class="muted tiny" style="margin-top:5px"><%= _t('.xlsx or .csv · max 20 MB · up to 5,000 rows') %></div>
+          <div style="margin-top:10px"><strong>Choose a file</strong> or drag it here</div>
+          <div class="muted tiny" style="margin-top:5px">.xlsx or .csv · max 20 MB · up to 5,000 rows</div>
           <div class="dz-name" style="margin-top:9px;color:var(--accent-2);font-size:12.5px;font-weight:700"></div>
         </div>
       </label>
     </div>
     <div class="card-footer" style="text-align:right">
-      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> <%= _t('Build preview') %></button>
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Build preview</button>
     </div>
   </form>
 </div>
@@ -222,10 +233,10 @@
 <!-- ==================== PICHHLE IMPORTS ==================== -->
 <% if (history.length) { %>
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Past imports') %></h3></div>
+    <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle imports</h3></div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('When') %></th><th><%= _t('File') %></th><th><%= _t('By') %></th><th class="right"><%= _t('Rows') %></th><th class="right"><%= _t('Applied') %></th><th class="right"><%= _t('Skip') %></th></tr></thead>
+        <thead><tr><th>Kab</th><th>File</th><th>By</th><th class="right">Rows</th><th class="right">Lage</th><th class="right">Skip</th></tr></thead>
         <tbody>
           <% history.forEach(function (h) { %>
             <tr>
@@ -244,21 +255,21 @@
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How it works') %></h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How it works</h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt><%= _t('Who counts as a new client') %></dt>
-      <dd><%- _th('Whose <strong>first deposit</strong> falls on that day and is not assigned to any caller yet. This list fills itself after Daily Upload.') %></dd>
-      <dt><%= _t('Assign from queue') %></dt>
-      <dd><%= _t('Tick and choose a caller — 200 at a time. Or give the whole queue to one caller.') %></dd>
-      <dt><%= _t('From Excel') %></dt>
-      <dd><%- _th('Export → fill the <code>caller</code> column in Excel → upload → Preview → Apply. Usernames not found in the database are skipped and listed in the preview.') %></dd>
-      <dt><%= _t('What to put in caller') %></dt>
-      <dd><%- _th('<strong>login_id</strong>, not the name. {n}', { n: (callers.map(function (c) { return c.login_id + ' (' + c.name + ')'; }).join(' · ')) }) %></dd>
-      <dt><%= _t('Existing assignment') %></dt>
-      <dd><%- _th('If a customer already belongs to someone, the file will <strong>change</strong> them. The "Will change" column counts exactly those.') %></dd>
-      <dt><%= _t('Do Not Contact') %></dt>
-      <dd><%= _t('DNC customers are never assigned — they do not appear in the queue either.') %></dd>
+      <dt>Who counts as a new client</dt>
+      <dd>Whose <strong>first deposit</strong> falls on that day and is not assigned to any caller yet. This list fills itself after Daily Upload.</dd>
+      <dt>Assign from queue</dt>
+      <dd>Tick and choose a caller — 200 at a time. Or give the whole queue to one caller.</dd>
+      <dt>From Excel</dt>
+      <dd>Export → in Excel fill the<code>caller</code> column → upload → Preview → Apply. Usernames not found in the database are skipped and listed in the preview.</dd>
+      <dt>What to put in caller</dt>
+      <dd><strong>login_id</strong>, not the name.<%= callers.map(function (c) { return c.login_id + ' (' + c.name + ')'; }).join(' · ') %></dd>
+      <dt>Purani assignment</dt>
+      <dd>If a customer already belongs to someone, the file will <strong>change</strong> them. The "Will change" column counts exactly those.</dd>
+      <dt>Do Not Contact</dt>
+      <dd>DNC customers are never assigned — they do not appear in the queue either.</dd>
     </dl>
   </div>
 </div>

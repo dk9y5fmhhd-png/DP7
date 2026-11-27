@@ -37,7 +37,7 @@ const STATUS_LABEL = {
 const PRIORITY_LABEL = {
   P0: 'P0 — Do not contact',
   PD: 'PD — First deposit pending',
-  P1: 'P1 — Call first',
+  P1: 'P1 — Sabse pehle',
   P2: 'P2 — Regular',
   P3: 'P3 — Reactivated',
   P4: 'P4 — Active',
@@ -216,14 +216,14 @@ function priorityFor(c, cfg) {
 }
 
 /* ------------------------------------------------------------------ *
- * Mobile masking: nobody sees a whole number on screen, whatever their
- * role. First two and last two digits, as in Ringline.
+ * Mobile masking — caller ko poora number nahi dikhta
  * ------------------------------------------------------------------ */
 
-function maskMobile(mobile) {
+function maskMobile(mobile, canSeeFull) {
   const m = String(mobile || '');
-  if (m.length < 5) return m ? '****' : '';
-  return m.slice(0, 2) + '*'.repeat(m.length - 4) + m.slice(-2);
+  if (canSeeFull) return m;
+  if (m.length < 4) return m ? '••••' : '';
+  return '•'.repeat(Math.max(0, m.length - 4)) + m.slice(-4);
 }
 
 module.exports = {
