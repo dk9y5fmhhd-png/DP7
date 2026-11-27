@@ -1,0 +1,8 @@
+<% messages.forEach(function (m) { %>
+  <div class="bubble <%= m.direction === 'out' ? 'out' : '' %> <%= m.direction === 'out' && m.sent_by !== me ? 'colleague' : '' %>">
+    <% if (m.direction === 'out' && m.sent_by_name) { %><div class="tiny soft"><%= m.sent_by === me ? _t('You') : m.sent_by_name %></div><% } %>
+    <div class="bubble-text"><%= m.body || ('[' + (m.media_type || 'message') + ']') %></div>
+    <div class="bubble-meta"><%= m.at.slice(0, 16) %> · <%= m.number_label %><%= m.state ? ' · ' + _t(m.state) : '' %></div>
+    <% if (m.failure) { %><div class="tiny" style="color:var(--danger)"><%= _t(m.failure) %></div><% } %>
+  </div>
+<% }); %>

@@ -116,11 +116,11 @@ router.post('/manual', async (req, res, next) => {
     const usernames = [].concat(req.body.username || []).filter(Boolean);
 
     if (!unassign && !callerId) {
-      req.session.flash = { type: 'error', message: 'Pehle caller chunein.' };
+      req.session.flash = { type: 'error', message: 'Choose a caller first.' };
       return res.redirect(back);
     }
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Pehle customers tick split it:' };
+      req.session.flash = { type: 'error', message: 'Tick the customers first.' };
       return res.redirect(back);
     }
 
@@ -136,8 +136,8 @@ router.post('/manual', async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: unassign
-        ? `${out.rowCount} customers se caller hata diya.`
-        : `${out.rowCount} customers assign ho gaye.`,
+        ? `${out.rowCount} customers no longer have a caller.`
+        : `${out.rowCount} customers assigned.`,
     };
     res.redirect(back);
   } catch (err) {
@@ -153,7 +153,7 @@ router.post('/all-fresh', async (req, res, next) => {
     const days = Number(req.body.days) || 7;
 
     if (!callerId) {
-      req.session.flash = { type: 'error', message: 'Pehle caller chunein.' };
+      req.session.flash = { type: 'error', message: 'Choose a caller first.' };
       return res.redirect(back);
     }
 
@@ -208,6 +208,7 @@ router.get('/export', async (req, res, next) => {
 
 router.post('/import', upload.single('file'), async (req, res, next) => {
   try {
+    if (!auth.verifyCsrf(req)) return auth.rejectCsrf(res);
     if (!req.file) {
       req.session.flash = { type: 'error', message: 'Choose a file.' };
       return res.redirect('/assign');
@@ -218,7 +219,7 @@ router.post('/import', upload.single('file'), async (req, res, next) => {
     const parsed = await A.parse(matrix);
 
     if (!parsed.rows.length && !parsed.errors.length) {
-      req.session.flash = { type: 'error', message: 'File me koi row nahi mili.' };
+      req.session.flash = { type: 'error', message: 'No row found in the file.' };
       return res.redirect('/assign');
     }
 
@@ -251,7 +252,7 @@ router.post('/apply', async (req, res, next) => {
   try {
     const prev = req.session.assignPreview;
     if (!prev || Date.now() - prev.at > 30 * 60 * 1000) {
-      req.session.flash = { type: 'error', message: 'Preview purana ho gaya. File dobara upload split it:' };
+      req.session.flash = { type: 'error', message: 'The preview expired. Upload the file again.' };
       return res.redirect('/assign');
     }
 
@@ -270,7 +271,7 @@ router.post('/apply', async (req, res, next) => {
 
     req.session.flash = {
       type: 'success',
-      message: `${applied} customers assign ho gaye (${prev.fileName}).`,
+      message: `${applied} customers assigned (${prev.fileName}).`,
     };
     res.redirect('/assign');
   } catch (err) {

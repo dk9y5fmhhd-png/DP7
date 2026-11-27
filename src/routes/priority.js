@@ -77,9 +77,9 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       today,
       roleWeights: {
         PD: 'ID created with no deposit yet — first in queue',
-        P1: 'VIP inactive + recently inactive (14 din)',
-        P2: 'Normal inactive + naya customer',
-        P3: 'Reactivated — dobara active hua',
+        P1: 'VIP inactive + recently inactive (14 days)',
+        P2: 'Normal inactive + new customer',
+        P3: 'Reactivated — active again',
       },
     });
   } catch (err) {
@@ -140,6 +140,8 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const today = D.todayISO();
     const showAll = req.query.all === '1';
     const forceAll = req.query.full === '1'; // target poora hone par bhi poori list
+
+    const waWaiting = await require('../lib/whatsapp-inbox').waitingFor(me);
 
     const base = mineCte();
     const tgt = await targetInfo(me);
@@ -235,6 +237,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     );
 
     res.render('mycalls', {
+      waWaiting,
       title: 'My Calls',
       page: 'mycalls',
       rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
@@ -330,8 +333,11 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     const note = String(req.body.response || '').trim().slice(0, 2000);
     const date = D.isDate(req.body.action_date) ? req.body.action_date : D.todayISO();
 
-    if (!username) throw new Error('Customer chunein.');
-    if (!R.ALL_ACTIONS.includes(action)) throw new Error('Remark chunein.');
+    if (!username) throw new Error('Choose a customer.');
+    if (!(await require('../lib/access').canTouch(req.session.user, username))) {
+      throw new Error('That customer is not assigned to you.');
+    }
+    if (!R.ALL_ACTIONS.includes(action)) throw new Error('Choose a remark.');
 
     const q = R.info(action);
 
@@ -368,8 +374,8 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: nextTouch
-        ? `Remark save — ${username}: ${action}. Next touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
-        : `Remark save — ${username}: ${action}. Cycle se hata diya.`,
+        ? `Remark saved — ${username}: ${action}. Next touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
+        : `Remark saved — ${username}: ${action}. Removed from the cycle.`,
     };
     res.redirect(req.get('referer') || '/calling/my');
   } catch (err) {

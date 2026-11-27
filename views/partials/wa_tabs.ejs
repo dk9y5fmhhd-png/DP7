@@ -1,0 +1,8 @@
+<nav class="tabs">
+  <a class="<%= tab === 'inbox' ? 'on' : '' %>" href="/whatsapp"><%= _t('Inbox') %></a>
+  <a class="<%= tab === 'history' ? 'on' : '' %>" href="/whatsapp/history"><%= _t('History') %></a>
+  <% if (isAdmin) { %>
+    <a class="<%= tab === 'numbers' ? 'on' : '' %>" href="/whatsapp/numbers"><%= _t('Numbers') %></a>
+    <a class="<%= tab === 'templates' ? 'on' : '' %>" href="/whatsapp/templates"><%= _t('Templates') %></a>
+  <% } %>
+</nav>

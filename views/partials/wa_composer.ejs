@@ -1,0 +1,42 @@
+<%
+  // One box for a customer, used by the chat page and the pop-up, so they can
+  // never say different things.
+  const ready = numbers.filter(function (n) { return n.status === 'connected'; });
+  const stopped = customer.do_not_contact ? _t('This customer is marked "Do Not Contact".')
+    : optedOut ? _t('This contact is on the WhatsApp do-not-contact list.') : '';
+  const canTemplate = ready.length > 0 && templates.length > 0;
+  const canReply = Boolean(reply && reply.status === 'connected');
+%>
+<% if (stopped) { %>
+  <div class="notice"><%= stopped %></div>
+<% } else { %>
+  <% if (canReply) { %>
+    <form method="post" action="/whatsapp/chat/<%= reply.id %>" class="wa-reply">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="form-group"><label><%= _t('Reply') %></label><textarea class="prose reply" name="text" rows="3" maxlength="1000" required></textarea></div>
+      <div class="send-foot">
+        <span class="field-help"><%= _t('Replying from {label}, the number the customer wrote to.', { label: reply.label }) %></span>
+        <button class="btn btn-primary" type="submit" data-busy="<%= _t('Sending…') %>"><%= _t('Send reply') %></button>
+      </div>
+    </form>
+    <% if (canTemplate) { %>
+      <details class="more-send">
+        <summary><%= _t('Send a template instead') %></summary>
+        <%- include('wa_send_form') %>
+      </details>
+    <% } %>
+  <% } else { %>
+    <% if (reply) { %><div class="notice" style="margin-bottom:12px"><%= _t('{label} is not connected, so you cannot reply from it right now.', { label: reply.label }) %></div><% } %>
+    <% if (canTemplate) { %>
+      <%- include('wa_send_form') %>
+    <% } else if (!reply) { %>
+      <div class="notice">
+        <% if (!ready.length) { %>
+          <%= isAdmin ? _t('No WhatsApp number is connected. Link one under Settings → WhatsApp → Numbers.') : _t('To start a chat you need a WhatsApp number. Ask a Super Admin to give you one (Settings → WhatsApp → Numbers).') %>
+        <% } else { %>
+          <%= _t('No active template. A Super Admin can add one under WhatsApp → Templates.') %>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
+<% } %>

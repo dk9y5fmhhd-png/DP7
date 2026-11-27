@@ -1,0 +1,6 @@
+<form method="post" action="/language" class="lang-switch" style="margin:0;display:flex;gap:4px;justify-content:center">
+  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+  <% Object.keys(LANGUAGES).forEach(function (code) { %>
+    <button class="btn btn-sm <%= lang === code ? 'btn-primary' : 'btn-ghost' %>" type="submit" name="lang" value="<%= code %>" lang="<%= code %>"><%= LANGUAGES[code] %></button>
+  <% }); %>
+</form>

@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const db = require('./db');
+const respond = require('./lib/respond');
 
 const PAGES = [
   { key: 'dashboard', label: 'Dashboard', url: '/', icon: 'grid', group: 'main' },
@@ -11,6 +12,7 @@ const PAGES = [
   { key: 'mycalls', label: 'My Calls', url: '/calling/my', icon: 'phone', group: 'main' },
   { key: 'calls', label: 'Call Log', url: '/calls', icon: 'clock', group: 'main' },
   { key: 'due', label: 'Follow-ups Due', url: '/calling/due', icon: 'alert', group: 'main' },
+  { key: 'whatsapp', label: 'WhatsApp', url: '/whatsapp', icon: 'whatsapp', group: 'main' },
   { key: 'upload', label: 'Daily Upload', url: '/upload', icon: 'upload', group: 'main' },
   { key: 'adddata', label: 'Add Data', url: '/add-data', icon: 'plus', group: 'main' },
   { key: 'reports', label: 'Client Reports', url: '/reports', icon: 'list', group: 'reports' },
@@ -109,10 +111,10 @@ function requirePage(page) {
       return res.redirect('/login');
     }
     if (!can(req.session.user, page)) {
-      return res.status(403).render('error', {
+      return respond.fail(req, res, 403, {
         title: 'Access denied',
         heading: 'Access denied',
-        message: `Aapke account ko "${page}" page ka access nahi hai. Super Admin se kehiye.`,
+        message: `Your account has no access to the "${page}" page. Ask the Super Admin.`,
       });
     }
     next();
@@ -122,10 +124,10 @@ function requirePage(page) {
 function requireSuperAdmin(req, res, next) {
   if (!req.session.user) return res.redirect('/login');
   if (req.session.user.role !== 'super_admin') {
-    return res.status(403).render('error', {
+    return respond.fail(req, res, 403, {
       title: 'Access denied',
       heading: 'Super Admin only',
-      message: 'Ye page sirf Super Admin ke liye hai.',
+      message: 'This page is only for the Super Admin.',
     });
   }
   next();
@@ -136,6 +138,11 @@ function csrfToken(req) {
   return req.session.csrf;
 }
 
+// Only these routes take file uploads; each verifies the token itself after
+// multer has parsed the body. Any other multipart POST is checked like a form
+// (and fails, since no body is parsed), so it cannot be used to skip CSRF.
+const UPLOAD_PATHS = /^\/(upload\/(customers|deposits)|add-data|assign\/import)\/?$/i;
+
 function isMultipart(req) {
   return String(req.get('content-type') || '').toLowerCase().startsWith('multipart/form-data');
 }
@@ -144,13 +151,13 @@ function isMultipart(req) {
 // andar hota hai (verifyCsrf) — yahan sirf aage jaane dete hain.
 function checkCsrf(req, res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-  if (isMultipart(req)) return next();
+  if (isMultipart(req) && UPLOAD_PATHS.test(req.path)) return next();
   const sent = req.body && (req.body.csrf_token || req.get('x-csrf-token'));
   if (!req.session.csrf || sent !== req.session.csrf) {
-    return res.status(403).render('error', {
+    return respond.fail(req, res, 403, {
       title: 'Session expired',
       heading: 'Form expired',
-      message: 'Page purana ho gaya tha. Refresh karke dobara try kijiye.',
+      message: 'The page was out of date. Refresh and try again.',
     });
   }
   next();
@@ -164,10 +171,11 @@ function verifyCsrf(req) {
 }
 
 function rejectCsrf(res) {
-  return res.status(403).render('error', {
+  const { req } = res;
+  return respond.fail(req, res, 403, {
     title: 'Session expired',
     heading: 'Form expired',
-    message: 'Page purana ho gaya tha. Refresh karke dobara try kijiye.',
+    message: 'The page was out of date. Refresh and try again.',
   });
 }
 

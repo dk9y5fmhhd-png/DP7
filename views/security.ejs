@@ -2,76 +2,76 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Security</h1>
-    <div class="sub">Your password, two-factor and login history.</div>
+    <h1><%= _t('Security') %></h1>
+    <div class="sub"><%= _t('Your password, two-factor and login history.') %></div>
   </div>
 </div>
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h3><%- icon('shield', 15) %> Change password</h3></div>
+    <div class="card-header"><h3><%- icon('shield', 15) %> <%= _t('Change password') %></h3></div>
     <form method="post" action="/security/password">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <div class="form-group">
-          <label>Current password</label>
+          <label><%= _t('Current password') %></label>
           <input type="password" name="current_password" required autocomplete="current-password">
         </div>
         <div class="form-group">
-          <label>New password</label>
+          <label><%= _t('New password') %></label>
           <input type="password" name="new_password" required minlength="6" autocomplete="new-password">
         </div>
         <div class="form-group">
-          <label>Confirm new password</label>
+          <label><%= _t('Confirm new password') %></label>
           <input type="password" name="confirm_password" required minlength="6" autocomplete="new-password">
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
-        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Update password</button>
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Update password') %></button>
       </div>
     </form>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('shield', 15) %> Two-factor (2FA)</h3>
+      <h3><%- icon('shield', 15) %> <%= _t('Two-factor (2FA)') %></h3>
       <span class="badge <%= me.totp_enabled ? 'badge-success' : 'badge-neutral' %>" style="margin-left:auto">
-        <%= me.totp_enabled ? 'On' : 'Off' %>
+        <%= me.totp_enabled ? _t('On') : _t('Off') %>
       </span>
     </div>
     <div class="card-body">
       <% if (me.totp_enabled) { %>
-        <p class="soft">A 6-digit code from your authenticator app is required at login.</p>
+        <p class="soft"><%= _t('A 6-digit code from your authenticator app is required at login.') %></p>
         <form method="post" action="/security/2fa/disable">
           <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
           <div class="form-group">
-            <label>Password (to confirm)</label>
+            <label><%= _t('Password (to confirm)') %></label>
             <input type="password" name="password" required autocomplete="current-password">
           </div>
-          <button type="submit" class="btn btn-danger" data-confirm="Turn off 2FA?">Disable 2FA</button>
+          <button type="submit" class="btn btn-danger" data-confirm="<%= _t('Turn off 2FA?') %>"><%= _t('Disable 2FA') %></button>
         </form>
 
       <% } else if (qr) { %>
-        <p class="soft">Scan this QR in Google Authenticator or Authy, then enter the code to confirm.</p>
+        <p class="soft"><%= _t('Scan this QR in Google Authenticator or Authy, then enter the code to confirm.') %></p>
         <div style="text-align:center;margin:14px 0">
-          <img src="<%= qr %>" alt="2FA QR" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:8px">
-          <div class="muted tiny" style="margin-top:8px">Manual entry: <code><%= secret %></code></div>
+          <img src="<%= qr %>" alt="<%= _t('2FA QR') %>" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:8px">
+          <div class="muted tiny" style="margin-top:8px"><%- _th('Manual entry: <code>{secret}</code>', { secret: (secret) }) %></div>
         </div>
         <form method="post" action="/security/2fa/confirm">
           <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
           <div class="form-group">
-            <label>6-digit code</label>
+            <label><%= _t('6-digit code') %></label>
             <input type="text" name="token" inputmode="numeric" maxlength="6" required
                    style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:700" placeholder="000000">
           </div>
-          <button type="submit" class="btn btn-primary">Confirm &amp; enable</button>
+          <button type="submit" class="btn btn-primary"><%- _th('Confirm &amp; enable') %></button>
         </form>
 
       <% } else { %>
-        <p class="soft">With 2FA on, your account stays safe even if the password is stolen.</p>
+        <p class="soft"><%= _t('With 2FA on, your account stays safe even if the password is stolen.') %></p>
         <form method="post" action="/security/2fa/start">
           <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-          <button type="submit" class="btn btn-primary"><%- icon('shield', 15) %> Enable 2FA</button>
+          <button type="submit" class="btn btn-primary"><%- icon('shield', 15) %> <%= _t('Enable 2FA') %></button>
         </form>
       <% } %>
     </div>
@@ -79,13 +79,13 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('clock', 15) %> Recent activity</h3></div>
+  <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Recent activity') %></h3></div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>Action</th><th>Detail</th><th>IP</th><th class="right">When</th></tr></thead>
+      <thead><tr><th><%= _t('Action') %></th><th><%= _t('Detail') %></th><th><%= _t('IP') %></th><th class="right"><%= _t('When') %></th></tr></thead>
       <tbody>
         <% if (!log.length) { %>
-          <tr><td colspan="4"><div class="empty">No activity recorded.</div></td></tr>
+          <tr><td colspan="4"><div class="empty"><%= _t('No activity recorded.') %></div></td></tr>
         <% } %>
         <% log.forEach(function (l) { %>
           <tr>

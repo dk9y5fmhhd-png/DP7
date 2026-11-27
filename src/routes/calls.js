@@ -5,41 +5,34 @@ const db = require('../db');
 const auth = require('../auth');
 const C = require('../lib/customers');
 const telecmi = require('../lib/telecmi');
+const access = require('../lib/access');
 const D = require('../lib/dates');
 
 const router = express.Router();
 
 /* ------------------------------ click to call ------------------------------ */
 
-router.post('/call', auth.requireLogin, async (req, res, next) => {
+router.post('/call', auth.requireLogin, async (req, res) => {
+  const back = req.get('referer') || '/calling/my';
+  let result;
   try {
     const username = String(req.body.username || '').trim();
-    const c = await db.row(
-      'SELECT * FROM customers WHERE LOWER(username) = LOWER($1)',
-      [username]
-    );
-    if (!c) throw new Error('Customer nahi mila.');
+    const customer = await access.ownCustomer(req.session.user, username);
+    if (!customer) throw new Error('That customer is not assigned to you.');
+    if (customer.do_not_contact) throw new Error('This customer is marked "Do Not Contact".');
 
-    if (c.do_not_contact) throw new Error('This customer is marked "Do Not Contact".');
-
-    const out = await telecmi.clickToCall({ customer: c, callerId: req.session.user.id });
-    await auth.audit(req, 'call', `${username} provider=${out.provider} ok=${out.ok}`);
-
-    if (!out.ok) {
-      req.session.flash = { type: 'error', message: out.message };
-      return res.redirect(req.get('referer') || '/calling/my');
-    }
-
-    req.session.flash = {
-      type: 'success',
-      message: out.message + (out.dial ? ` Number: ${out.dial}` : ''),
-    };
-    // click-to-call ke baad seedha remark form kholne ke liye customer wapas
-    res.redirect((req.get('referer') || '/calling/my') + (req.get('referer') ? '' : ''));
+    const out = await telecmi.dial({ customer, user: req.session.user });
+    await auth.audit(req, 'call', `${customer.username} ok=${out.ok}`);
+    result = out;
   } catch (err) {
-    req.session.flash = { type: 'error', message: err.message };
-    res.redirect(req.get('referer') || '/calling/my');
+    result = { ok: false, message: err.message };
   }
+  // The call pop-up asks for JSON and stays on the page.
+  if (String(req.get('accept') || '').includes('application/json')) {
+    return res.json({ ok: result.ok, message: res.locals._tm(result.message) });
+  }
+  req.session.flash = { type: result.ok ? 'success' : 'error', message: result.message };
+  res.redirect(back);
 });
 
 /* ------------------------------ call log ------------------------------ */
@@ -83,7 +76,7 @@ router.get('/', auth.requirePage('calls'), async (req, res, next) => {
       bcParams
     );
 
-    const cfg = await telecmi.config();
+    const cfg = { enabled: await telecmi.isEnabled() };
 
     res.render('calls', {
       title: 'Call Log',

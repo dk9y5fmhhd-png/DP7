@@ -13,12 +13,12 @@ const PRIORITY_ORDER = ['PD', 'P1', 'P2', 'P3', 'P4'];
 
 const SCOPES = {
   unassigned: {
-    label: 'Unassigned wale',
+    label: 'Unassigned',
     where: 'b.assigned_to IS NULL',
     params: () => [],
   },
   all: {
-    label: 'Sab customers (dobara baant)',
+    label: 'All customers (re-split)',
     where: 'b.do_not_contact = FALSE',
     params: () => [],
   },
@@ -32,7 +32,7 @@ async function buildPlan({ callerIds, scope = 'unassigned', priority = '', perCa
   if (!Array.isArray(callerIds) || !callerIds.length) throw new Error('Choose at least one caller.');
 
   const ids = [...new Set(callerIds.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
-  if (!ids.length) throw new Error('Caller IDs galat hain.');
+  if (!ids.length) throw new Error('The caller IDs are wrong.');
 
   const sc = SCOPES[scope] || SCOPES.unassigned;
   const params = [...sc.params()];

@@ -1,0 +1,6 @@
+<div class="dialog-head">
+  <h3><span style="color:#25D366"><%- icon('whatsapp', 16) %></span> <%= customer.username %> <span class="muted tiny"><%= mobileShown %></span></h3>
+  <button type="button" class="close-x" data-close aria-label="<%= _t('Close') %>">&times;</button>
+</div>
+<% if (messages.length) { %><div class="thread"><%- include('wa_thread') %></div><% } %>
+<div class="composer"><%- include('wa_composer') %></div>

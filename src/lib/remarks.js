@@ -46,10 +46,10 @@ const RETRY = new Set(['No Answer', 'Number Not Reachable', 'Call Again', 'Busy'
 
 // Caller ke liye quick date buttons
 const QUICK_DATES = [
-  { days: 1, label: 'Kal' },
-  { days: 2, label: '2 din' },
-  { days: 3, label: '3 din' },
-  { days: 7, label: '1 hafta' },
+  { days: 1, label: 'Tomorrow' },
+  { days: 2, label: '2 days' },
+  { days: 3, label: '3 days' },
+  { days: 7, label: '1 week' },
 ];
 
 module.exports = {

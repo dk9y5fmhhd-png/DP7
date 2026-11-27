@@ -1,0 +1,15 @@
+<div class="telecmi-fields" data-user="<%= u ? u.id : '' %>">
+  <div class="form-group">
+    <label><%= _t('TeleCMI agent ID') %></label>
+    <input type="text" name="telecmi_agent_id" value="<%= u ? u.telecmi_agent_id || '' : '' %>" maxlength="40" autocomplete="off" placeholder="<%= _t('Paste it here, e.g. 5010_33339421') %>">
+    <span class="tiny telecmi-account" aria-live="polite"></span>
+  </div>
+  <div class="form-group">
+    <label><%= _t('TeleCMI password') %> <span class="muted tiny"><%= _t('(optional)') %></span></label>
+    <input type="password" name="telecmi_password" autocomplete="new-password" placeholder="<%= u && u.has_telecmi_password ? _t('saved') : _t('not set') %>">
+    <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+      <button type="button" class="btn btn-sm telecmi-test"><%= _t('Test login') %></button>
+      <span class="tiny telecmi-result" aria-live="polite"></span>
+    </div>
+  </div>
+</div>

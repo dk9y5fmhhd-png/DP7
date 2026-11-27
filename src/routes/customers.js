@@ -133,7 +133,7 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
         WHERE LOWER(b.username) = LOWER($1)`,
       [req.params.username]
     );
-    if (!c) return res.status(404).render('error', { title: 'Not found', heading: 'Customer nahi mila', message: 'Customers page se dobara try kijiye.' });
+    if (!c) return res.status(404).render('error', { title: 'Not found', heading: 'Customer not found', message: 'Try again from the Customers page.' });
 
     // caller kisi doosre ka customer na khole
     if (!admin && c.assigned_to !== me.id) {
@@ -229,7 +229,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
         await db.value(`SELECT COUNT(*)::int FROM customer_board b WHERE ${where}`, params)
       );
       if (!total) {
-        req.session.flash = { type: 'error', message: 'Is filter me koi customer nahi mila.' };
+        req.session.flash = { type: 'error', message: 'No customer matches this filter.' };
         return res.redirect(back);
       }
 
@@ -252,14 +252,14 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       req.session.flash = {
         type: 'success',
         message: unassign
-          ? `${out.rowCount} customers se caller hata diya (ab unassigned).`
-          : `${out.rowCount} customers assign ho gaye.`,
+          ? `${out.rowCount} customers no longer have a caller (now unassigned).`
+          : `${out.rowCount} customers assigned.`,
       };
       return res.redirect(back);
     }
 
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Pehle customers chunein.' };
+      req.session.flash = { type: 'error', message: 'Choose customers first.' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
@@ -269,7 +269,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       [callerId, usernames.map((u) => String(u).toLowerCase())]
     );
     await auth.audit(req, 'assign', `caller=${callerId} rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: out.rowCount + ' customers assign ho gaye.' };
+    req.session.flash = { type: 'success', message: `${out.rowCount} customers assigned.` };
     res.redirect(req.get('referer') || '/customers');
   } catch (err) {
     next(err);
@@ -283,7 +283,7 @@ router.post('/:id/flags', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'customer_flag', `id=${req.params.id} dnc=${dnc}`);
     req.session.flash = {
       type: 'success',
-      message: dnc ? 'Customer "Do Not Contact" me daal diya.' : 'Customer put back in the call list.',
+      message: dnc ? 'Customer marked "Do Not Contact".' : 'Customer put back in the call list.',
     };
     res.redirect(req.get('referer') || '/customers');
   } catch (err) {
@@ -300,13 +300,13 @@ router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     const c = await db.row('SELECT id, username FROM customers WHERE id = $1', [req.params.id]);
     if (!c) {
-      req.session.flash = { type: 'error', message: 'Customer nahi mila.' };
+      req.session.flash = { type: 'error', message: 'Customer not found.' };
       return res.redirect('/customers');
     }
     await db.query('DELETE FROM customers WHERE id = $1', [c.id]);
     await db.query('DELETE FROM followups WHERE LOWER(username) = LOWER($1)', [c.username]);
     await auth.audit(req, 'customer_delete', c.username);
-    req.session.flash = { type: 'success', message: `Customer "${c.username}" delete ho gaya (remarks aur calls bhi).` };
+    req.session.flash = { type: 'success', message: `Customer "${c.username}" deleted (remarks and calls too).` };
     res.redirect(req.body.back === 'detail' ? '/customers' : (req.get('referer') || '/customers'));
   } catch (err) {
     next(err);
@@ -317,13 +317,13 @@ router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
 router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
-      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      req.session.flash = { type: 'error', message: 'Type DELETE in the confirm box — nothing was deleted.' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
     const usernames = [].concat(req.body.username || []).filter(Boolean);
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Pehle customers ke checkbox tick split it:' };
+      req.session.flash = { type: 'error', message: 'Tick the customer checkboxes first.' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
@@ -333,7 +333,7 @@ router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) =
     await auth.audit(req, 'customer_delete_selected', `${out.rowCount} rows`);
     req.session.flash = {
       type: 'success',
-      message: `${out.rowCount} customers delete ho gaye (remarks saath).`,
+      message: `${out.rowCount} customers deleted (with their remarks).`,
     };
     res.redirect('/customers');
   } catch (err) {
@@ -345,7 +345,7 @@ router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) =
 router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
-      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      req.session.flash = { type: 'error', message: 'Type DELETE in the confirm box — nothing was deleted.' };
       return res.redirect('/customers');
     }
 

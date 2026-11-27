@@ -1,0 +1,38 @@
+<dialog class="form-dialog" id="<%= n ? 'num' + n.id : 'numNew' %>">
+  <form method="post" action="/whatsapp/numbers<%= n ? '/' + n.id : '' %>">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="dialog-head">
+      <h3><%= n ? _t('Edit {name}', { name: n.label }) : _t('Add a number') %></h3>
+      <button type="button" class="close-x" data-close aria-label="<%= _t('Close') %>">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <div class="field-row">
+        <div class="form-group">
+          <label><%= _t('Name') %></label>
+          <input type="text" name="label" value="<%= n ? n.label : '' %>" maxlength="60" required placeholder="<%= _t('Retention 1') %>">
+        </div>
+        <div class="form-group">
+          <label><%= _t('Daily limit') %></label>
+          <input type="number" name="daily_cap" min="1" max="1000" value="<%= n ? n.daily_cap : 150 %>">
+        </div>
+      </div>
+      <% if (n) { %>
+        <div class="form-group" style="margin-bottom:0">
+          <label><%= _t('Who may send from this number') %></label>
+          <div class="check-row">
+            <% users.forEach(function (u) { %>
+              <label class="check-pill"><input type="checkbox" name="user_id" value="<%= u.id %>" <%= n.user_ids.includes(u.id) ? 'checked' : '' %>> <span><%= u.name %></span></label>
+            <% }); %>
+          </div>
+          <span class="field-help"><%= _t('Super Admins can always send. Start with a low daily limit.') %></span>
+        </div>
+      <% } else { %>
+        <p class="field-help" style="margin:0"><%= _t('After adding, link the phone with a QR code and choose who may send from it.') %></p>
+      <% } %>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" data-close><%= _t('Cancel') %></button>
+      <button type="submit" class="btn btn-primary"><%= n ? _t('Save') : _t('Add') %></button>
+    </div>
+  </form>
+</dialog>

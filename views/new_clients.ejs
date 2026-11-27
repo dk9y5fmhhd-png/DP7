@@ -2,15 +2,13 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>New Clients</h1>
+    <h1><%= _t('New Clients') %></h1>
     <div class="sub">
-      <strong><%= ymLabel %></strong> — how many new clients arrived each day. When the month changes this window
-      shows the new month and last month drops off automatically.
-    </div>
+      <%- _th('<strong>{ymLabel}</strong> — how many new clients arrived each day. When the month changes this window shows the new month and last month drops off automatically.', { ymLabel: (ymLabel) }) %> </div>
   </div>
   <div class="chips">
-    <a class="chip <%= isCurrent ? 'on' : '' %>" href="/new-clients?m=<%= today.slice(0, 7) %>"><%- icon('day', 13) %> This month</a>
-    <a class="chip" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %> Last month</a>
+    <a class="chip <%= isCurrent ? 'on' : '' %>" href="/new-clients?m=<%= today.slice(0, 7) %>"><%- icon('day', 13) %> <%= _t('This month') %></a>
+    <a class="chip" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %> <%= _t('Last month') %></a>
     <% if (isAdmin) { %>
       <a class="chip" href="/new-clients/export?m=<%= ym %>"><%- icon('download', 13) %> CSV</a>
     <% } %>
@@ -19,47 +17,46 @@
 
 <div class="stat-grid">
   <div class="stat ok">
-    <div class="label">New clients this month</div>
+    <div class="label"><%= _t('New clients this month') %></div>
     <div class="value"><%= totals.month.toLocaleString('en-IN') %></div>
     <div class="hint">
-      <%= totals.prev %> last mahine ·
-      <span style="color:<%= totals.delta >= 0 ? 'var(--success)' : 'var(--danger)' %>">
+      <%= _t('{prev} last month ·', { prev: (totals.prev) }) %> <span style="color:<%= totals.delta >= 0 ? 'var(--success)' : 'var(--danger)' %>">
         <%= totals.delta >= 0 ? '+' : '' %><%= totals.delta %>
       </span>
     </div>
   </div>
   <div class="stat">
-    <div class="label">Today</div>
+    <div class="label"><%= _t('Today') %></div>
     <div class="value"><%= totals.today %></div>
     <div class="hint"><%= helpers.prettyDate(today) %></div>
   </div>
   <div class="stat">
-    <div class="label">Tomorrow</div>
+    <div class="label"><%= _t('Tomorrow') %></div>
     <div class="value"><%= totals.yesterday %></div>
     <div class="hint"><%= totals.yesterdayLabel %></div>
   </div>
   <div class="stat">
-    <div class="label">Daily average</div>
+    <div class="label"><%= _t('Daily average') %></div>
     <div class="value"><%= totals.avg %></div>
-    <div class="hint">per day</div>
+    <div class="hint"><%= _t('per day') %></div>
   </div>
   <div class="stat">
-    <div class="label">Best day</div>
+    <div class="label"><%= _t('Best day') %></div>
     <div class="value" style="font-size:22px">
       <% if (totals.best) { %><%= totals.best.day %><span style="font-size:13px;color:var(--fg-muted)"> <%= helpers.prettyDate(totals.best.date).split(' ')[1] %></span><% } else { %>—<% } %>
     </div>
-    <div class="hint"><%= totals.best ? totals.best.count + ' clients' : 'no data' %></div>
+    <div class="hint"><%= totals.best ? _t('{n} clients', { n: totals.best.count }) : _t('no data') %></div>
   </div>
   <div class="stat <%= totals.zeroDays ? 'warn' : 'ok' %>">
-    <div class="label">Zero days</div>
+    <div class="label"><%= _t('Zero days') %></div>
     <div class="value"><%= totals.zeroDays %></div>
-    <div class="hint">days with no new client</div>
+    <div class="hint"><%= _t('days with no new client') %></div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('day', 15) %>Day-wise count —<%= ymLabel %></h3>
+    <h3><%- icon('day', 15) %><%= _t('Day-wise count —{ymLabel}', { ymLabel: (ymLabel) }) %></h3>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <a class="btn btn-sm" href="/new-clients?m=<%= prevYm %>"><%- icon('left', 13) %></a>
       <% if (canGoNext) { %>
@@ -68,8 +65,7 @@
     </div>
   </div>
   <div class="card-body">
-    <p class="muted tiny" style="margin:0 0 14px">"New client" = whose<strong>pehla deposit</strong> on that day. Click any day to see that day's clients.
-    </p>
+    <p class="muted tiny" style="margin:0 0 14px"><%- _th('"New client" = whose <strong>first deposit</strong> is on that day. Click any day to see that day\'s clients.') %> </p>
 
     <%
       const todayDay = Number(today.slice(8, 10));
@@ -81,14 +77,14 @@
     %>
 
     <div class="cal-head">
-      <% ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function (w) { %><span><%= w %></span><% }); %>
+      <% [_t('Mon'), _t('Tue'), _t('Wed'), _t('Thu'), _t('Fri'), _t('Sat'), _t('Sun')].forEach(function (w) { %><span><%= w %></span><% }); %>
     </div>
     <div class="cal">
       <% cells.forEach(function (d) { %>
         <% if (!d) { %><div class="cal-cell empty"></div><% } else { %>
           <a class="cal-cell <%= d.isToday ? 'today' : '' %> <%= d.isFuture ? 'future' : '' %> <%= day === d.day ? 'sel' : '' %> <%= d.count ? 'has' : '' %>"
              href="/new-clients?m=<%= ym %>&d=<%= d.day %>"
-             title="<%= helpers.prettyDate(d.date) %> — <%= d.count %> naye clients">
+             title="<%= _t('{date} — {count} new clients', { date: (helpers.prettyDate(d.date)), count: (d.count) }) %>">
             <span class="cal-day"><%= d.day %></span>
             <% if (d.count) { %>
               <span class="cal-count"><%= d.count %></span>
@@ -102,9 +98,9 @@
     </div>
 
     <div class="muted tiny" style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap">
-      <span><span class="badge badge-success">Today</span> = today</span>
-      <span><span class="badge badge-neutral">Grey</span>= upcoming days</span>
-      <span><span class="badge badge-accent">Number</span> = new clients that day</span>
+      <span><span class="badge badge-success"><%= _t('Today') %></span> <%= _t('= today') %></span>
+      <span><span class="badge badge-neutral"><%= _t('Grey') %></span><%= _t('= upcoming days') %></span>
+      <span><span class="badge badge-accent"><%= _t('Number') %></span> <%= _t('= new clients that day') %></span>
     </div>
   </div>
 </div>
@@ -116,19 +112,17 @@
   %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('team', 15) %> <%= helpers.prettyDateLong(selLabel) %> new clients for</h3>
-      <span class="badge badge-accent" style="margin-left:auto"><%= list.length %> clients</span>
+      <h3><%- icon('team', 15) %> <%= _t('{selLabel} new clients for', { selLabel: (helpers.prettyDateLong(selLabel)) }) %></h3>
+      <span class="badge badge-accent" style="margin-left:auto"><%= _t('{n} clients', { n: (list.length) }) %></span>
     </div>
     <% if (!list.length) { %>
       <div class="card-body"><div class="empty">
-        <span class="big">—</span>
-        No new client on this day.
-      </div></div>
+        <span class="big">—</span> <%= _t('No new client on this day.') %> </div></div>
     <% } else { %>
     <div class="table-wrapper">
       <table>
         <thead>
-          <tr><th>#</th><th>Username</th><th>Mobile</th><th class="right">Deposits</th><th class="right">Total</th><th>Level</th><th>Status</th><th>Caller</th><th>Last remark</th></tr>
+          <tr><th>#</th><th><%= _t('Username') %></th><th><%= _t('Mobile') %></th><th class="right"><%= _t('Deposits') %></th><th class="right"><%= _t('Total') %></th><th><%= _t('Level') %></th><th><%= _t('Status') %></th><th><%= _t('Caller') %></th><th><%= _t('Last remark') %></th></tr>
         </thead>
         <tbody>
           <% list.forEach(function (r, i) { %>
@@ -140,37 +134,33 @@
               <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
               <td><span class="badge badge-neutral">L<%= r.level_id || '—' %></span></td>
               <td>
-                <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= r.status %></span>
+                <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= _t(r.status) %></span>
               </td>
               <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">—</span><% } %></td>
-              <td class="muted tiny"><%= r.last_remark || '—' %></td>
+              <td class="muted tiny"><%= _t(r.last_remark || '—') %></td>
             </tr>
           <% }); %>
         </tbody>
       </table>
     </div>
-    <div class="card-footer muted tiny">
-      Total deposits from this day's clients: <strong><%= helpers.money(list.reduce(function (a, r) { return a + Number(r.deposit_amount); }, 0)) %></strong>
+    <div class="card-footer muted tiny"> <%- _th('Total deposits from this day\'s clients: <strong>{n}</strong>', { n: (helpers.money(list.reduce(function (a, r) { return a + Number(r.deposit_amount); }, 0))) }) %>
     </div>
     <% } %>
   </div>
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> How this window works</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How this window works') %></h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt>New client</dt>
-      <dd>Whose <strong>first deposit</strong> falls that day. A returning client is not counted as new again.</dd>
-      <dt>Where the date comes from</dt>
-      <dd>If the deposit file has no date column<strong>the "Date" box in Daily Upload</strong> date is applied.
-        So when uploading the 1st's data on the 2nd, set Date to <strong>1 tareekh</strong> —
-        then it shows on the 1st in this window.
-      </dd>
-      <dt>Mahina badla</dt>
-      <dd>as soon as a new month starts the window<strong>khud us mahine</strong> the current month. Last month drops off — its data is not deleted; use "Last month" to view it.</dd>
-      <dt>Purana data</dt>
-      <dd>To view another month, use the left/right arrows.</dd>
+      <dt><%= _t('New client') %></dt>
+      <dd><%- _th('Whose <strong>first deposit</strong> falls that day. A returning client is not counted as new again.') %></dd>
+      <dt><%= _t('Where the date comes from') %></dt>
+      <dd><%- _th('If the deposit file has no date column, <strong>the "Date" box in Daily Upload</strong> is used. So when uploading the 1st\'s data on the 2nd, set Date to <strong>the 1st</strong> — then it shows on the 1st in this window.') %> </dd>
+      <dt><%= _t('Month change') %></dt>
+      <dd><%- _th('As soon as a new month starts, the window shows <strong>that month</strong>. Last month drops off — its data is not deleted; use "Last month" to view it.') %></dd>
+      <dt><%= _t('Old data') %></dt>
+      <dd><%= _t('To view another month, use the left/right arrows.') %></dd>
     </dl>
   </div>
 </div>

@@ -100,7 +100,7 @@ router.post('/apply', async (req, res, next) => {
   try {
     const saved = req.session.splitPlan;
     if (!saved || Date.now() - saved.at > 10 * 60 * 1000) {
-      req.session.flash = { type: 'error', message: 'Preview purana ho gaya (10 minute). Dobara preview banayein.' };
+      req.session.flash = { type: 'error', message: 'The preview expired (10 minutes). Make a new preview.' };
       return res.redirect('/callers');
     }
 
@@ -147,11 +147,11 @@ router.post('/:id/team', async (req, res, next) => {
     const team = req.body.team === 'acquisition' ? 'acquisition' : 'retention';
     const target = await db.row('SELECT id, login_id, role FROM users WHERE id = $1', [req.params.id]);
     if (!target) {
-      req.session.flash = { type: 'error', message: 'User nahi mila.' };
+      req.session.flash = { type: 'error', message: 'User not found.' };
       return res.redirect('/callers');
     }
     if (target.role === 'super_admin') {
-      req.session.flash = { type: 'error', message: 'Super Admin ka koi team nahi.' };
+      req.session.flash = { type: 'error', message: 'The Super Admin has no team.' };
       return res.redirect('/callers');
     }
     await db.query('UPDATE users SET team = $2 WHERE id = $1', [target.id, team]);

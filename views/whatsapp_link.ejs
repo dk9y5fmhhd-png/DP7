@@ -1,0 +1,67 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= _t('Link {label}', { label: (number.label) }) %></h1>
+  </div>
+  <div class="chips"><a class="chip" href="/whatsapp/numbers"><%- icon('left', 13) %> <%= _t('Numbers') %></a></div>
+</div>
+
+<div class="card linked" id="waDone" hidden>
+  <div class="card-body">
+    <span class="linked-mark"><%- icon('check', 30) %></span>
+    <h3><%= _t('Phone linked') %></h3>
+    <p class="muted"><%= _t('This number is ready. Choose who may send from it.') %></p>
+    <a class="btn btn-primary" href="/whatsapp/numbers"><%= _t('Go to numbers') %></a>
+  </div>
+</div>
+
+<div class="link-grid" id="waLinking">
+  <div class="card" style="text-align:center">
+    <div class="card-body">
+      <img id="waQr" alt="<%= _t('WhatsApp QR code') %>" width="280" height="280" style="display:none;margin:0 auto 10px;background:#fff;border-radius:10px">
+      <p id="waStatus" class="soft"><%= _t('Waiting for the WhatsApp service…') %></p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <ol class="steps">
+        <li><h4><%= _t('Open WhatsApp on the phone') %></h4><p><%= _t('Use a company number you can afford to lose.') %></p></li>
+        <li><h4><%= _t('Linked devices → Link a device') %></h4><p><%= _t('It is in the WhatsApp settings menu.') %></p></li>
+        <li><h4><%= _t('Scan the code') %></h4><p><%= _t('The code refreshes by itself. This page shows when the phone is linked.') %></p></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var img = document.getElementById('waQr');
+    var line = document.getElementById('waStatus');
+    var text = {
+      qr: <%- _js('Scan this code with the phone.') %>,
+      connecting: <%- _js('Connecting…') %>,
+      reconnecting: <%- _js('Reconnecting…') %>,
+      connected: <%- _js('Connected. You can close this page.') %>,
+      qr_expired: <%- _js('The code expired. Go back and press "Link with QR" again.') %>,
+      logged_out: <%- _js('Logged out. Go back and press "Link with QR" again.') %>,
+      disconnected: <%- _js('Not connected.') %>,
+      replaced: <%- _js('Another server is using this login.') %>
+    };
+    function poll() {
+      fetch('/whatsapp/numbers/<%= number.id %>/state.json').then(function (r) { return r.json(); }).then(function (s) {
+        line.textContent = text[s.status] || s.message || s.status;
+        img.style.display = s.image ? 'block' : 'none';
+        if (s.status === 'connected') {
+          document.getElementById('waDone').hidden = false;
+          document.getElementById('waLinking').hidden = true;
+        }
+        if (s.image) img.src = s.image;
+        if (['connected', 'qr_expired', 'logged_out', 'replaced'].indexOf(s.status) === -1) setTimeout(poll, 2500);
+      }).catch(function () { line.textContent = <%- _js('Could not check. Retrying…') %>; setTimeout(poll, 5000); });
+    }
+    poll();
+  })();
+</script>
+
+<%- include('partials/foot') %>

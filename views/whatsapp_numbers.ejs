@@ -1,0 +1,107 @@
+<%- include('partials/head') %>
+
+<%
+  const STATUS = { connected: ['Connected', 'badge-success'], qr: ['Waiting for scan', 'badge-warn'], qr_expired: ['QR expired', 'badge-warn'],
+    connecting: ['Connecting', 'badge-info'], reconnecting: ['Reconnecting', 'badge-info'], logged_out: ['Logged out', 'badge-danger'],
+    replaced: ['Opened elsewhere', 'badge-danger'], disconnected: ['Not linked', 'badge-neutral'] };
+%>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= _t('WhatsApp numbers') %></h1>
+    <div class="sub"><%= _t('Company phones linked by QR code. This is an unofficial connection: WhatsApp can restrict or ban a number, so keep the daily limit low.') %></div>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/settings"><%- icon('left', 13) %> <%= _t('Settings') %></a>
+    <button type="button" class="btn btn-primary" data-open="numNew"><%- icon('plus', 14) %> <%= _t('Add a number') %></button>
+  </div>
+</div>
+<%- include('partials/wa_tabs') %>
+
+<% if (!configured) { %>
+  <div class="flash flash-error"><span><%- _th('<strong>WA_INTERNAL_TOKEN is not set</strong> — the WhatsApp service cannot be used yet.') %></span></div>
+<% } %>
+
+<% if (!numbers.length) { %>
+  <div class="card"><div class="empty"><span class="big"><%- icon('whatsapp', 28) %></span><%= _t('No number yet. Add one, then link its phone.') %></div></div>
+<% } else { %>
+  <div class="num-grid">
+    <% numbers.forEach(function (n) {
+         const state = STATUS[n.status] || [n.status, 'badge-neutral'];
+         const names = users.filter((u) => n.user_ids.includes(u.id)).map((u) => u.name); %>
+      <div class="card num-card">
+        <div class="card-header">
+          <h3><span style="color:#25D366"><%- icon('whatsapp', 16) %></span> <%= n.label %></h3>
+          <span class="badge <%= state[1] %>" style="margin-left:auto"><%= _t(state[0]) %></span>
+        </div>
+        <div class="card-body">
+          <div class="muted tiny"><%= n.phone_number && n.status === 'connected' ? '+' + n.phone_number : _t('No phone linked') %></div>
+          <div class="field-meta" style="margin-top:14px"><span class="soft tiny"><%= _t('Sent today') %></span><strong class="tiny"><%= n.sent_today %> / <%= n.daily_cap %></strong></div>
+          <div class="meter"><span style="width:<%= Math.min(100, Math.round(n.sent_today / n.daily_cap * 100)) %>%"></span></div>
+          <div class="soft tiny"><%= _t('Who may send') %></div>
+          <div class="tag-row">
+            <% names.forEach(function (name) { %><span class="badge badge-neutral"><%= name %></span><% }); %>
+            <% if (!names.length) { %><span class="muted tiny"><%= _t('Super Admins only') %></span><% } %>
+          </div>
+        </div>
+        <div class="card-footer">
+          <form method="post" action="/whatsapp/numbers/<%= n.id %>/connect">
+            <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+            <button class="btn btn-sm <%= n.status === 'connected' ? '' : 'btn-primary' %>" type="submit"><%= n.status === 'connected' ? _t('Check connection') : _t('Link with QR') %></button>
+          </form>
+          <button type="button" class="btn btn-sm" data-open="num<%= n.id %>"><%= _t('Edit') %></button>
+          <% if (n.status === 'connected') { %>
+            <form method="post" action="/whatsapp/numbers/<%= n.id %>/logout" class="push">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-danger" type="submit" data-confirm="<%= _t('Log this phone out?') %>"><%= _t('Log out') %></button>
+            </form>
+          <% } else { %>
+            <form method="post" action="/whatsapp/numbers/<%= n.id %>/delete" class="push">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-danger btn-icon" type="submit" title="<%= _t('Remove') %>" data-confirm="<%= _t('Remove this number? Its message history is kept.') %>"><%- icon('trash', 13) %></button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('alert', 15) %> <%= _t('Do-not-contact list') %></h3>
+    <form method="post" action="/whatsapp/opt-outs" class="row-actions" style="margin-left:auto">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="text" name="number" required placeholder="<%= _t('Mobile number') %>" aria-label="<%= _t('Mobile number') %>">
+      <button class="btn" type="submit"><%= _t('Block') %></button>
+    </form>
+  </div>
+  <% if (!optOuts.length) { %>
+    <div class="empty"><%= _t('Nobody is blocked. A customer who replies STOP appears here.') %></div>
+  <% } else { %>
+    <div class="table-wrapper">
+      <table style="min-width:0">
+        <thead><tr><th><%= _t('Mobile number') %></th><th><%= _t('Reason') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
+        <tbody>
+          <% optOuts.forEach(function (o) { %>
+            <tr>
+              <td class="num">+<%= o.number %></td>
+              <td class="muted"><%= o.source === 'reply' ? _t('Replied "{text}"', { text: o.trigger_text || '' }) : _t('added by an admin') %></td>
+              <td>
+                <form method="post" action="/whatsapp/opt-outs/<%= o.id %>/delete" class="row-actions">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <button class="btn btn-sm" type="submit" data-confirm="<%= _t('Allow messages to this number again?') %>"><%= _t('Remove') %></button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/wa_number_dialog', { n: null }) %>
+<% numbers.forEach(function (n) { %><%- include('partials/wa_number_dialog', { n: n }) %><% }); %>
+
+<%- include('partials/foot') %>

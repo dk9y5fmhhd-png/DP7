@@ -2,77 +2,71 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Retention Cadence</h1>
-    <div class="sub">Every customer's regular touch cycle —<strong>A: 5 days</strong> ·
-      <strong>B: 12 days</strong> · <strong>C: 30 days</strong>.
-      See who has been missed and how many days one full round takes.
-    </div>
+    <h1><%= _t('Retention Cadence') %></h1>
+    <div class="sub"><%- _th('Every customer\'s regular touch cycle —<strong>A: 5 days</strong> · <strong>B: 12 days</strong> · <strong>C: 30 days</strong>. See who has been missed and how many days one full round takes.') %> </div>
   </div>
   <div class="chips">
     <% [7, 15, 30].forEach(function (d) { %>
-      <a class="chip <%= days === d ? 'on' : '' %>" href="/cadence?days=<%= d %>"><%= d %>days</a>
+      <a class="chip <%= days === d ? 'on' : '' %>" href="/cadence?days=<%= d %>"><%= _t('{d} days', { d: (d) }) %></a>
     <% }); %>
     <form method="post" action="/cadence/refresh" style="margin:0">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-      <button class="chip" type="submit"><%- icon('refresh', 13) %> Recompute</button>
+      <button class="chip" type="submit"><%- icon('refresh', 13) %> <%= _t('Recompute') %></button>
     </form>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat">
-    <div class="label">In cadence</div>
+    <div class="label"><%= _t('In cadence') %></div>
     <div class="value"><%= overall.total.toLocaleString('en-IN') %></div>
-    <div class="hint">excluding Do Not Contact</div>
+    <div class="hint"><%= _t('excluding Do Not Contact') %></div>
   </div>
   <div class="stat <%= totals.coverage >= 60 ? 'ok' : 'warn' %>">
-    <div class="label"><%= days %>days touched</div>
+    <div class="label"><%= _t('touched in {days} days', { days: (days) }) %></div>
     <div class="value"><%= overall.covered.toLocaleString('en-IN') %></div>
-    <div class="hint"><strong><%= totals.coverage %>%</strong> coverage</div>
+    <div class="hint"><%- _th('<strong>{coverage}%</strong> coverage', { coverage: (totals.coverage) }) %></div>
   </div>
   <div class="stat <%= overall.stale ? 'bad' : 'ok' %>">
-    <div class="label">Untouched</div>
+    <div class="label"><%= _t('Untouched') %></div>
     <div class="value"><%= overall.stale.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= days %> days with no touch</div>
+    <div class="hint"><%= _t('{days} days with no touch', { days: (days) }) %></div>
   </div>
   <div class="stat <%= overall.never ? 'bad' : 'ok' %>">
-    <div class="label">Never called</div>
+    <div class="label"><%= _t('Never called') %></div>
     <div class="value"><%= overall.never.toLocaleString('en-IN') %></div>
-    <div class="hint">never once</div>
+    <div class="hint"><%= _t('never once') %></div>
   </div>
   <div class="stat warn">
-    <div class="label">Due now</div>
+    <div class="label"><%= _t('Due now') %></div>
     <div class="value"><%= overall.due.toLocaleString('en-IN') %></div>
-    <div class="hint">cadence date nikal gayi</div>
+    <div class="hint"><%= _t('cadence date has passed') %></div>
   </div>
   <div class="stat <%= totals.daysToFinish && totals.daysToFinish <= days ? 'ok' : 'bad' %>">
-    <div class="label">One round</div>
-    <div class="value" style="font-size:24px"><%= totals.daysToFinish ? totals.daysToFinish + ' days' : '—' %></div>
-    <div class="hint"><%= (totals.need_per_day || 0).toLocaleString('en-IN') %>calls/day needed · capacity<%= totals.target %></div>
+    <div class="label"><%= _t('One round') %></div>
+    <div class="value" style="font-size:24px"><%= totals.daysToFinish ? _t('{d} days', { d: totals.daysToFinish }) : '—' %></div>
+    <div class="hint"><%= _t('{n} calls/day needed · capacity {target}', { n: ((totals.need_per_day || 0).toLocaleString('en-IN')), target: (totals.target) }) %></div>
   </div>
 </div>
 
 <% if (totals.daysToFinish && totals.daysToFinish > days) { %>
   <div class="flash flash-error" style="margin-bottom:18px">
     <span>
-      <strong>One round <%= totals.daysToFinish %> days — <%= days %> days, more than the target.</strong><br>
+      <strong><%= _t('One round {daysToFinish} days — {days} days, more than the target.', { daysToFinish: (totals.daysToFinish), days: (days) }) %></strong><br>
       <span class="muted tiny">
-        <%= totals.stale.toLocaleString('en-IN') %> customers are untouched, and capacity is
-        <%= totals.target %> calls per day. Each day needs <%= totals.need_per_day.toLocaleString('en-IN') %> calls.
-        Options: raise the caller targets, or move one or two more callers onto retention.
-      </span>
+        <%= _t('{stale} customers are untouched, and capacity is {target} calls per day. Each day needs {need_per_day} calls. Options: raise the caller targets, or move one or two more callers onto retention.', { stale: (totals.stale.toLocaleString('en-IN')), target: (totals.target), need_per_day: (totals.need_per_day.toLocaleString('en-IN')) }) %> </span>
     </span>
   </div>
 <% } %>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('layers', 15) %> Tier-wise</h3>
-    <span class="muted tiny" style="margin-left:auto">A = VIP · B = normal · C = purana · D = DNC</span>
+    <h3><%- icon('layers', 15) %> <%= _t('Tier-wise') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('A = VIP · B = normal · C = old dormant · D = DNC') %></span>
   </div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>Tier</th><th>Cycle</th><th class="right">Customers</th><th class="right">Due</th><th class="right"><%= days %> Days untouched</th><th class="right">Never called</th></tr></thead>
+      <thead><tr><th><%= _t('Tier') %></th><th><%= _t('Cycle') %></th><th class="right"><%= _t('Customers') %></th><th class="right"><%= _t('Due') %></th><th class="right"><%= _t('{days} Days untouched', { days: (days) }) %></th><th class="right"><%= _t('Never called') %></th></tr></thead>
       <tbody>
         <% tierRows.forEach(function (t) { %>
           <tr>
@@ -80,9 +74,9 @@
               <span class="badge <%= t.key === 'A' ? 'badge-success' : (t.key === 'D' ? 'badge-danger' : 'badge-neutral') %>">
                 <%= t.key %>
               </span>
-              <strong style="margin-left:8px"><%= t.label %></strong>
+              <strong style="margin-left:8px"><%= _t(t.label) %></strong>
             </td>
-            <td class="muted tiny"><%= t.hint %></td>
+            <td class="muted tiny"><%= _t(t.hint) %></td>
             <td class="right num"><strong><%= (t.total || 0).toLocaleString('en-IN') %></strong></td>
             <td class="right num">
               <% if (t.due) { %><span class="badge badge-warn"><%= t.due %></span><% } else { %><span class="muted">0</span><% } %>
@@ -100,28 +94,28 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('team', 15) %> Caller-wise coverage</h3>
+    <h3><%- icon('team', 15) %> <%= _t('Caller-wise coverage') %></h3>
   </div>
   <div class="table-wrapper">
     <table>
       <thead>
         <tr>
-          <th>Caller</th><th>Team</th><th class="right">Target</th>
-          <th>Coverage</th>
-          <th class="right">Assigned</th><th class="right">A</th><th class="right">B</th><th class="right">C</th>
-          <th class="right">Bhoole</th><th class="right">Needed per day</th>
+          <th><%= _t('Caller') %></th><th><%= _t('Team') %></th><th class="right"><%= _t('Target') %></th>
+          <th><%= _t('Coverage') %></th>
+          <th class="right"><%= _t('Assigned') %></th><th class="right">A</th><th class="right">B</th><th class="right">C</th>
+          <th class="right"><%= _t('Missed') %></th><th class="right"><%= _t('Needed per day') %></th>
         </tr>
       </thead>
       <tbody>
         <% if (!perCaller.length) { %>
-          <tr><td colspan="10"><div class="empty">No callers yet.</div></td></tr>
+          <tr><td colspan="10"><div class="empty"><%= _t('No callers yet.') %></div></td></tr>
         <% } %>
         <% perCaller.forEach(function (c) { %>
           <tr>
             <td class="who"><strong><%= c.name %></strong><div class="muted tiny"><%= c.team === 'acquisition' ? 'acquisition' : 'retention' %></div></td>
             <td>
               <span class="badge <%= c.team === 'acquisition' ? 'badge-info' : 'badge-neutral' %>">
-                <%= c.team === 'acquisition' ? 'Acq' : 'Ret' %>
+                <%= c.team === 'acquisition' ? _t('Acq') : _t('Ret') %>
               </span>
             </td>
             <td class="right num"><%= c.daily_target %></td>
@@ -152,7 +146,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('day', 15) %> Touched per day (last <%= days %> days)</h3>
+    <h3><%- icon('day', 15) %> <%= _t('Touched per day (last {days} days)', { days: (days) }) %></h3>
   </div>
   <div class="card-body">
     <%
@@ -174,21 +168,19 @@
         <div class="muted tiny" style="flex:1;text-align:center"><%= d.day.slice(8, 10) %>/<%= d.day.slice(5, 7) %></div>
       <% }); %>
     </div>
-    <p class="muted tiny" style="margin:14px 0 0">
-      Ye <strong>alag customers</strong> counts distinct customers — calling the same customer twice counts once.
-      To complete one round you need <strong><%= (totals.need_per_day || 0).toLocaleString('en-IN') %></strong> new customers called.</p>
+    <p class="muted tiny" style="margin:14px 0 0"> <%- _th('This counts <strong>distinct customers</strong> — calling the same customer twice counts once. To complete one round you need <strong>{n}</strong> new customers called.', { n: ((totals.need_per_day || 0).toLocaleString('en-IN')) }) %></p>
   </div>
 </div>
 
 <% if (worst.length) { %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('alert', 15) %>Most neglected (2+ deposits)</h3>
-      <span class="muted tiny" style="margin-left:auto">Top 25</span>
+      <h3><%- icon('alert', 15) %><%= _t('Most neglected (2+ deposits)') %></h3>
+      <span class="muted tiny" style="margin-left:auto"><%= _t('Top 25') %></span>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Customer</th><th>Tier</th><th class="right">Deposits</th><th class="right">Total</th><th class="right">Days since touch</th><th>Cadence date</th><th>Caller</th></tr></thead>
+        <thead><tr><th><%= _t('Customer') %></th><th><%= _t('Tier') %></th><th class="right"><%= _t('Deposits') %></th><th class="right"><%= _t('Total') %></th><th class="right"><%= _t('Days since touch') %></th><th><%= _t('Cadence date') %></th><th><%= _t('Caller') %></th></tr></thead>
         <tbody>
           <% worst.forEach(function (r) { %>
             <tr>
@@ -197,8 +189,8 @@
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
               <td class="right num">
-                <% if (r.days_since_touch >= 9999) { %><span class="badge badge-danger">never</span>
-                <% } else { %><span class="badge badge-danger"><%= r.days_since_touch %>days</span><% } %>
+                <% if (r.days_since_touch >= 9999) { %><span class="badge badge-danger"><%= _t('never') %></span>
+                <% } else { %><span class="badge badge-danger"><%= _t('{days_since_touch} days', { days_since_touch: (r.days_since_touch) }) %></span><% } %>
               </td>
               <td class="muted tiny nowrap"><%= r.next_touch_on ? helpers.prettyDate(r.next_touch_on) : '—' %></td>
               <td class="tiny"><%= r.caller_name || '—' %></td>
@@ -211,22 +203,21 @@
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> How cadence works</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How cadence works') %></h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt>Tier A</dt>
-      <dd>VIP, high value (25+ deposits) or recently inactive —<strong>every 5 days</strong> touch</dd>
-      <dt>Tier B</dt>
-      <dd>Normal and active customers —<strong>every 12 days</strong>. This is the largest slice of the base</dd>
-      <dt>Tier C</dt>
-      <dd>60 days old dormant — <strong>every 30 days</strong>. Dead numbers exit here into D</dd>
-      <dt>Tier D</dt>
-      <dd>Wrong Number / Do Not Contact — <strong>no touch at all</strong>, removed from the queue for good</dd>
-      <dt>Reset by remark</dt>
-      <dd>Every time a remark is saved the next touch counts from that day. "Will Deposit" → 2 days · "No Answer" → tomorrow · "Not Interested" → 15 days</dd>
-      <dt>Untouched</dt>
-      <dd>Jinka <code>next_touch_on</code> has passed — that is the real red flag.
-        If this number keeps rising, capacity is short</dd>
+      <dt><%= _t('Tier A') %></dt>
+      <dd><%- _th('VIP, high value (25+ deposits) or recently inactive —<strong>every 5 days</strong> touch') %></dd>
+      <dt><%= _t('Tier B') %></dt>
+      <dd><%- _th('Normal and active customers —<strong>every 12 days</strong>. This is the largest slice of the base') %></dd>
+      <dt><%= _t('Tier C') %></dt>
+      <dd><%- _th('60 days old dormant — <strong>every 30 days</strong>. Dead numbers exit here into D') %></dd>
+      <dt><%= _t('Tier D') %></dt>
+      <dd><%- _th('Wrong Number / Do Not Contact — <strong>no touch at all</strong>, removed from the queue for good') %></dd>
+      <dt><%= _t('Reset by remark') %></dt>
+      <dd><%= _t('Every time a remark is saved the next touch counts from that day. "Will Deposit" → 2 days · "No Answer" → tomorrow · "Not Interested" → 15 days') %></dd>
+      <dt><%= _t('Untouched') %></dt>
+      <dd><%- _th('Their <code>next_touch_on</code> has passed — that is the real red flag. If this number keeps rising, capacity is short') %></dd>
     </dl>
   </div>
 </div>

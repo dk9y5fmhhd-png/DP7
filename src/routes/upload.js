@@ -82,7 +82,7 @@ router.get('/template/:kind', auth.requirePage('upload'), async (req, res, next)
 router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
-      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
+      req.session.flash = { type: 'error', message: 'Type DELETE in the confirm box — nothing was deleted.' };
       return res.redirect('/upload');
     }
 
@@ -99,7 +99,7 @@ router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'clear_deposits', `scope=${scope} removed=${removed}`);
     req.session.flash = {
       type: 'success',
-      message: `${removed} deposit rows delete — customer master dobara sync (${sync.total} customers). Ab sahi file upload split it:`,
+      message: `${removed} deposit rows deleted — customer master synced again (${sync.total} customers). Now upload the correct file.`,
     };
     res.redirect('/upload');
   } catch (err) {
@@ -183,7 +183,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
         for (const rec of parsed.rows) {
           const username = String(rec.username || rec.item || rec.worker || '').trim();
           if (!username) {
-            errors.push({ line: rec.line, text: '', reason: 'Username khaali' });
+            errors.push({ line: rec.line, text: '', reason: 'Username is empty' });
             continue;
           }
           let mobile = String(rec.mobile || rec.meters || '').replace(/[^\d]/g, '');
@@ -246,11 +246,11 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             ? Math.round(Number(rec.count)) : 1;
 
           if (!username) {
-            errors.push({ line: rec.line, text: '', reason: 'Username khaali' });
+            errors.push({ line: rec.line, text: '', reason: 'Username is empty' });
             continue;
           }
           if (!Number.isFinite(qty) || qty < 0) {
-            errors.push({ line: rec.line, text: `amount=${rec.qty}`, reason: 'Amount galat' });
+            errors.push({ line: rec.line, text: `amount=${rec.qty}`, reason: 'Amount is wrong' });
             continue;
           }
 

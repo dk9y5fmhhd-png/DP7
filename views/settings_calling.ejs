@@ -1,0 +1,94 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= _t('Calling (TeleCMI)') %></h1>
+    <div class="sub"><%= _t('TeleCMI accounts and what to enter in the TeleCMI panel. Each person\'s agent ID is set on the Users page.') %></div>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/settings"><%- icon('left', 13) %> <%= _t('Settings') %></a>
+    <a class="btn" href="/users"><%- icon('team', 13) %> <%= _t('Users') %></a>
+    <button type="button" class="btn btn-primary" data-open="accNew"><%- icon('plus', 14) %> <%= _t('Add account') %></button>
+  </div>
+</div>
+
+<% if (!encryptionReady) { %>
+  <div class="flash flash-error"><span><%- _th('<strong>CREDENTIALS_ENCRYPTION_KEY is not set.</strong> Add it to the server variables (32 characters or more) before saving any secret.') %></span></div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('phone', 15) %> <%= _t('Accounts') %></h3></div>
+  <% if (!accounts.length) { %>
+    <div class="empty"><span class="big"><%- icon('phone', 28) %></span><%= _t('No account yet.') %></div>
+  <% } else { %>
+    <div class="table-wrapper">
+      <table style="min-width:0">
+        <thead><tr><th><%= _t('Name') %></th><th><%= _t('App ID') %></th><th><%= _t('App secret') %></th><th><%= _t('Status') %></th><th><%= _t('Last call record') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
+        <tbody>
+          <% accounts.forEach(function (a) { %>
+            <tr>
+              <td class="cell-main"><%= a.label %></td>
+              <td><code><%= a.app_id %></code></td>
+              <td class="muted"><%= a.secretEnd ? '••••' + a.secretEnd : _t('Cannot be read') %></td>
+              <td><span class="badge <%= a.is_active ? 'badge-success' : 'badge-neutral' %>"><%= a.is_active ? _t('Active') : _t('Switched off') %></span></td>
+              <td class="muted tiny"><%= a.last_webhook_at ? a.last_webhook_at.slice(0, 16) : _t('never') %></td>
+              <td>
+                <div class="row-actions">
+                  <form method="post" action="/settings/calling/accounts/<%= a.id %>/test">
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button class="btn btn-sm" type="submit"><%= _t('Test') %></button>
+                  </form>
+                  <button type="button" class="btn btn-sm" data-open="acc<%= a.id %>"><%= _t('Edit') %></button>
+                  <% if (!a.is_active) { %>
+                    <form method="post" action="/settings/calling/accounts/<%= a.id %>/delete">
+                      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-danger btn-icon" type="submit" title="<%= _t('Remove') %>" data-confirm="<%= _t('Remove this account?') %>"><%- icon('trash', 13) %></button>
+                    </form>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('settings', 15) %> <%= _t('Setup in the TeleCMI panel') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('In the TeleCMI panel of each account, open Developer.') %></span>
+  </div>
+  <div class="card-body">
+    <ol class="steps">
+      <li>
+        <h4><%= _t('App secret') %></h4>
+        <p><%= _t('Copy the App ID and App secret and add them as an account above. Agents whose ID ends in that App ID call with it.') %></p>
+      </li>
+      <li>
+        <h4><%= _t('Webhooks: add two') %></h4>
+        <p><%= _t('Add one with type CDR and one with type Notify. Method POST for both, and this Server URL for both. Every account uses the same address.') %></p>
+        <% if (webhookUrl) { %>
+          <div class="copy-field"><code><%= webhookUrl %></code><button class="btn btn-sm" type="button" data-copy="<%= webhookUrl %>" data-copied="<%= _t('Copied') %>"><%= _t('Copy') %></button></div>
+        <% } else { %>
+          <p><%= _t('The address appears once CREDENTIALS_ENCRYPTION_KEY is set.') %></p>
+        <% } %>
+      </li>
+      <li>
+        <h4><%= _t('IP whitelisting') %></h4>
+        <p><%= _t('Add the server\'s IP, so TeleCMI accepts calls started from DP7.') %></p>
+        <% serverIps.forEach(function (ip) { %>
+          <div class="copy-field" style="max-width:360px"><code><%= ip %></code><button class="btn btn-sm" type="button" data-copy="<%= ip %>" data-copied="<%= _t('Copied') %>"><%= _t('Copy') %></button></div>
+        <% }); %>
+        <% if (!serverIps.length) { %>
+          <p><%= _t('No address is set. On Railway enable Static Outbound IPs, put all the addresses in SERVER_PUBLIC_IP, and redeploy.') %></p>
+        <% } %>
+      </li>
+    </ol>
+  </div>
+</div>
+
+<%- include('partials/telecmi_account_dialog', { a: null }) %>
+<% accounts.forEach(function (a) { %><%- include('partials/telecmi_account_dialog', { a: a }) %><% }); %>
+
+<%- include('partials/foot') %>

@@ -1,0 +1,43 @@
+<dialog class="form-dialog" id="<%= t ? 'tpl' + t.id : 'tplNew' %>">
+  <form method="post" action="/whatsapp/templates<%= t ? '/' + t.id : '' %>" class="tpl-form">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="dialog-head">
+      <h3><%= t ? _t('Edit template') : _t('New template') %></h3>
+      <button type="button" class="close-x" data-close aria-label="<%= _t('Close') %>">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <div class="form-group">
+        <label><%= _t('Name') %></label>
+        <input type="text" name="name" value="<%= t ? t.name : '' %>" maxlength="60" required>
+      </div>
+      <div class="field-row">
+        <div class="form-group">
+          <label><%= _t('Language') %></label>
+          <select name="language"><option value="en" <%= t && t.language === 'hi' ? '' : 'selected' %>><%= _t('English') %></option><option value="hi" <%= t && t.language === 'hi' ? 'selected' : '' %>><%= _t('Hindi') %></option></select>
+        </div>
+        <% if (t) { %>
+        <div class="form-group">
+          <label><%= _t('Status') %></label>
+          <select name="is_active"><option value="1" <%= t.is_active ? 'selected' : '' %>><%= _t('Active') %></option><option value="0" <%= t.is_active ? '' : 'selected' %>><%= _t('Hidden from callers') %></option></select>
+        </div>
+        <% } %>
+      </div>
+      <div class="form-group">
+        <div class="field-meta">
+          <label><%= _t('Message') %></label>
+          <button type="button" class="btn btn-sm tpl-insert"><%- icon('plus', 12) %> <%= _t('Insert value') %></button>
+        </div>
+        <textarea class="prose" name="body" maxlength="1000" required><%= t ? t.body : '' %></textarea>
+        <div class="field-meta field-help"><span><%= _t('A value such as {1} is filled in by the caller before sending.') %></span><span class="tpl-count"></span></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label><%= _t('Preview') %></label>
+        <div class="preview tpl-preview"></div>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" data-close><%= _t('Cancel') %></button>
+      <button type="submit" class="btn btn-primary"><%= t ? _t('Save') : _t('Add template') %></button>
+    </div>
+  </form>
+</dialog>

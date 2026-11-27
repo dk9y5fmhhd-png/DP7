@@ -2,11 +2,11 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Add Data</h1>
-    <div class="sub">Upload an Excel / CSV file — or paste the rows directly. One file can hold several dates.</div>
+    <h1><%= _t('Add Data') %></h1>
+    <div class="sub"><%= _t('Upload an Excel / CSV file — or paste the rows directly. One file can hold several dates.') %></div>
   </div>
   <div class="chips">
-    <a class="chip" href="/add-data/template"><%- icon('download', 13) %> Excel template</a>
+    <a class="chip" href="/add-data/template"><%- icon('download', 13) %> <%= _t('Excel template') %></a>
   </div>
 </div>
 
@@ -15,51 +15,45 @@
     <%- icon(result.dryRun ? 'alert' : 'check', 15) %>
     <span>
       <% if (result.empty) { %>
-        <strong>No valid row found.</strong>
-        <% if (result.mode === 'file') { %>
-          Could not read the data in this file. Download the template and use that format (columns: <code>date, username, mobile, amount</code>).
-        <% } else { %>
-          Check the format: <code>username mobile amount</code>
+        <strong><%= _t('No valid row found.') %></strong>
+        <% if (result.mode === 'file') { %> <%- _th('Could not read the data in this file. Download the template and use that format (columns: <code>date, username, mobile, amount</code>).') %> <% } else { %> <%- _th('Check the format: <code>username mobile amount</code>') %>
         <% } %>
       <% } else if (result.dryRun) { %>
-        <strong>Preview</strong> — <%= result.totalRows %> valid row<%= result.totalRows === 1 ? '' : 's' %> found<%= result.dates && result.dates.length > 1 ? ', across ' + result.dates.length + ' different dates' : '' %>. Nothing has been saved yet. Review the list below and press <strong>Save</strong> to save.<% } else { %>
-        <strong><%= result.inserted %></strong> row<%= result.inserted === 1 ? '' : 's' %>will be saved<%= result.inserted === 1 ? 'ya' : 'ye' %>
-        <%= result.dates && result.dates.length > 1 ? '(' + result.dates.length + ' dates)' : '— ' + result.playDate %><%= result.skipped ? ', ' + result.skipped + ' skipped (already existed)' : '' %>.
-      <% } %>
-      <% if (result.errors && result.errors.length) { %>
-        · <strong><%= result.errors.length %></strong> line<%= result.errors.length === 1 ? '' : 's' %>skipped.<% } %>
+        <%- _th('<strong>Preview</strong> — {totalRows} valid rows found{n}. Nothing has been saved yet. Review the list below and press <strong>Save</strong> to save.', { totalRows: (result.totalRows), n: (result.dates && result.dates.length > 1 ? _t(', across {n} different dates', { n: result.dates.length }) : '') }) %><% } else { %>
+        <%- _th('<strong>{inserted}</strong> rows saved {playDate}{n}.', { inserted: (result.inserted), playDate: (result.dates && result.dates.length > 1 ? _t('({n} dates)', { n: result.dates.length }) : '— ' + result.playDate), n: (result.skipped ? _t(', {n} skipped (already existed)', { n: result.skipped }) : '') }) %> <% } %>
+      <% if (result.errors && result.errors.length) { %> <%- _th('· <strong>{n}</strong> lines skipped.', { n: (result.errors.length) }) %><% } %>
     </span>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('file', 15) %>File read</h3>
+      <h3><%- icon('file', 15) %><%= _t('File read') %></h3>
       <span class="muted tiny" style="margin-left:auto">
         <% if (result.fileName) { %><%= result.fileName %><% } %>
-        <% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %>
+        <% if (result.sheet) { %> <%= _t('· sheet "{sheet}"', { sheet: (result.sheet) }) %><% } %>
       </span>
     </div>
     <div class="card-body">
       <dl class="kv">
-        <dt>Valid rows</dt><dd><%= result.totalRows || 0 %></dd>
-        <dt>Date</dt>
+        <dt><%= _t('Valid rows') %></dt><dd><%= result.totalRows || 0 %></dd>
+        <dt><%= _t('Date') %></dt>
         <dd>
-          <% if (result.usedDateColumn) { %>From the file's date column (<%= (result.dates || []).length %>different days)<% } else { %>The form date —<%= result.playDate %>
+          <% if (result.usedDateColumn) { %><%= _t('From the file\'s date column ({n} different days)', { n: ((result.dates || []).length) }) %><% } else { %><%= _t('The form date —{playDate}', { playDate: (result.playDate) }) %>
           <% } %>
         </dd>
         <% if (result.headerMap) { %>
-          <dt>Columns</dt>
+          <dt><%= _t('Columns') %></dt>
           <dd>
-            <% const names = { date: 'Date', username: 'Username', mobile: 'Mobile', amount: 'Amount' };
+            <% const names = { date: _t('Date'), username: _t('Username'), mobile: _t('Mobile'), amount: _t('Amount') };
                Object.keys(result.headerMap).forEach(function (k, i) { %>
-              <span class="badge badge-neutral"><%= names[k] || k %> → column <%= result.headerMap[k] + 1 %></span>
+              <span class="badge badge-neutral"><%= _t('{k} → column {n}', { k: (names[k] || k), n: (result.headerMap[k] + 1) }) %></span>
             <% }); %>
           </dd>
         <% } else if (result.mode === 'file') { %>
-          <dt>Columns</dt><dd class="muted">No header found — first column is treated as username, second as mobile, third as amount.</dd>
+          <dt><%= _t('Columns') %></dt><dd class="muted"><%= _t('No header found — first column is treated as username, second as mobile, third as amount.') %></dd>
         <% } %>
         <% if (result.perDate && result.perDate.length) { %>
-          <dt>Saved</dt>
+          <dt><%= _t('Saved') %></dt>
           <dd>
             <% result.perDate.forEach(function (p) { %>
               <span class="badge badge-success"><%= p.date %> · <%= p.inserted %><%= p.skipped ? ' (+' + p.skipped + ' skip)' : '' %></span>
@@ -72,19 +66,19 @@
 
   <% if (result.errors && result.errors.length) { %>
     <div class="card">
-      <div class="card-header"><h3><%- icon('alert', 15) %> Skipped lines</h3></div>
+      <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('Skipped lines') %></h3></div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
+          <thead><tr><th style="width:70px"><%= _t('Line') %></th><th><%= _t('Content') %></th><th><%= _t('Reason') %></th></tr></thead>
           <tbody>
             <% result.errors.slice(0, 50).forEach(function (e) { %>
-              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= e.reason %></span></td></tr>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= _t(e.reason) %></span></td></tr>
             <% }); %>
           </tbody>
         </table>
       </div>
       <% if (result.errors.length > 50) { %>
-        <div class="card-footer muted tiny">Showing only the first 50 errors.</div>
+        <div class="card-footer muted tiny"><%= _t('Showing only the first 50 errors.') %></div>
       <% } %>
     </div>
   <% } %>
@@ -92,12 +86,12 @@
   <% if (result.parsed && result.parsed.length) { %>
     <div class="card">
       <div class="card-header">
-        <h3><%- icon('list', 15) %> Parsed preview</h3>
-        <span class="muted tiny" style="margin-left:auto"><%= result.parsed.length %> of <%= result.totalRows %> rows</span>
+        <h3><%- icon('list', 15) %> <%= _t('Parsed preview') %></h3>
+        <span class="muted tiny" style="margin-left:auto"><%= _t('{n} of {totalRows} rows', { n: (result.parsed.length), totalRows: (result.totalRows) }) %></span>
       </div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th style="width:70px">Line</th><th>Date</th><th>Username</th><th>Mobile</th><th class="right">Amount</th></tr></thead>
+          <thead><tr><th style="width:70px"><%= _t('Line') %></th><th><%= _t('Date') %></th><th><%= _t('Username') %></th><th><%= _t('Mobile') %></th><th class="right"><%= _t('Amount') %></th></tr></thead>
           <tbody>
             <% result.parsed.forEach(function (r) { %>
               <tr>
@@ -118,8 +112,8 @@
 <div class="grid-2" style="grid-template-columns: 1.2fr 1fr">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('download', 15) %> Excel / CSV upload</h3>
-      <span class="muted tiny" style="margin-left:auto">.xlsx · .csv</span>
+      <h3><%- icon('download', 15) %> <%= _t('Excel / CSV upload') %></h3>
+      <span class="muted tiny" style="margin-left:auto"><%= _t('.xlsx · .csv') %></span>
     </div>
     <form method="post" action="/add-data" enctype="multipart/form-data" id="uploadForm">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
@@ -127,33 +121,33 @@
         <label class="dropzone" id="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" id="fileInput" required>
           <span class="dz-icon"><%- icon('file', 26) %></span>
-          <span class="dz-title" id="dzTitle">Drop the Excel file here</span>
-          <span class="dz-sub">or click to choose · .xlsx or .csv · max 20 MB</span>
+          <span class="dz-title" id="dzTitle"><%= _t('Drop the Excel file here') %></span>
+          <span class="dz-sub"><%= _t('or click to choose · .xlsx or .csv · max 20 MB') %></span>
         </label>
 
         <div class="filter-bar" style="padding:16px 0 0;border:0;background:none">
           <div>
-            <label>Play date <span class="muted tiny">(only used when the file has no date column)</span></label>
+            <label><%= _t('Play date') %> <span class="muted tiny"><%= _t('(only used when the file has no date column)') %></span></label>
             <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>">
           </div>
         </div>
 
-        <p class="muted tiny" style="margin:12px 0 0">Column names<code>date</code>, <code>username</code>, <code>mobile</code>, <code>amount</code> is easiest. Column order can change — the header is read automatically. Need the template? Use the link above<strong>Excel template</strong> to save.</p>
+        <p class="muted tiny" style="margin:12px 0 0"><%- _th('The easiest column names are <code>date</code>, <code>username</code>, <code>mobile</code>, <code>amount</code>. Column order can change — the header is read automatically. Need a template? Use the <strong>Excel template</strong> link above.') %></p>
       </div>
       <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
-        <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
-        <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Upload &amp; save</button>
+        <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> <%= _t('Preview only') %></button>
+        <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> <%- _th('Upload &amp; save') %></button>
       </div>
     </form>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('clock', 15) %> Recent days</h3>
+      <h3><%- icon('clock', 15) %> <%= _t('Recent days') %></h3>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>Date</th><th class="right">Rows</th><th class="right">Clients</th><th class="right">Amount</th></tr></thead>
+        <thead><tr><th><%= _t('Date') %></th><th class="right"><%= _t('Rows') %></th><th class="right"><%= _t('Clients') %></th><th class="right"><%= _t('Amount') %></th></tr></thead>
         <tbody>
           <% days.forEach(function (d) { %>
             <tr>
@@ -164,7 +158,7 @@
             </tr>
           <% }); %>
           <% if (!days.length) { %>
-            <tr><td colspan="4"><div class="empty">No data yet.</div></td></tr>
+            <tr><td colspan="4"><div class="empty"><%= _t('No data yet.') %></div></td></tr>
           <% } %>
         </tbody>
       </table>
@@ -174,55 +168,53 @@
 
 <details class="card" style="padding:0">
   <summary class="card-header" style="cursor:pointer;list-style:none">
-    <h3 style="display:inline-flex"><%- icon('plus', 15) %>Or paste directly</h3>
-    <span class="muted tiny" style="margin-left:auto">for a short list</span>
+    <h3 style="display:inline-flex"><%- icon('plus', 15) %><%= _t('Or paste directly') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('for a short list') %></span>
   </summary>
   <form method="post" action="/add-data" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
       <div class="filter-bar" style="padding:0 0 14px;border:0;background:none">
         <div>
-          <label>Play date</label>
+          <label><%= _t('Play date') %></label>
           <input type="date" name="play_date" value="<%= today %>" max="<%= helpers.today() %>" required>
         </div>
       </div>
       <div class="form-group">
-        <label>Rows</label>
-        <textarea name="rows" placeholder="username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200"><%= draft %></textarea>
-        <span class="muted tiny">
-          Format: <code>username mobile amount</code>— separated by comma, tab or space. Amount is optional (blank = 0).</span>
+        <label><%= _t('Rows') %></label>
+        <textarea name="rows" placeholder="<%- _th('username mobile amount&#10;rahul123 9876543210 500&#10;priya_s 9123456780 1200') %>"><%= draft %></textarea>
+        <span class="muted tiny"> <%- _th('Format: <code>username mobile amount</code>— separated by comma, tab or space. Amount is optional (blank = 0).') %></span>
       </div>
     </div>
     <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
-      <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> Preview only</button>
-      <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> Save entries</button>
+      <button type="submit" name="dry" value="1" class="btn"><%- icon('search', 15) %> <%= _t('Preview only') %></button>
+      <button type="submit" name="dry" value="0" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Save entries') %></button>
     </div>
   </form>
 </details>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('alert', 15) %> Danger zone — delete one day's data</h3>
+    <h3><%- icon('alert', 15) %> <%= _t('Danger zone — delete one day\'s data') %></h3>
   </div>
   <form method="post" action="/add-data/delete-day">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
       <div class="form-row" style="align-items:flex-end">
         <div class="form-group" style="margin:0">
-          <label>Date</label>
+          <label><%= _t('Date') %></label>
           <input type="date" name="play_date" required>
         </div>
         <div class="form-group" style="margin:0">
-          <label>T-PIN</label>
+          <label><%= _t('T-PIN') %></label>
           <input type="password" name="pin" placeholder="••••••" required autocomplete="off">
         </div>
         <div class="form-group" style="margin:0">
-          <button type="submit" class="btn btn-danger" data-confirm="All data for this day will be deleted. Confirm?">
-            <%- icon('x', 15) %> Delete day
-          </button>
+          <button type="submit" class="btn btn-danger" data-confirm="<%= _t('All data for this day will be deleted. Confirm?') %>">
+            <%- icon('x', 15) %> <%= _t('Delete day') %> </button>
         </div>
       </div>
-      <p class="muted tiny" style="margin:12px 0 0">This action is permanent. Export a CSV from Backup first.</p>
+      <p class="muted tiny" style="margin:12px 0 0"><%= _t('This action is permanent. Export a CSV from Backup first.') %></p>
     </div>
   </form>
 </div>

@@ -1,0 +1,49 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= _t('WhatsApp templates') %></h1>
+    <div class="sub"><%= _t('Ready-made messages callers can send. Add one for each language.') %></div>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/settings"><%- icon('left', 13) %> <%= _t('Settings') %></a>
+    <button type="button" class="btn btn-primary" data-open="tplNew"><%- icon('plus', 14) %> <%= _t('New template') %></button>
+  </div>
+</div>
+<%- include('partials/wa_tabs') %>
+
+<div class="card">
+  <% if (!templates.length) { %>
+    <div class="empty"><span class="big"><%- icon('whatsapp', 28) %></span><%= _t('No templates yet. Add the first message callers can send.') %></div>
+  <% } else { %>
+    <div class="table-wrapper">
+      <table style="min-width:0">
+        <thead><tr><th><%= _t('Name') %></th><th><%= _t('Message') %></th><th><%= _t('Language') %></th><th><%= _t('Status') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
+        <tbody>
+          <% templates.forEach(function (t) { %>
+            <tr>
+              <td class="cell-main"><%= t.name %></td>
+              <td><div class="cell-text preview-text" data-template-preview><%= t.body %></div></td>
+              <td><span class="badge badge-neutral"><%= t.language === 'hi' ? _t('Hindi') : _t('English') %></span></td>
+              <td><span class="badge <%= t.is_active ? 'badge-success' : 'badge-neutral' %>"><%= t.is_active ? _t('Active') : _t('Hidden from callers') %></span></td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-sm" data-open="tpl<%= t.id %>"><%= _t('Edit') %></button>
+                  <form method="post" action="/whatsapp/templates/<%= t.id %>/delete">
+                    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                    <button class="btn btn-sm btn-danger btn-icon" type="submit" title="<%= _t('Delete') %>" data-confirm="<%= _t('Delete this template?') %>"><%- icon('trash', 13) %></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/wa_template_dialog', { t: null }) %>
+<% templates.forEach(function (t) { %><%- include('partials/wa_template_dialog', { t: t }) %><% }); %>
+
+<%- include('partials/foot') %>

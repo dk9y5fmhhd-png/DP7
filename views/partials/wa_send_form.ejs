@@ -1,0 +1,20 @@
+<% const sendable = numbers.filter(function (n) { return n.status === 'connected'; }); %>
+  <form method="post" action="/whatsapp/customer/<%= encodeURIComponent(customer.username) %>" class="wa-send">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="form-group"><label><%= _t('Send from') %></label>
+      <select name="session_id" required>
+        <% sendable.forEach(function (n) { %><option value="<%= n.id %>"><%= _t('{label} — {sent_today} left today', { label: n.label, sent_today: Math.max(0, n.daily_cap - n.sent_today) }) %></option><% }); %>
+      </select>
+    </div>
+    <div class="form-group"><label><%= _t('Template') %></label>
+      <select name="template_id" required>
+        <% templates.forEach(function (t) { %><option value="<%= t.id %>" data-body="<%= t.body %>"><%= t.name %> (<%= t.language === 'hi' ? _t('Hindi') : _t('English') %>)</option><% }); %>
+      </select>
+    </div>
+    <div class="wa-values" data-label="<%= _t('Value') %>"></div>
+    <div class="form-group"><label><%= _t('Preview') %></label><div class="preview wa-preview"></div></div>
+    <p class="field-help"><%= _t('To {number}. Messages are spaced a few seconds apart, so sending can take a moment.', { number: mobileShown }) %></p>
+    <div class="send-foot">
+            <button class="btn btn-primary" type="submit" data-busy="<%= _t('Sending…') %>"><%= _t('Send message') %></button>
+    </div>
+  </form>

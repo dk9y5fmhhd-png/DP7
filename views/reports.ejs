@@ -2,18 +2,15 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Client Reports</h1>
-    <div class="sub">
-      Jin clients ne <%= helpers.prettyDateLong(filters.date) %> did not deposit (they were active before) —
-      this is today's follow-up list.
-    </div>
+    <h1><%= _t('Client Reports') %></h1>
+    <div class="sub"> <%= _t('Clients who did not deposit on {date} but were active before. This is today\'s follow-up list.', { date: (helpers.prettyDateLong(filters.date)) }) %> </div>
   </div>
   <div class="chips">
     <% if (user.role === 'super_admin') { %>
     <a class="chip" href="/reports/export?type=client&date=<%= filters.date %>&quiet=<%= filters.quiet %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
       <%- icon('download', 13) %> CSV
     </a>
-    <a class="chip" href="#" data-print><%- icon('file', 13) %> Print</a>
+    <a class="chip" href="#" data-print><%- icon('file', 13) %> <%= _t('Print') %></a>
     <% } %>
   </div>
 </div>
@@ -21,13 +18,13 @@
 <div class="card">
   <form method="get" action="/reports" class="filter-bar">
     <div>
-      <label>Date</label>
+      <label><%= _t('Date') %></label>
       <input type="date" name="date" value="<%= filters.date %>" max="<%= helpers.today() %>">
     </div>
     <div>
-      <label>Level</label>
+      <label><%= _t('Level') %></label>
       <select name="level" data-autosubmit>
-        <option value="">All levels</option>
+        <option value=""><%= _t('All levels') %></option>
         <% levels.forEach(function (l) { %>
           <option value="<%= l.id %>" <%= String(filters.level) === String(l.id) ? 'selected' : '' %>>
             <%= l.name %> (<%= helpers.money(l.min) %><%= l.max === null ? '+' : ' – ' + helpers.money(l.max) %>)
@@ -36,31 +33,29 @@
       </select>
     </div>
     <div>
-      <label>Duplicates</label>
+      <label><%= _t('Duplicates') %></label>
       <label class="check-pill" style="height:36px">
-        <input type="checkbox" name="dups" value="1" <%= filters.dups ? 'checked' : '' %>> Only duplicate numbers
-      </label>
+        <input type="checkbox" name="dups" value="1" <%= filters.dups ? 'checked' : '' %>> <%= _t('Only duplicate numbers') %> </label>
     </div>
     <input type="hidden" name="quiet" value="<%= filters.quiet %>">
     <div>
-      <button type="submit" class="btn btn-primary"><%- icon('search', 15) %> Search</button>
+      <button type="submit" class="btn btn-primary"><%- icon('search', 15) %> <%= _t('Search') %></button>
     </div>
     <div>
-      <a href="/reports" class="btn btn-outline"><%- icon('refresh', 15) %> Reset</a>
+      <a href="/reports" class="btn btn-outline"><%- icon('refresh', 15) %> <%= _t('Reset') %></a>
     </div>
   </form>
 
   <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border)">
     <div class="chips">
-      <% [['today', 'Newly quiet (active until yesterday)'], ['d3', '3 days'], ['d7', '7 days'], ['all', 'Poora backlog']].forEach(function (opt) { %>
+      <% [['today', _t('Newly quiet (active until yesterday)')], ['d3', _t('3 days')], ['d7', _t('7 days')], ['all', _t('Full backlog')]].forEach(function (opt) { %>
         <a class="chip <%= filters.quiet === opt[0] ? 'on' : '' %>"
            href="/reports?date=<%= filters.date %>&quiet=<%= opt[0] %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">
           <%= opt[1] %>
         </a>
       <% }); %>
       <span class="muted tiny" style="align-self:center;margin-left:6px">
-        <strong><%= data.total.toLocaleString('en-IN') %></strong> clients
-        <% if (data.dupes && data.dupes.size) { %> · <%= data.dupes.size %> duplicate numbers<% } %>
+        <%- _th('<strong>{total}</strong> clients', { total: (data.total.toLocaleString('en-IN')) }) %> <% if (data.dupes && data.dupes.size) { %> <%= _t('· {size} duplicate numbers', { size: (data.dupes.size) }) %><% } %>
       </span>
     </div>
   </div>
@@ -69,54 +64,51 @@
     <table>
       <thead>
         <tr>
-          <th>Username</th>
-          <th>Mobile Number</th>
-          <th>Level</th>
-          <th>Inactive On</th>
-          <th>Last Active</th>
-          <th>Status</th>
-          <th>Remark</th>
-          <th>Follow-up</th>
-          <th class="right">Action</th>
+          <th><%= _t('Username') %></th>
+          <th><%= _t('Mobile Number') %></th>
+          <th><%= _t('Level') %></th>
+          <th><%= _t('Inactive On') %></th>
+          <th><%= _t('Last Active') %></th>
+          <th><%= _t('Status') %></th>
+          <th><%= _t('Remark') %></th>
+          <th><%= _t('Follow-up') %></th>
+          <th class="right"><%= _t('Action') %></th>
         </tr>
       </thead>
       <tbody>
         <% if (!data.rows.length) { %>
           <tr><td colspan="9">
             <div class="empty">
-              <span class="big"><%- icon('check', 30) %></span>
-              No client matches this filter. Try a different date or chip.
-            </div>
+              <span class="big"><%- icon('check', 30) %></span> <%= _t('No client matches this filter. Try a different date or chip.') %> </div>
           </td></tr>
         <% } %>
         <% data.rows.forEach(function (r) {
              const daysInactive = Math.max(0, Math.round((new Date(filters.date) - new Date(r.last_deposit)) / 86400000)); %>
           <tr>
             <td class="who"><strong><%= r.username %></strong>
-              <div class="muted tiny"><%= helpers.money(r.total_deposited) %> · <%= r.deposit_count %> deposits</div>
+              <div class="muted tiny"><%= _t('{total_deposited} · {deposit_count} deposits', { total_deposited: (helpers.money(r.total_deposited)), deposit_count: (r.deposit_count) }) %></div>
             </td>
             <td class="num nowrap">
               <%= mask(r.mobile) %>
-              <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="Ye number <%= r.dupeCount %> clients share this number">×<%= r.dupeCount %></span><% } %>
+              <% if (r.dupeCount > 1) { %><span class="badge badge-warn" title="<%= _t('{dupeCount} clients share this number', { dupeCount: (r.dupeCount) }) %>">×<%= r.dupeCount %></span><% } %>
             </td>
-            <td><span class="badge <%= r.levelClass %>"><%= r.levelName || 'No level' %></span></td>
+            <td><span class="badge <%= r.levelClass %>"><%= r.levelName || _t('No level') %></span></td>
             <td class="nowrap muted"><%= filters.date %></td>
             <td class="nowrap"><%= r.last_deposit %></td>
             <td>
-              <span class="badge badge-danger">Inactive</span>
-              <span class="muted tiny" style="display:block;margin-top:3px"><%= daysInactive %>days</span>
+              <span class="badge badge-danger"><%= _t('Inactive') %></span>
+              <span class="muted tiny" style="display:block;margin-top:3px"><%= _t('{daysInactive} days', { daysInactive: (daysInactive) }) %></span>
             </td>
             <td><div class="note <%= r.followup && r.followup.response ? '' : 'muted' %>" title="<%= r.followup && r.followup.response ? r.followup.response : '' %>"><%= r.followup && r.followup.response ? r.followup.response : '—' %></div></td>
             <td>
               <% if (r.followup) { %>
-                <span class="badge badge-neutral"><%= r.followup.action_type %></span>
+                <span class="badge badge-neutral"><%= _t(r.followup.action_type) %></span>
                 <span class="muted tiny" style="display:block;margin-top:3px"><%= r.followup.action_date %></span>
               <% } else { %><span class="muted">—</span><% } %>
             </td>
             <td class="right">
               <button type="button" class="btn btn-primary btn-sm" onclick="openFollowup('<%= r.username.replace(/'/g, "\\'") %>')">
-                <%- icon('phone', 13) %> Follow-up
-              </button>
+                <%- icon('phone', 13) %> <%= _t('Follow-up') %> </button>
             </td>
           </tr>
         <% }); %>
@@ -125,14 +117,12 @@
   </div>
 
   <div class="card-footer pagination">
-    <span class="page-info">
-      Page <%= data.page %> of <%= data.pages %> · <%= data.total.toLocaleString('en-IN') %> rows
-    </span>
+    <span class="page-info"> <%= _t('Page {page} of {pages} · {total} rows', { page: (data.page), pages: (data.pages), total: (data.total.toLocaleString('en-IN')) }) %> </span>
     <% if (data.page > 1) { %>
-      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page - 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>"><%- icon('left', 14) %> Prev</a>
+      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page - 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>"><%- icon('left', 14) %> <%= _t('Prev') %></a>
     <% } %>
     <% if (data.page < data.pages) { %>
-      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page + 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>">Next <%- icon('right', 14) %></a>
+      <a class="btn btn-sm" href="/reports?date=<%= filters.date %>&quiet=<%= filters.quiet %>&page=<%= data.page + 1 %><%= filters.level ? '&level=' + filters.level : '' %><%= filters.dups ? '&dups=1' : '' %>"><%= _t('Next') %> <%- icon('right', 14) %></a>
     <% } %>
   </div>
 </div>

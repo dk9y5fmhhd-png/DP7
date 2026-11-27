@@ -21,6 +21,7 @@ function publicUser(u) {
     login_id: u.login_id,
     role: u.role,
     page_access: u.page_access || [],
+    language: u.language || null,
   };
 }
 
@@ -29,10 +30,12 @@ function publicUser(u) {
  * ------------------------------------------------------------------ */
 function finishLogin(req, user) {
   const returnTo = req.session.returnTo && req.session.returnTo !== '/' ? req.session.returnTo : null;
+  const picked = req.session.lang || null;
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) return reject(err);
       req.session.user = publicUser(user);
+      if (picked) { req.session.lang = picked; req.session.user.language = picked; }
       req.session.csrf = crypto.randomBytes(24).toString('hex');
       // 10 ghante ka fixed clock — refresh se nahi badhta
       req.session.loginAt = Date.now();
@@ -41,7 +44,7 @@ function finishLogin(req, user) {
       req.session.save(async (saveErr) => {
         if (saveErr) return reject(saveErr);
         try {
-          await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+          await db.query('UPDATE users SET last_login_at = NOW(), language = COALESCE($2, language) WHERE id = $1', [user.id, picked]);
           await auth.audit(req, 'login', `role=${user.role}`);
         } catch (e) {
           console.error('[login]', e.message);
@@ -105,11 +108,11 @@ router.post('/login', async (req, res, next) => {
       res.status(status).render('login', { title: 'Sign in', error: message, loginId, expired: false });
     };
 
-    if (!user) return fail('Login ID ya password galat hai.');
+    if (!user) return fail('Wrong login ID or password.');
 
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const mins = Math.ceil((new Date(user.locked_until) - Date.now()) / 60000);
-      return fail(`Account lock hai. ${mins} minute baad try kijiye.`);
+      return fail(`The account is locked. Try again in ${mins} minutes.`);
     }
 
     const ok = await bcrypt.compare(password, user.password_hash);
@@ -167,7 +170,7 @@ router.post('/login/2fa', async (req, res, next) => {
       await auth.audit(req, '2fa_failed', `user=${user.login_id}`);
       return res
         .status(401)
-        .render('login2fa', { title: 'Two-factor', error: 'Code galat hai, dobara try kijiye.' });
+        .render('login2fa', { title: 'Two-factor', error: 'Wrong code, try again.' });
     }
 
     delete req.session.pending2fa;
@@ -204,7 +207,7 @@ router.get('/login/waiting', async (req, res, next) => {
 
     const ageMin = Math.floor((Date.now() - new Date(r.requested_at).getTime()) / 60000);
     res.render('login_waiting', {
-      title: 'Approval ka intezaar',
+      title: 'Waiting for approval',
       request: r,
       ageMin,
       ttl: APPROVAL_TTL_MIN,

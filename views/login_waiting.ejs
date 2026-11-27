@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= lang %>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Waiting for approval · Dailyplay7 CRM</title>
-  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
+  <title><%= _t('Waiting for approval · Dailyplay7 CRM') %></title>
+  <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>">
   <link rel="icon" href="/favicon.png">
 </head>
 <body>
@@ -14,56 +14,54 @@
     <div class="auth-brand">
       <span class="wordmark wordmark--lg">Dailyplay<span class="wordmark-7">7</span></span>
       <hr class="brand-rule">
-      <div class="auth-title">Retention CRM</div>
+      <div class="auth-title"><%= _t('Retention CRM') %></div>
     </div>
 
     <% if (rejected) { %>
       <div class="flash flash-error">
-        <span><strong>Admin rejected your login.</strong><br>
-        If this was a mistake, tell your admin.</span>
+        <span><%- _th('<strong>Admin rejected your login.</strong><br> If this was a mistake, tell your admin.') %></span>
       </div>
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-outline" style="width:100%">Back to login</button>
+        <button class="btn btn-outline" style="width:100%"><%= _t('Back to login') %></button>
       </form>
 
     <% } else if (stale) { %>
       <div class="flash flash-error">
-        <span><strong>The request expired.</strong><br>
-        Admin ne <%= ttl %> minutes. Log in again.</span>
+        <span><%- _th('<strong>The request expired.</strong><br> The admin did not answer within {ttl} minutes. Log in again.', { ttl: (ttl) }) %></span>
       </div>
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-primary" style="width:100%">Log in again</button>
+        <button class="btn btn-primary" style="width:100%"><%= _t('Log in again') %></button>
       </form>
 
     <% } else { %>
       <div class="flash flash-info" style="align-items:flex-start">
         <span>
-          <strong>Waiting for admin approval.</strong><br>
-          <span class="muted tiny">Your login opens automatically once approved. Do not close this page.</span>
+          <strong><%= _t('Waiting for admin approval.') %></strong><br>
+          <span class="muted tiny"><%= _t('Your login opens automatically once approved. Do not close this page.') %></span>
         </span>
       </div>
 
       <dl class="kv" style="margin:14px 0 18px">
-        <dt>Login ID</dt><dd><%= request.login_id %></dd>
-        <dt>Naam</dt><dd><%= request.user_name || request.name %></dd>
-        <dt>IP</dt><dd><%= request.ip || '—' %></dd>
-        <dt>Bheja gaya</dt><dd><%= helpers.prettyDateTime(request.requested_at) %></dd>
-        <dt>Time bacha</dt><dd><strong id="ttl"><%= Math.max(0, ttl - ageMin) %> minute</strong></dd>
+        <dt><%= _t('Login ID') %></dt><dd><%= request.login_id %></dd>
+        <dt><%= _t('Name') %></dt><dd><%= request.user_name || request.name %></dd>
+        <dt><%= _t('IP') %></dt><dd><%= request.ip || '—' %></dd>
+        <dt><%= _t('Sent at') %></dt><dd><%= helpers.prettyDateTime(request.requested_at) %></dd>
+        <dt><%= _t('Time left') %></dt><dd><strong id="ttl"><%= _t('{ageMin} minute', { ageMin: (Math.max(0, ttl - ageMin)) }) %></strong></dd>
       </dl>
 
       <div class="flash flash-info" id="waitingBox" style="margin-bottom:14px">
-        <span class="muted tiny" id="waitingText">Approval request sent to admin…</span>
+        <span class="muted tiny" id="waitingText"><%= _t('Approval request sent to admin…') %></span>
       </div>
 
       <form method="post" action="/login/cancel">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-outline" style="width:100%">Cancel</button>
+        <button class="btn btn-outline" style="width:100%"><%= _t('Cancel') %></button>
       </form>
     <% } %>
 
-    <div class="auth-foot">Dailyplay7 · v<%= appVersion %> · internal use only</div>
+    <div class="auth-foot"><%= _t('Dailyplay7 · v{appVersion} · internal use only', { appVersion: (appVersion) }) %></div>
   </div>
 </div>
 
@@ -80,7 +78,7 @@
         .then(function (d) {
           if (d.status === 'approved') {
             clearInterval(poll);
-            document.getElementById('waitingText').textContent = 'Approved — signing you in…';
+            document.getElementById('waitingText').textContent = <%- _js('Approved — signing you in…') %>;
             // POST se session banta hai
             form = document.createElement('form');
             form.method = 'POST';
@@ -113,6 +111,7 @@
   })();
 </script>
 <% } %>
+<div style="position:fixed;top:14px;right:14px"><%- include('partials/lang_switch') %></div>
 </body>
 </html>
 

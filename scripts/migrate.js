@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS = {
   cohort_weekly_min: 0.75,
   delete_pin: '969696',
   site_name: 'DP7',
+  default_language: 'en',
   site_tagline: 'Client deposit tracking & retention',
   // retention CRM (spec) — 7-din rule, VIP by count, priority
   inactive_days: 7,
@@ -30,9 +31,6 @@ const DEFAULT_SETTINGS = {
   vip_min_count: 25,
   vip_premium_count: 51,
   vip_high_count: 101,
-  telecmi_app_id: '',
-  telecmi_secret: '',
-  telecmi_agent: '',
 };
 
 async function main() {
@@ -53,6 +51,7 @@ async function main() {
     ['schema-v4.3.sql', 'schema v4.3 (retention cadence)'],
     ['schema-v4.4.sql', 'schema v4.4 (excel assignment)'],
     ['schema-v4.5.sql', 'schema v4.5 (registered IDs follow-up)'],
+    ['schema-v5.0.sql', 'schema v5.0 (TeleCMI + WhatsApp)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);
     if (!fs.existsSync(p2)) continue;

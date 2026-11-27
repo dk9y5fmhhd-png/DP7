@@ -32,12 +32,12 @@ const STATUS_LABEL = {
   active: 'Active',
   inactive: 'Inactive',
   reactivated: 'Reactivated',
-  no_deposit: 'ID bana · deposit nahi',
+  no_deposit: 'ID created · no deposit',
 };
 const PRIORITY_LABEL = {
   P0: 'P0 — Do not contact',
-  PD: 'PD — First deposit baaki',
-  P1: 'P1 — Sabse pehle',
+  PD: 'PD — First deposit pending',
+  P1: 'P1 — Call first',
   P2: 'P2 — Regular',
   P3: 'P3 — Reactivated',
   P4: 'P4 — Active',

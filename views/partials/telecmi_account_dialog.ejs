@@ -1,0 +1,30 @@
+<dialog class="form-dialog" id="<%= a ? 'acc' + a.id : 'accNew' %>">
+  <form method="post" action="/settings/calling/accounts<%= a ? '/' + a.id : '' %>">
+    <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <div class="dialog-head">
+      <h3><%= a ? _t('Edit {name}', { name: a.label }) : _t('Add account') %></h3>
+      <button type="button" class="close-x" data-close aria-label="<%= _t('Close') %>">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <div class="form-group"><label><%= _t('Name') %></label><input type="text" name="label" value="<%= a ? a.label : '' %>" maxlength="60" required></div>
+      <div class="form-group">
+        <label><%= _t('App ID') %></label>
+        <% if (a) { %><input type="text" value="<%= a.app_id %>" disabled><% } else { %><input type="text" name="app_id" inputmode="numeric" required><% } %>
+      </div>
+      <div class="form-group">
+        <label><%= a ? _t('New secret') : _t('App secret') %></label>
+        <input type="password" name="secret" <%= a ? '' : 'required' %> autocomplete="new-password" placeholder="<%= a ? _t('leave blank to keep') : '' %>">
+      </div>
+      <% if (a) { %>
+      <div class="form-group" style="margin-bottom:0">
+        <label><%= _t('Status') %></label>
+        <select name="is_active"><option value="1" <%= a.is_active ? 'selected' : '' %>><%= _t('Active') %></option><option value="0" <%= a.is_active ? '' : 'selected' %>><%= _t('Switched off') %></option></select>
+      </div>
+      <% } %>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn btn-ghost" data-close><%= _t('Cancel') %></button>
+      <button type="submit" class="btn btn-primary"><%= a ? _t('Save') : _t('Add account') %></button>
+    </div>
+  </form>
+</dialog>

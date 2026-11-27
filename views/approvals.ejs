@@ -2,35 +2,34 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Login Approvals</h1>
-    <div class="sub">Whenever a user logs in they wait for your approval. As soon as you approve, their login opens by itself. The request<strong><%= ttl %> minute</strong> in expiry.</div>
+    <h1><%= _t('Login Approvals') %></h1>
+    <div class="sub"><%- _th('Whenever a user logs in they wait for your approval. As soon as you approve, their login opens by itself. A request expires after <strong>{ttl} minutes</strong>.', { ttl: (ttl) }) %></div>
   </div>
   <div class="chips">
-    <a class="chip" href="/users"><%- icon('team', 13) %> Users</a>
+    <a class="chip" href="/users"><%- icon('team', 13) %> <%= _t('Users') %></a>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat <%= stats.pending ? 'warn' : 'ok' %>">
-    <div class="label">Pending now</div>
+    <div class="label"><%= _t('Pending now') %></div>
     <div class="value" id="pendingCount"><%= stats.pending %></div>
-    <div class="hint"><%= stats.pending ? 'allow them now' : 'nobody is waiting' %></div>
+    <div class="hint"><%= stats.pending ? _t('allow them now') : _t('nobody is waiting') %></div>
   </div>
-  <div class="stat ok"><div class="label">Approve kiye</div><div class="value"><%= stats.approved %></div><div class="hint">total</div></div>
-  <div class="stat bad"><div class="label">Reject kiye</div><div class="value"><%= stats.rejected %></div><div class="hint">total</div></div>
-  <div class="stat"><div class="label">Expired</div><div class="value"><%= stats.expired %></div><div class="hint">not approved in time</div></div>
+  <div class="stat ok"><div class="label"><%= _t('Approved') %></div><div class="value"><%= stats.approved %></div><div class="hint"><%= _t('total') %></div></div>
+  <div class="stat bad"><div class="label"><%= _t('Rejected') %></div><div class="value"><%= stats.rejected %></div><div class="hint"><%= _t('total') %></div></div>
+  <div class="stat"><div class="label"><%= _t('Expired') %></div><div class="value"><%= stats.expired %></div><div class="hint"><%= _t('not approved in time') %></div></div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('shield', 15) %> Pending requests</h3>
+    <h3><%- icon('shield', 15) %> <%= _t('Pending requests') %></h3>
     <% if (rows.length > 1) { %>
       <form method="post" action="/approvals/approve-all" style="margin:0 0 0 auto">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <button class="btn btn-sm btn-primary" type="submit"
-                data-confirm="Approve all <%= rows.length %> requests?">
-          <%- icon('check', 13) %> Approve all
-        </button>
+                data-confirm="<%= _t('Approve all {n} requests?', { n: (rows.length) }) %>">
+          <%- icon('check', 13) %> <%= _t('Approve all') %> </button>
       </form>
     <% } %>
   </div>
@@ -38,20 +37,18 @@
     <table>
       <thead>
         <tr>
-          <th>User</th>
-          <th>Role</th>
-          <th>2FA</th>
-          <th>IP</th>
-          <th>Waiting</th>
-          <th class="right">Action</th>
+          <th><%= _t('User') %></th>
+          <th><%= _t('Role') %></th>
+          <th><%= _t('2FA') %></th>
+          <th><%= _t('IP') %></th>
+          <th><%= _t('Waiting') %></th>
+          <th class="right"><%= _t('Action') %></th>
         </tr>
       </thead>
       <tbody>
         <% if (!rows.length) { %>
           <tr><td colspan="6"><div class="empty">
-            <span class="big"><%- icon('check', 26) %></span>
-            Nobody is waiting to log in right now.
-            <div class="muted tiny" style="margin-top:8px">This page refreshes itself every 3 seconds.</div>
+            <span class="big"><%- icon('check', 26) %></span> <%= _t('Nobody is waiting to log in right now.') %> <div class="muted tiny" style="margin-top:8px"><%= _t('This page refreshes itself every 3 seconds.') %></div>
           </div></td></tr>
         <% } %>
         <% rows.forEach(function (r) { %>
@@ -60,22 +57,22 @@
               <strong><%= r.name %></strong>
               <div class="muted tiny"><%= r.login_id %></div>
             </td>
-            <td><span class="badge badge-neutral"><%= r.role === 'super_admin' ? 'Super Admin' : 'Admin' %></span></td>
-            <td><% if (r.totp_enabled) { %><span class="badge badge-success">On</span><% } else { %><span class="badge badge-neutral">Off</span><% } %></td>
+            <td><span class="badge badge-neutral"><%= r.role === 'super_admin' ? _t('Super Admin') : _t('Admin') %></span></td>
+            <td><% if (r.totp_enabled) { %><span class="badge badge-success"><%= _t('On') %></span><% } else { %><span class="badge badge-neutral"><%= _t('Off') %></span><% } %></td>
             <td class="num tiny"><%= r.ip || '—' %></td>
             <td class="nowrap">
-              <span class="badge <%= r.age_min >= ttl ? 'badge-danger' : 'badge-warn' %>"><%= r.age_min %> min</span>
+              <span class="badge <%= r.age_min >= ttl ? 'badge-danger' : 'badge-warn' %>"><%= _t('{age_min} min', { age_min: (r.age_min) }) %></span>
               <div class="muted tiny"><%= helpers.prettyDateTime(r.requested_at) %></div>
             </td>
             <td class="right nowrap">
               <form method="post" action="/approvals/<%= r.id %>/approve" style="display:inline;margin:0">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                <button class="btn btn-sm btn-primary" type="submit"><%- icon('check', 13) %> Allow</button>
+                <button class="btn btn-sm btn-primary" type="submit"><%- icon('check', 13) %> <%= _t('Allow') %></button>
               </form>
               <form method="post" action="/approvals/<%= r.id %>/reject" style="display:inline;margin:0">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                 <button class="btn btn-sm btn-danger" type="submit"
-                        data-confirm="<%= r.login_id %> login will be rejected. Confirm?"><%- icon('x', 13) %></button>
+                        data-confirm="<%= _t('{login_id} login will be rejected. Confirm?', { login_id: (r.login_id) }) %>"><%- icon('x', 13) %></button>
               </form>
             </td>
           </tr>
@@ -86,20 +83,20 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('clock', 15) %> Recent history</h3></div>
+  <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Recent history') %></h3></div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>User</th><th>Status</th><th>IP</th><th>Requested</th><th>Decided</th><th class="right">Wait</th><th class="right">By</th></tr></thead>
+      <thead><tr><th><%= _t('User') %></th><th><%= _t('Status') %></th><th><%= _t('IP') %></th><th><%= _t('Requested') %></th><th><%= _t('Decided') %></th><th class="right"><%= _t('Wait') %></th><th class="right"><%= _t('By') %></th></tr></thead>
       <tbody>
         <% if (!history.length) { %>
-          <tr><td colspan="7"><div class="empty">No history yet.</div></td></tr>
+          <tr><td colspan="7"><div class="empty"><%= _t('No history yet.') %></div></td></tr>
         <% } %>
         <% history.forEach(function (h) { %>
           <tr>
             <td class="who"><strong><%= h.name %></strong><div class="muted tiny"><%= h.login_id %></div></td>
             <td>
               <span class="badge <%= h.status === 'approved' ? 'badge-success' : (h.status === 'rejected' ? 'badge-danger' : 'badge-neutral') %>">
-                <%= h.status %>
+                <%= _t(h.status) %>
               </span>
             </td>
             <td class="num tiny"><%= h.ip || '—' %></td>
@@ -116,19 +113,19 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('team', 15) %>Can log in without approval</h3>
-    <span class="muted tiny" style="margin-left:auto">Super Admin always bypasses this</span>
+    <h3><%- icon('team', 15) %><%= _t('Can log in without approval') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('Super Admin always bypasses this') %></span>
   </div>
   <div class="card-body">
-    <p class="muted tiny" style="margin-top:0">To avoid approving a trusted account every time, switch it off here.<strong>Note:</strong> Switching it off means that account can log in without your permission.</p>
+    <p class="muted tiny" style="margin-top:0"><%- _th('To avoid approving a trusted account every time, switch it off here.<strong>Note:</strong> Switching it off means that account can log in without your permission.') %></p>
     <% if (!usersOff.length) { %>
-      <div class="empty" style="padding:24px">Approval is on for all users. 👍</div>
+      <div class="empty" style="padding:24px"><%= _t('Approval is on for all users. 👍') %></div>
     <% } else { %>
       <div class="chips">
         <% usersOff.forEach(function (u) { %>
           <form method="post" action="/approvals/user/<%= u.id %>/toggle" style="margin:0">
             <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-            <button class="chip" type="submit" title="Turn approval back on">
+            <button class="chip" type="submit" title="<%= _t('Turn approval back on') %>">
               <%- icon('x', 12) %> <%= u.name %> (<%= u.login_id %>)
             </button>
           </form>
@@ -139,19 +136,19 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> How it works</h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How it works') %></h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt>Login</dt>
-      <dd>User enters ID + password → a request reaches you → you press<strong>Allow</strong>→ their login opens</dd>
-      <dt>Session</dt>
-      <dd>After login it runs for <strong>10 hours</strong>. Refreshing in between changes nothing</dd>
-      <dt>After 10 hours</dt>
-      <dd>Session ends — the next refresh logs them out and your approval is needed again</dd>
-      <dt>Request expire</dt>
-      <dd><%= ttl %>minutes the request dies and the user has to log in again</dd>
-      <dt>Download</dt>
-      <dd>Non-admins cannot download any CSV / export — all blocked</dd>
+      <dt><%= _t('Login') %></dt>
+      <dd><%- _th('User enters ID + password → a request reaches you → you press <strong>Allow</strong> → their login opens') %></dd>
+      <dt><%= _t('Session') %></dt>
+      <dd><%- _th('After login it runs for <strong>10 hours</strong>. Refreshing in between changes nothing') %></dd>
+      <dt><%= _t('After 10 hours') %></dt>
+      <dd><%= _t('Session ends — the next refresh logs them out and your approval is needed again') %></dd>
+      <dt><%= _t('Request expire') %></dt>
+      <dd><%= _t('After {ttl} minutes the request expires and the user has to log in again', { ttl: (ttl) }) %></dd>
+      <dt><%= _t('Download') %></dt>
+      <dd><%= _t('Non-admins cannot download any CSV / export — all blocked') %></dd>
     </dl>
   </div>
 </div>

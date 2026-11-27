@@ -4,6 +4,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const auth = require('../auth');
+const secrets = require('../lib/crypto');
+const telecmi = require('../lib/telecmi');
 
 const router = express.Router();
 
@@ -26,7 +28,8 @@ router.use(auth.requireSuperAdmin);
 async function listUsers() {
   return db.rows(
     `SELECT id, name, login_id, role, page_access, daily_target, team, totp_enabled, failed_attempts,
-            locked_until, last_login_at, created_at
+            locked_until, last_login_at, created_at,
+            telecmi_agent_id, telecmi_password_enc IS NOT NULL AS has_telecmi_password
        FROM users ORDER BY role DESC, name`
   );
 }
@@ -39,9 +42,58 @@ router.get('/', async (req, res, next) => {
       page: 'users',
       users,
       grantable: GRANTABLE,
+      telecmiAccounts: await db.rows('SELECT app_id, label, is_active FROM telecmi_accounts ORDER BY id'),
+      encryptionReady: secrets.isConfigured(),
       flash: req.session.flash || null,
     });
     delete req.session.flash;
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reads the TeleCMI fields of a user form; null when the form has none.
+function agentFields(body) {
+  if (body.telecmi_agent_id === undefined) return null;
+  const agentId = String(body.telecmi_agent_id).replace(/\s/g, '').slice(0, 40);
+  const password = String(body.telecmi_password || '').slice(0, 200);
+  const error = !telecmi.validAgentId(agentId) ? 'An agent ID looks like 5001_1111112 (digits, then the app ID).'
+    : password && !secrets.isConfigured() ? 'CREDENTIALS_ENCRYPTION_KEY is missing or shorter than 32 characters.' : null;
+  return { agentId, password, error };
+}
+
+// The "Test login" button: uses what is typed, falling back to what is saved.
+router.post('/telecmi-test', async (req, res, next) => {
+  try {
+    const id = /^\d{1,9}$/.test(String(req.body.user_id)) ? Number(req.body.user_id) : 0;
+    const saved = id ? await db.row('SELECT telecmi_agent_id, telecmi_password_enc FROM users WHERE id = $1', [id]) : null;
+    const agentId = String(req.body.telecmi_agent_id || '').trim() || saved?.telecmi_agent_id || '';
+    let password = String(req.body.telecmi_password || '');
+    // The saved password belongs to the saved ID only.
+    if (!password && saved?.telecmi_password_enc && agentId === saved.telecmi_agent_id) {
+      password = secrets.decrypt(saved.telecmi_password_enc);
+    }
+    const r = agentId && password
+      ? await telecmi.checkLogin(agentId, password)
+      : { ok: false, message: 'Enter the agent ID and password to test.' };
+    res.json({ ok: r.ok, message: res.locals._tm(r.message) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/telecmi', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id) || 0;
+    const agent = agentFields(req.body);
+    if (!agent || agent.error) {
+      req.session.flash = { type: 'error', message: agent?.error || 'User not found.' };
+      return res.redirect('/users');
+    }
+    await telecmi.saveAgent(id, agent.agentId, agent.password);
+    await auth.audit(req, 'telecmi_agent', `user=${id} agent=${agent.agentId || 'none'}`);
+    req.session.flash = { type: 'success', message: 'TeleCMI ID saved.' };
+    res.redirect('/users');
   } catch (err) {
     next(err);
   }
@@ -63,22 +115,29 @@ router.post('/create', async (req, res, next) => {
     const access = role === 'super_admin' ? [] : normaliseAccess(req.body);
 
     if (!name || !loginId || password.length < 6) {
-      req.session.flash = { type: 'error', message: 'Naam, login ID aur kam se kam 6 character ka password calls.' };
+      req.session.flash = { type: 'error', message: 'Enter a name, a login ID and a password of at least 6 characters.' };
       return res.redirect('/users');
     }
     if (await db.value('SELECT 1 FROM users WHERE LOWER(login_id) = LOWER($1)', [loginId])) {
-      req.session.flash = { type: 'error', message: `Login ID "${loginId}" pehle se hai.` };
+      req.session.flash = { type: 'error', message: `Login ID "${loginId}" already exists.` };
+      return res.redirect('/users');
+    }
+
+    const agent = agentFields(req.body);
+    if (agent?.error) {
+      req.session.flash = { type: 'error', message: agent.error };
       return res.redirect('/users');
     }
 
     const hash = await bcrypt.hash(password, 10);
-    await db.query(
+    const created = await db.row(
       `INSERT INTO users (name, login_id, password_hash, role, page_access, daily_target, team)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [name, loginId, hash, role, access, targetOf(req.body.daily_target, 40), teamOf(req.body.team)]
     );
+    if (agent?.agentId) await telecmi.saveAgent(created.id, agent.agentId, agent.password);
     await auth.audit(req, 'create_user', `${loginId} (${role})`);
-    req.session.flash = { type: 'success', message: `User "${loginId}" ban gaya.` };
+    req.session.flash = { type: 'success', message: `User "${loginId}" created.` };
     res.redirect('/users');
   } catch (err) {
     next(err);
@@ -90,7 +149,7 @@ router.post('/:id/update', async (req, res, next) => {
     const id = Number(req.params.id);
     const target = await db.row('SELECT * FROM users WHERE id = $1', [id]);
     if (!target) {
-      req.session.flash = { type: 'error', message: 'User nahi mila.' };
+      req.session.flash = { type: 'error', message: 'User not found.' };
       return res.redirect('/users');
     }
 
@@ -102,12 +161,18 @@ router.post('/:id/update', async (req, res, next) => {
     if (target.role === 'super_admin' && role !== 'super_admin') {
       const supers = Number(await db.value("SELECT COUNT(*)::int FROM users WHERE role = 'super_admin'"));
       if (supers <= 1) {
-        req.session.flash = { type: 'error', message: 'Ye akela Super Admin hai — ise Admin nahi bana sakte.' };
+        req.session.flash = { type: 'error', message: 'This is the only Super Admin — it cannot be made an Admin.' };
         return res.redirect('/users');
       }
     }
 
     const access = role === 'super_admin' ? [] : normaliseAccess(req.body);
+    const agent = agentFields(req.body);
+    if (agent?.error) {
+      req.session.flash = { type: 'error', message: agent.error };
+      return res.redirect('/users');
+    }
+    if (agent) await telecmi.saveAgent(id, agent.agentId, agent.password);
     await db.query(
       'UPDATE users SET name = $2, role = $3, page_access = $4, daily_target = $5, team = $6 WHERE id = $1',
       [id, name, role, access, targetOf(req.body.daily_target, target.daily_target), teamOf(req.body.team, target.team)]
@@ -115,7 +180,7 @@ router.post('/:id/update', async (req, res, next) => {
 
     if (password) {
       if (password.length < 6) {
-        req.session.flash = { type: 'error', message: 'Password kam se kam 6 character ka hona calls.' };
+        req.session.flash = { type: 'error', message: 'The password needs at least 6 characters.' };
         return res.redirect('/users');
       }
       await db.query('UPDATE users SET password_hash = $2 WHERE id = $1', [
@@ -126,7 +191,7 @@ router.post('/:id/update', async (req, res, next) => {
     }
 
     await auth.audit(req, 'update_user', `${target.login_id} → ${role}`);
-    req.session.flash = { type: 'success', message: `User "${target.login_id}" update ho gaya.` };
+    req.session.flash = { type: 'success', message: `User "${target.login_id}" updated.` };
     res.redirect('/users');
   } catch (err) {
     next(err);
@@ -137,7 +202,7 @@ router.post('/:id/unlock', async (req, res, next) => {
   try {
     await db.query('UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = $1', [req.params.id]);
     await auth.audit(req, 'unlock_user', `id=${req.params.id}`);
-    req.session.flash = { type: 'success', message: 'Account unlock ho gaya.' };
+    req.session.flash = { type: 'success', message: 'Account unlocked.' };
     res.redirect('/users');
   } catch (err) {
     next(err);
@@ -148,20 +213,20 @@ router.post('/:id/delete', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (id === req.session.user.id) {
-      req.session.flash = { type: 'error', message: 'Apna hi account delete nahi kar sakte.' };
+      req.session.flash = { type: 'error', message: 'You cannot delete your own account.' };
       return res.redirect('/users');
     }
     const target = await db.row('SELECT login_id, role FROM users WHERE id = $1', [id]);
     if (target && target.role === 'super_admin') {
       const supers = Number(await db.value("SELECT COUNT(*)::int FROM users WHERE role = 'super_admin'"));
       if (supers <= 1) {
-        req.session.flash = { type: 'error', message: 'Aakhri Super Admin delete nahi ho sakta.' };
+        req.session.flash = { type: 'error', message: 'The last Super Admin cannot be deleted.' };
         return res.redirect('/users');
       }
     }
     await db.query('DELETE FROM users WHERE id = $1', [id]);
     await auth.audit(req, 'delete_user', target ? target.login_id : `id=${id}`);
-    req.session.flash = { type: 'success', message: 'User delete ho gaya.' };
+    req.session.flash = { type: 'success', message: 'User deleted.' };
     res.redirect('/users');
   } catch (err) {
     next(err);

@@ -4,6 +4,8 @@
 // DST/offset drift. "Today" is resolved in APP_TZ (default: Asia/Kolkata) because
 // the office works on IST days, not on the server's UTC day.
 
+const i18n = require('./i18n');
+
 const APP_TZ = process.env.APP_TZ || 'Asia/Kolkata';
 
 function todayISO() {
@@ -66,20 +68,25 @@ function isoWeekNumber(d) {
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Hindi dates come from the platform; English keeps its original wording.
+const hindi = (d, options) => new Intl.DateTimeFormat('hi-IN', { timeZone: 'UTC', ...options }).format(parse(d));
+
 function prettyDate(d) {
   if (!isDate(d)) return '—';
+  if (i18n.current() === 'hi') return hindi(d, { day: 'numeric', month: 'short', year: 'numeric' });
   const dt = parse(d);
   return `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()].slice(0, 3)} ${dt.getUTCFullYear()}`;
 }
 function prettyDateLong(d) {
   if (!isDate(d)) return '—';
+  if (i18n.current() === 'hi') return hindi(d, { day: 'numeric', month: 'long', year: 'numeric', weekday: 'short' });
   const dt = parse(d);
   return `${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]} ${dt.getUTCFullYear()} (${DAYS[dt.getUTCDay()]})`;
 }
 function prettyDateTime(dt) {
   if (!dt) return '—';
   const d = new Date(dt);
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(i18n.current() === 'hi' ? 'hi-IN' : 'en-GB', {
     timeZone: APP_TZ,
     day: '2-digit',
     month: 'short',
@@ -90,11 +97,11 @@ function prettyDateTime(dt) {
   }).format(d);
 }
 function relativeDays(d, from) {
-  if (!isDate(d)) return 'never';
+  if (!isDate(d)) return i18n.t('never');
   const n = diffDays(d, from || todayISO());
-  if (n <= 0) return 'today';
-  if (n === 1) return '1 day ago';
-  return `${n} days ago`;
+  if (n <= 0) return i18n.t('today');
+  if (n === 1) return i18n.t('1 day ago');
+  return i18n.t('{n} days ago', { n });
 }
 
 function money(n) {
@@ -114,12 +121,15 @@ function periodFor(kind, anchor) {
   if (kind === 'monthly') {
     const start = startOfMonth(anchor);
     const end = endOfMonth(anchor);
-    return { start, end, label: `${MONTHS[parse(start).getUTCMonth()]} ${start.slice(0, 4)}` };
+    const label = i18n.current() === 'hi'
+      ? hindi(start, { month: 'long', year: 'numeric' })
+      : `${MONTHS[parse(start).getUTCMonth()]} ${start.slice(0, 4)}`;
+    return { start, end, label };
   }
   const start = startOfWeek(anchor);
   const end = endOfWeek(anchor);
   const wk = isoWeekNumber(start);
-  return { start, end, label: `Week ${wk} · ${prettyDate(start)} – ${prettyDate(end)}` };
+  return { start, end, label: i18n.t('Week {wk} · {from} – {to}', { wk, from: prettyDate(start), to: prettyDate(end) }) };
 }
 
 // Previous / next anchor for the "change" selector.

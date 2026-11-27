@@ -1,0 +1,47 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= customer ? customer.username : _t('Unknown contact') %></h1>
+    <div class="sub"><%= _t('WhatsApp · {mobileShown}', { mobileShown: (mobileShown) }) %></div>
+  </div>
+  <div class="chips">
+    <a class="chip" href="/whatsapp"><%- icon('left', 13) %> <%= _t('Inbox') %></a>
+    <% if (customer && can('customers')) { %><a class="chip" href="/customers/<%= encodeURIComponent(customer.username) %>"><%= _t('Customer') %></a><% } %>
+  </div>
+</div>
+
+<div class="card chat-card">
+  <div class="thread" id="waThread">
+    <% if (!messages.length) { %><div class="empty"><%= _t('No messages with this customer yet.') %></div><% } %>
+    <%- include('partials/wa_thread') %>
+  </div>
+
+  <div class="composer">
+    <% if (customer) { %>
+      <%- include('partials/wa_composer') %>
+    <% } else { %>
+      <% if (optedOut) { %><div class="notice"><%= _t('This contact is on the WhatsApp do-not-contact list.') %></div>
+      <% } else if (!reply || reply.status !== 'connected') { %><div class="notice"><%= _t('This chat cannot be answered from here.') %></div>
+      <% } else { %>
+        <form method="post" action="/whatsapp/chat/<%= reply.id %>">
+          <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+          <div class="form-group"><label><%= _t('Reply') %></label><textarea class="prose reply" name="text" rows="3" maxlength="1000" required></textarea></div>
+          <button class="btn btn-primary" type="submit"><%= _t('Send reply') %></button>
+        </form>
+      <% } %>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  var thread = document.getElementById('waThread');
+  thread.scrollTop = thread.scrollHeight;
+  // New replies appear by themselves, but never while something is being typed.
+  setInterval(function () {
+    var typing = Array.prototype.some.call(document.querySelectorAll('textarea, .wa-values input'), function (f) { return f.value || f === document.activeElement; });
+    if (!document.hidden && !typing) location.reload();
+  }, 15000);
+</script>
+
+<%- include('partials/foot') %>

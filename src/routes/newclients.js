@@ -24,6 +24,9 @@ function parseMonth(v) {
 }
 function monthLabel(ym) {
   const [y, m] = ym.split('-');
+  if (require('../lib/i18n').current() === 'hi') {
+    return new Intl.DateTimeFormat('hi-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(y), Number(m) - 1, 1)));
+  }
   return `${MONTHS_HI[Number(m) - 1]} ${y}`;
 }
 function shiftMonth(ym, dir) {

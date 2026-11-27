@@ -135,7 +135,7 @@ async function main() {
     ['/calls', /Call Log/i],
     ['/upload', /Daily Upload/i],
     ['/settings?tab=retention', /Retention|VIP/i],
-    ['/settings?tab=telecmi', /TeleCMI/i],
+    ['/settings/calling', /TeleCMI/i],
   ];
   for (const [path, re] of pages) {
     const r = await req(path);
@@ -218,11 +218,9 @@ async function main() {
   // reset
   await db.query("UPDATE customers SET do_not_contact = FALSE WHERE username='AarushS52'");
 
-  /* ---------- click to call ---------- */
+  /* ---------- click to call (full cover: tests/integrations.js) ---------- */
   const callRes = await post('/calls/call', { username: 'KKK74DP' }, token);
   check('click-to-call POST', callRes.status === 302);
-  const callRow = await db.row("SELECT * FROM calls WHERE username='KKK74DP' ORDER BY id DESC LIMIT 1");
-  check('call log me entry', !!callRow, callRow ? callRow.provider : 'missing');
 
   /* ---------- upload: customers ---------- */
   const custBuf = await xlsx([
@@ -267,14 +265,6 @@ async function main() {
     vip_min_count: '25', vip_premium_count: '51', vip_high_count: '101',
   }, token);
   check('retention settings save', retSave.status === 302);
-
-  const tcSave = await post('/settings/telecmi', { telecmi_app_id: 'demo-app', telecmi_secret: 'demo-secret', telecmi_agent: '+919999999999' }, token);
-  check('telecmi settings save', tcSave.status === 302);
-  const tcfg = await db.value("SELECT value FROM settings WHERE key='telecmi_app_id'");
-  check('telecmi app id save hua', String(tcfg).includes('demo-app'));
-
-  // wapas khaali karo (galti se call na jaye)
-  await post('/settings/telecmi', { telecmi_app_id: '', telecmi_secret: '', telecmi_agent: '' }, token);
 
   /* ---------- masking for restricted user ---------- */
   // demo caller ravi ko dekho

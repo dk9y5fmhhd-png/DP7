@@ -1,0 +1,90 @@
+<%- include('partials/head') %>
+
+<%
+  const base = tab === 'inbox' ? '/whatsapp' : '/whatsapp/history';
+  const query = function (page) {
+    const p = new URLSearchParams();
+    Object.keys(filters).forEach(function (k) { if (filters[k] && k !== 'page') p.set(k === 'needsReply' ? 'needs' : k, k === 'needsReply' ? '1' : filters[k]); });
+    p.set('page', page);
+    return base + '?' + p.toString();
+  };
+%>
+
+<div class="page-head">
+  <div class="titles">
+    <h1>WhatsApp</h1>
+    <div class="sub"><%= tab === 'inbox' ? _t('Chats where the customer has replied.') : _t('All messages, newest first.') %> <%= _t('To start a chat, use the WhatsApp button on a customer.') %></div>
+  </div>
+  <div class="page-actions">
+    <% if (isAdmin) { %><a class="btn" href="/settings"><%- icon('left', 13) %> <%= _t('Settings') %></a>
+    <% } else if (can('mycalls')) { %><a class="btn" href="/calling/my"><%- icon('left', 13) %> <%= _t('My Calls') %></a><% } %>
+  </div>
+</div>
+<%- include('partials/wa_tabs') %>
+
+<div class="card">
+  <form method="get" action="<%= base %>" class="filter-bar">
+    <div style="flex:1;min-width:220px"><label><%= _t('Search') %></label><input type="search" name="q" value="<%= filters.q %>" maxlength="100" placeholder="<%= _t('customer, staff or message text') %>"></div>
+    <% if (tab === 'inbox') { %>
+      <% if (isAdmin) { %><div><label><%= _t('Caller') %></label><select name="staff"><option value=""><%= _t('All callers') %></option><% staff.forEach(function (s) { %><option value="<%= s.id %>" <%= filters.staff === s.id ? 'selected' : '' %>><%= s.name %></option><% }); %></select></div><% } %>
+      <div><label class="check-pill" style="height:36px"><input type="checkbox" name="needs" value="1" <%= filters.needsReply ? 'checked' : '' %>> <span><%= _t('Needs reply') %></span></label></div>
+    <% } else { %>
+      <div><label><%= _t('Direction') %></label><select name="direction"><option value=""><%= _t('All') %></option><option value="out" <%= filters.direction === 'out' ? 'selected' : '' %>><%= _t('Sent') %></option><option value="in" <%= filters.direction === 'in' ? 'selected' : '' %>><%= _t('Received') %></option></select></div>
+      <div><label><%= _t('Number') %></label><select name="number"><option value=""><%= _t('All') %></option><% allNumbers.forEach(function (n) { %><option value="<%= n.id %>" <%= filters.number === n.id ? 'selected' : '' %>><%= n.label %></option><% }); %></select></div>
+    <% } %>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> <%= _t('View') %></button></div>
+  </form>
+
+  <% if (!rows.length) { %>
+    <div class="empty"><span class="big"><%- icon('whatsapp', 28) %></span><%= _t('No messages yet.') %></div>
+  <% } else if (tab === 'inbox') { %>
+    <div class="chat-list">
+      <% rows.forEach(function (m) { %>
+        <a href="/whatsapp/chat/<%= m.id %>">
+          <span class="chat-avatar"><%= String(m.contact).slice(0, 1).toUpperCase() %></span>
+          <span class="chat-main">
+            <span class="chat-line"><strong><%= m.contact %></strong><span class="muted tiny"><%= m.at.slice(0, 16) %></span></span>
+            <span class="chat-line"><span class="chat-preview"><%= m.direction === 'out' ? _t('You') + ': ' : '' %><%= m.body || ('[' + (m.media_type || 'message') + ']') %></span>
+              <% if (m.direction === 'in') { %><span class="badge badge-warn"><%= _t('Needs reply') %></span><% } else if (m.failure) { %><span class="badge badge-danger"><%= _t(m.state) %></span><% } %></span>
+            <span class="muted tiny"><%= m.staff_name || _t('No caller') %> · <%= m.number_label %></span>
+          </span>
+        </a>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="table-wrapper">
+      <table style="min-width:0">
+        <thead><tr><th><%= _t('Contact') %></th><th><%= _t('Message') %></th><th><%= _t('Number') %></th><th><%= _t('Status') %></th><th><%= _t('When') %></th><th></th></tr></thead>
+        <tbody>
+          <% rows.forEach(function (m) { %>
+            <tr>
+              <td class="cell-main"><%= m.contact %></td>
+              <td><div class="muted tiny"><%= m.direction === 'in' ? _t('Received') : (m.sent_by_name ? _t('Sent by {name}', { name: m.sent_by_name }) : _t('Sent')) %></div><div class="cell-text"><%= m.body || ('[' + (m.media_type || 'message') + ']') %></div></td>
+              <td class="tiny nowrap"><%= m.number_label %></td>
+              <td class="tiny"><% if (m.failure) { %><span class="badge badge-danger" title="<%= _t(m.failure) %>"><%= _t(m.state) %></span><% } else if (m.state) { %><span class="badge badge-neutral"><%= _t(m.state) %></span><% } %></td>
+              <td class="tiny nowrap"><%= m.at.slice(0, 16) %></td>
+              <td class="right"><a class="btn btn-sm" href="/whatsapp/chat/<%= m.id %>"><%= _t('Open') %></a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<% if (filters.page > 1 || more) { %>
+  <div class="chips">
+    <% if (filters.page > 1) { %><a class="chip" href="<%= query(filters.page - 1) %>"><%- icon('left', 13) %> <%= _t('Prev') %></a><% } %>
+    <% if (more) { %><a class="chip" href="<%= query(filters.page + 1) %>"><%= _t('Next') %> <%- icon('right', 13) %></a><% } %>
+  </div>
+<% } %>
+<% if (tab === 'inbox') { %>
+  <script>
+    setInterval(function () {
+      var active = document.activeElement;
+      if (!document.hidden && !(active && /INPUT|SELECT/.test(active.tagName))) location.reload();
+    }, 15000);
+  </script>
+<% } %>
+
+<%- include('partials/foot') %>

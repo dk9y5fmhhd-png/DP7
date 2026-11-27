@@ -50,7 +50,7 @@ async function parse(rowsMatrix) {
     (r) => Array.isArray(r) && r.some((cell) => String(cell === null || cell === undefined ? '' : cell).trim() !== '')
   );
   if (!clean.length) {
-    return { rows: [], errors: ['File khaali hai.'], callers: new Map(), stats: { total: 0 } };
+    return { rows: [], errors: ['The file is empty.'], callers: new Map(), stats: { total: 0 } };
   }
 
   const { userCol, callerCol, detected } = detectColumns(clean[0]);
@@ -101,11 +101,11 @@ async function parse(rowsMatrix) {
     const cName = String(r[callerCol] === null || r[callerCol] === undefined ? '' : r[callerCol]).trim();
 
     if (!uName) {
-      errors.push({ line: lineNo, type: 'no_username', message: `Line ${lineNo}: username khaali hai.` });
+      errors.push({ line: lineNo, type: 'no_username', message: `Line ${lineNo}: username is empty.` });
       continue;
     }
     if (!cName) {
-      errors.push({ line: lineNo, type: 'no_caller', message: `Line ${lineNo}: ${uName} — caller khaali hai.` });
+      errors.push({ line: lineNo, type: 'no_caller', message: `Line ${lineNo}: ${uName} — caller is empty.` });
       continue;
     }
 

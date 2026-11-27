@@ -2,40 +2,40 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1>Follow-ups Due</h1>
-    <div class="sub">How much each caller has pending, and who has gone overdue — at a glance.</div>
+    <h1><%= _t('Follow-ups Due') %></h1>
+    <div class="sub"><%= _t('How much each caller has pending, and who has gone overdue — at a glance.') %></div>
   </div>
   <div class="chips">
-    <a class="chip" href="/calls"><%- icon('clock', 13) %> Call Log</a>
-    <a class="chip" href="/calling"><%- icon('list', 13) %> Calling List</a>
+    <a class="chip" href="/calls"><%- icon('clock', 13) %> <%= _t('Call Log') %></a>
+    <a class="chip" href="/calling"><%- icon('list', 13) %> <%= _t('Calling List') %></a>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
-    <div class="label">Overdue</div>
+    <div class="label"><%= _t('Overdue') %></div>
     <div class="value"><%= totals.overdue %></div>
-    <div class="hint">date passed — most urgent</div>
+    <div class="hint"><%= _t('date passed — most urgent') %></div>
   </div>
-  <div class="stat"><div class="label">Due today</div><div class="value"><%= totals.due %></div><div class="hint">dated today</div></div>
-  <div class="stat"><div class="label">Total pending</div><div class="value"><%= totals.pending %></div><div class="hint">overdue + today</div></div>
+  <div class="stat"><div class="label"><%= _t('Due today') %></div><div class="value"><%= totals.due %></div><div class="hint"><%= _t('dated today') %></div></div>
+  <div class="stat"><div class="label"><%= _t('Total pending') %></div><div class="value"><%= totals.pending %></div><div class="hint"><%= _t('overdue + today') %></div></div>
   <div class="stat ok">
-    <div class="label">Today's work</div>
+    <div class="label"><%= _t('Today\'s work') %></div>
     <div class="value"><%= totals.done %> <span style="font-size:15px;color:var(--fg-muted)">/ <%= totals.target %></span></div>
-    <div class="hint"><%= totals.left %> customers left across all callers</div>
+    <div class="hint"><%= _t('{left} customers left across all callers', { left: (totals.left) }) %></div>
   </div>
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('users', 15) %> Caller-wise</h3></div>
+  <div class="card-header"><h3><%- icon('users', 15) %> <%= _t('Caller-wise') %></h3></div>
   <div class="table-wrapper">
     <table>
       <thead>
-        <tr><th>Caller</th><th>Target</th><th class="right">Overdue</th><th class="right">Due today</th><th class="right">Total pending</th><th class="right">Scheduled ahead</th><th class="right">Assigned</th></tr>
+        <tr><th><%= _t('Caller') %></th><th><%= _t('Target') %></th><th class="right"><%= _t('Overdue') %></th><th class="right"><%= _t('Due today') %></th><th class="right"><%= _t('Total pending') %></th><th class="right"><%= _t('Scheduled ahead') %></th><th class="right"><%= _t('Assigned') %></th></tr>
       </thead>
       <tbody>
         <% if (!perCaller.length) { %>
-          <tr><td colspan="7"><div class="empty">No customers assigned to a caller yet.</div></td></tr>
+          <tr><td colspan="7"><div class="empty"><%= _t('No customers assigned to a caller yet.') %></div></td></tr>
         <% } %>
         <% perCaller.forEach(function (c) { %>
           <tr>
@@ -50,8 +50,8 @@
                        style="width:<%= c.daily_target ? Math.min(100, Math.round((c.done_today / c.daily_target) * 100)) : 0 %>%"></div>
                 </div>
                 <span class="tiny <%= c.done_today >= c.daily_target ? '' : 'muted' %>" style="min-width:44px;text-align:right">
-                  <% if (c.done_today >= c.daily_target) { %><span class="badge badge-success">complete</span>
-                  <% } else { %><%= c.left_today %> left<% } %>
+                  <% if (c.done_today >= c.daily_target) { %><span class="badge badge-success"><%= _t('complete') %></span>
+                  <% } else { %><%= _t('{left_today} left', { left_today: (c.left_today) }) %><% } %>
                 </span>
               </div>
             </td>
@@ -67,7 +67,7 @@
       </tbody>
       <tfoot>
         <tr style="background:rgba(245,197,66,0.05)">
-          <td><strong>Total</strong></td>
+          <td><strong><%= _t('Total') %></strong></td>
           <td class="num"><strong><%= totals.done %> / <%= totals.target %></strong></td>
           <td class="right num"><strong><%= totals.overdue %></strong></td>
           <td class="right num"><strong><%= totals.due %></strong></td>
@@ -82,20 +82,18 @@
 
 <div class="card" style="<%= totals.overdue ? 'border-color:rgba(255,107,116,0.35)' : '' %>">
   <div class="card-header">
-    <h3><%- icon('alert', 15) %> Overdue customers</h3>
-    <span class="muted tiny" style="margin-left:auto">most overdue first</span>
+    <h3><%- icon('alert', 15) %> <%= _t('Overdue customers') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('most overdue first') %></span>
   </div>
   <div class="table-wrapper">
     <table>
       <thead>
-        <tr><th>Customer</th><th>Mobile</th><th>Caller</th><th>Priority</th><th>Last remark</th><th>Follow-up was</th><th class="right">Late</th><th class="right">Deposits</th></tr>
+        <tr><th><%= _t('Customer') %></th><th><%= _t('Mobile') %></th><th><%= _t('Caller') %></th><th><%= _t('Priority') %></th><th><%= _t('Last remark') %></th><th><%= _t('Follow-up was') %></th><th class="right"><%= _t('Late') %></th><th class="right"><%= _t('Deposits') %></th></tr>
       </thead>
       <tbody>
         <% if (!overdueRows.length) { %>
           <tr><td colspan="8"><div class="empty">
-            <span class="big"><%- icon('check', 26) %></span>
-            No follow-up is overdue. Everything is on time. 🎉
-          </div></td></tr>
+            <span class="big"><%- icon('check', 26) %></span> <%= _t('No follow-up is overdue. Everything is on time. 🎉') %> </div></td></tr>
         <% } %>
         <% overdueRows.forEach(function (r) { %>
           <tr>
@@ -103,9 +101,9 @@
             <td class="num nowrap"><%= r.mobile %></td>
             <td class="tiny"><%= r.caller_name %></td>
             <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : 'badge-neutral' %>"><%= r.priority %></span></td>
-            <td class="muted tiny"><%= r.action_type %></td>
+            <td class="muted tiny"><%= _t(r.action_type) %></td>
             <td class="nowrap muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></td>
-            <td class="right num"><span class="badge badge-danger"><%= r.days_late %>days</span></td>
+            <td class="right num"><span class="badge badge-danger"><%= _t('{days_late} days', { days_late: (r.days_late) }) %></span></td>
             <td class="right num"><%= r.deposit_count %></td>
           </tr>
         <% }); %>
@@ -113,15 +111,15 @@
     </table>
   </div>
   <% if (overdueRows.length >= 100) { %>
-    <div class="card-footer muted tiny">Showing the first 100 only.</div>
+    <div class="card-footer muted tiny"><%= _t('Showing the first 100 only.') %></div>
   <% } %>
 </div>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('check', 15) %> Who worked today</h3></div>
+  <div class="card-header"><h3><%- icon('check', 15) %> <%= _t('Who worked today') %></h3></div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>Caller</th><th class="right">Remarks</th><th class="right">Customers</th></tr></thead>
+      <thead><tr><th><%= _t('Caller') %></th><th class="right"><%= _t('Remarks') %></th><th class="right"><%= _t('Customers') %></th></tr></thead>
       <tbody>
         <% doneToday.forEach(function (d) { %>
           <tr>
@@ -130,7 +128,7 @@
             <td class="right num"><%= d.customers %></td>
           </tr>
         <% }); %>
-        <% if (!doneToday.length) { %><tr><td colspan="3"><div class="empty">No remark logged today.</div></td></tr><% } %>
+        <% if (!doneToday.length) { %><tr><td colspan="3"><div class="empty"><%= _t('No remark logged today.') %></div></td></tr><% } %>
       </tbody>
     </table>
   </div>

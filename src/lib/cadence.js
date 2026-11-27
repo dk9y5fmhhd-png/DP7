@@ -20,11 +20,11 @@ const db = require('../db');
 const GAPS = { N: 1, A: 5, B: 12, C: 30, D: null };
 
 const TIERS = {
-  N: { key: 'N', label: 'ID bana, deposit nahi', gap: 1, tone: 'warn', hint: 'pehla call 1 days' },
-  A: { key: 'A', label: 'VIP / high value', gap: 5, tone: 'accent', hint: 'har 5 din' },
-  B: { key: 'B', label: 'Normal / active', gap: 12, tone: 'info', hint: 'har 12 din' },
-  C: { key: 'C', label: 'Purana dormant', gap: 30, tone: 'neutral', hint: 'har 30 din' },
-  D: { key: 'D', label: 'Do Not Contact', gap: null, tone: 'danger', hint: 'koi touch nahi' },
+  N: { key: 'N', label: 'ID created, no deposit', gap: 1, tone: 'warn', hint: 'first call in 1 day' },
+  A: { key: 'A', label: 'VIP / high value', gap: 5, tone: 'accent', hint: 'every 5 days' },
+  B: { key: 'B', label: 'Normal / active', gap: 12, tone: 'info', hint: 'every 12 days' },
+  C: { key: 'C', label: 'Old dormant', gap: 30, tone: 'neutral', hint: 'every 30 days' },
+  D: { key: 'D', label: 'Do Not Contact', gap: null, tone: 'danger', hint: 'no touch' },
 };
 
 const ORDER = ['N', 'A', 'B', 'C', 'D'];

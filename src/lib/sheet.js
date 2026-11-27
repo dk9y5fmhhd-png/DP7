@@ -141,7 +141,7 @@ function parseCsv(text) {
 async function readMatrix(buffer, filename) {
   const ext = String(filename || '').toLowerCase().split('.').pop();
   if (ext === 'csv' || ext === 'txt') return { matrix: parseCsv(buffer.toString('utf8')), sheet: filename };
-  if (ext === 'xls') throw new Error('Purana .xls format support nahi hai — Excel me File → Save As → .xlsx split it:');
+  if (ext === 'xls') throw new Error('Old .xls format is not supported — in Excel use File → Save As → .xlsx and upload that.');
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const ws = wb.worksheets.find((w) => w.rowCount > 1) || wb.worksheets[0];
@@ -267,7 +267,7 @@ async function buildTemplate(kind) {
       'Only status = successful deposits count toward the customer.',
       'A duplicate transaction id rejects that row.',
       'Multiple genuine deposits for one username are allowed.',
-      'status khaali chhod dein to "successful" maana jayega.',
+      'A blank status counts as "successful".',
     ].forEach((t) => ws.addRow([t]).font = { size: 10, color: { argb: 'FF666666' } });
   }
 

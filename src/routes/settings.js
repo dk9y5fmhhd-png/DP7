@@ -10,6 +10,7 @@ router.use(auth.requireSuperAdmin);
 
 router.get('/', async (req, res, next) => {
   try {
+    if (req.query.tab === 'telecmi') return res.redirect('/settings/calling');
     const cfg = await settings.all();
     const levels = await settings.levels();
     res.render('settings', {
@@ -42,7 +43,7 @@ router.post('/retention', async (req, res, next) => {
     };
 
     if (!(cfg.vip_high_count > cfg.vip_premium_count && cfg.vip_premium_count > cfg.vip_min_count)) {
-      req.session.flash = { type: 'error', message: 'VIP counts badhte kram me hone chahiye: VIP < Premium < High Value.' };
+      req.session.flash = { type: 'error', message: 'VIP counts must increase: VIP < Premium < High Value.' };
       return res.redirect('/settings?tab=retention');
     }
 
@@ -52,24 +53,9 @@ router.post('/retention', async (req, res, next) => {
     await auth.audit(req, 'settings_retention', JSON.stringify(cfg));
     req.session.flash = {
       type: 'success',
-      message: `Retention settings save — ${r.total} customers dobara check hue.`,
+      message: `Retention settings saved — ${r.total} customers re-checked.`,
     };
     res.redirect('/settings?tab=retention');
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/telecmi', async (req, res, next) => {
-  try {
-    await settings.setMany({
-      telecmi_app_id: String(req.body.telecmi_app_id || '').trim().slice(0, 120),
-      telecmi_secret: String(req.body.telecmi_secret || '').trim().slice(0, 200),
-      telecmi_agent: String(req.body.telecmi_agent || '').replace(/[^\d+]/g, '').slice(0, 20),
-    });
-    await auth.audit(req, 'settings_telecmi', 'updated');
-    req.session.flash = { type: 'success', message: 'TeleCMI settings save ho gaye.' };
-    res.redirect('/settings?tab=telecmi');
   } catch (err) {
     next(err);
   }
@@ -84,6 +70,7 @@ router.post('/general', async (req, res, next) => {
     };
 
     const cfg = {
+      default_language: require('../lib/i18n').isLang(req.body.default_language) ? req.body.default_language : 'en',
       site_name: String(req.body.site_name || 'DP7').trim().slice(0, 40) || 'DP7',
       site_tagline: String(req.body.site_tagline || '').trim().slice(0, 120),
       active_window_days: Math.round(num(req.body.active_window_days, 7, 1, 365)),
@@ -97,14 +84,14 @@ router.post('/general', async (req, res, next) => {
     if (!(cfg.cohort_daily_min > cfg.cohort_byweekly_min && cfg.cohort_byweekly_min > cfg.cohort_weekly_min)) {
       req.session.flash = {
         type: 'error',
-        message: 'Cohort limits ghatte kram me hone chahiye: Daily > By Weekly > Weekly.',
+        message: 'Cohort limits must decrease: Daily > By Weekly > Weekly.',
       };
       return res.redirect('/settings?tab=cohorts');
     }
 
     await settings.setMany(cfg);
     await auth.audit(req, 'update_settings', 'general');
-    req.session.flash = { type: 'success', message: 'Settings save ho gaye.' };
+    req.session.flash = { type: 'success', message: 'Settings saved.' };
     res.redirect('/settings?tab=general&saved=1');
   } catch (err) {
     next(err);
@@ -133,7 +120,7 @@ router.post('/levels', async (req, res, next) => {
     }
 
     await auth.audit(req, 'update_levels', `${list.length} bands`);
-    req.session.flash = { type: 'success', message: 'Level bands save ho gaye.' };
+    req.session.flash = { type: 'success', message: 'Level bands saved.' };
     res.redirect('/settings?tab=levels');
   } catch (err) {
     next(err);

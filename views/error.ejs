@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title><%= title %> · DP7</title>
-  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
+  <title><%= _t('{title} · DP7', { title: _tm(title) }) %></title>
+  <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>">
 </head>
 <body>
 <div class="auth-wrap">
   <div class="auth-card" style="max-width:460px">
-    <h1 style="margin-bottom:8px"><%= heading %></h1>
-    <p class="sub" style="text-align:left"><%= message %></p>
+    <h1 style="margin-bottom:8px"><%= _tm(heading) %></h1>
+    <p class="sub" style="text-align:left"><%= _tm(message) %></p>
     <div style="display:flex;gap:9px;margin-top:18px">
-      <a href="/" class="btn btn-primary">Dashboard</a>
-      <a href="javascript:history.back()" class="btn btn-outline">Back</a>
+      <a href="/" class="btn btn-primary"><%= _t('Dashboard') %></a>
+      <a href="javascript:history.back()" class="btn btn-outline"><%= _t('Back') %></a>
     </div>
   </div>
 </div>
