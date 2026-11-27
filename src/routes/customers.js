@@ -10,11 +10,6 @@ const router = express.Router();
 
 const PER_PAGE = 100;
 
-// caller/staff ko poora number nahi dikhta
-function canSeeFullMobile(user) {
-  return user && (user.role === 'super_admin' || (user.page_access || []).includes('all'));
-}
-
 // Super Admin sab dekhta hai (assign/DNC/delete bhi usi ke haath me).
 // Baaki har user (caller) sirf apne assigned customers dekhta hai.
 function isAdminUser(user) {
@@ -96,7 +91,6 @@ router.get('/', auth.requirePage('customers'), async (req, res, next) => {
       params
     );
 
-    const full = canSeeFullMobile(req.session.user);
     const vipCounts = await db.rows(
       `SELECT vip_category, COUNT(*)::int AS c FROM customer_board b
         WHERE ${ownScopeSql(me, [])} GROUP BY vip_category`,
@@ -106,14 +100,13 @@ router.get('/', auth.requirePage('customers'), async (req, res, next) => {
     res.render('customers', {
       title: 'Customers',
       page: 'customers',
-      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, full) })),
+      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
       totals, count, page: safe, pages,
       callers: admin ? await callers() : [],
       isAdmin: admin,
       vipCounts: new Map(vipCounts.map((v) => [v.vip_category, v.c])),
       filters: { status, vip, priority, caller, q },
       labels: { STATUS_LABEL: C.STATUS_LABEL, VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
-      canSeeFull: full,
     });
   } catch (err) {
     next(err);
@@ -173,8 +166,7 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
       callers: admin ? await callers() : [],
       REMARKS: require('../lib/remarks').REMARKS,
       labels: { STATUS_LABEL: C.STATUS_LABEL, VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
-      canSeeFull: canSeeFullMobile(req.session.user),
-      mobileShown: C.maskMobile(c.mobile, canSeeFullMobile(req.session.user)),
+      mobileShown: C.maskMobile(c.mobile),
       today: D.todayISO(),
     });
   } catch (err) {

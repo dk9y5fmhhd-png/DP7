@@ -4,6 +4,7 @@
 // apart from the web app so a web deploy does not drop the WhatsApp links.
 
 require('dotenv').config();
+require('./quiet-libsignal').install();
 
 const { Client } = require('pg');
 const db = require('../db');

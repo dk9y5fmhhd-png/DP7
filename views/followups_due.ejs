@@ -98,7 +98,7 @@
         <% overdueRows.forEach(function (r) { %>
           <tr>
             <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
-            <td class="num nowrap"><%= r.mobile %></td>
+            <td class="num nowrap"><%= mask(r.mobile) %></td>
             <td class="tiny"><%= r.caller_name %></td>
             <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : 'badge-neutral' %>"><%= r.priority %></span></td>
             <td class="muted tiny"><%= _t(r.action_type) %></td>

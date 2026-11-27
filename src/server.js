@@ -87,11 +87,7 @@ app.use((req, res, next) => {
     today: D.todayISO,
   };
   res.locals.title = 'DP7';
-  // Mobile masking — sirf Super Admin ko poora number
-  res.locals.mask = (m) => {
-    const full = req.session && req.session.user && req.session.user.role === 'super_admin';
-    return require('./lib/customers').maskMobile(m, full);
-  };
+  res.locals.mask = require('./lib/customers').maskMobile;
   res.locals.appVersion = pkg.version;
   res.locals.icon = icon;
   res.locals.ACTION_TYPES = require('./lib/actions').ACTION_TYPES;

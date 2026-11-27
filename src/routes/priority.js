@@ -68,7 +68,7 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
     res.render('priority', {
       title: 'Calling List',
       page: 'priority',
-      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
+      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
       priority, counts: new Map(counts.map((c) => [c.priority, c])),
       filters: { caller: caller || '', free: onlyFree },
       isAdmin: admin,
@@ -240,7 +240,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
       waWaiting,
       title: 'My Calls',
       page: 'mycalls',
-      rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
+      rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
       target: tgt,
       tab,
       tabCounts: tCounts,

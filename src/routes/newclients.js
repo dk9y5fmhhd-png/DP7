@@ -155,10 +155,6 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
       today,
       grid: days.map((d) => ({ ...d, pct: Math.round((d.count / maxCount) * 100) })),
       isAdmin: admin,
-      mask: (m) => {
-        const full = req.session.user && req.session.user.role === 'super_admin';
-        return require('../lib/customers').maskMobile(m, full);
-      },
     });
   } catch (err) {
     next(err);

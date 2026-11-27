@@ -205,7 +205,7 @@ async function main() {
   await db.query('UPDATE customers SET assigned_to = $1 WHERE username = ANY($2::text[])', [ncId, day1Users]);
 
   const day1nc = await req(`/new-clients?m=${ym}&d=1`);
-  check('non-admin ko mobile masked', /•{3,}\d{4}/.test(day1nc.text));
+  check('non-admin ko mobile masked', /\d{2}\*{3,}\d{2}/.test(day1nc.text));
   check('non-admin ko sirf apne 3 clients', day1Users.every((u) => day1nc.text.includes(u)), 'assigned');
   check('non-admin ko doosre ka client nahi', !day1nc.text.includes(names[7]), 'blocked');
 

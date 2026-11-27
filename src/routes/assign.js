@@ -96,7 +96,6 @@ router.get('/', async (req, res, next) => {
       callers, fresh, byDay, totals, history, days, today,
       from,
       preview: req.session.assignPreview || null,
-      mask: (m) => require('../lib/customers').maskMobile(m, true),
     });
     delete req.session.assignPreview;
   } catch (err) {

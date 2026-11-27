@@ -1136,8 +1136,6 @@
  "WhatsApp number not found.": "WhatsApp नंबर नहीं मिला।",
  "WhatsApp numbers": "WhatsApp नंबर",
  "WhatsApp refused it (code {a}).": "WhatsApp ने मना किया (कोड {a})।",
- "WhatsApp refused it: this number cannot start a chat with this contact right now. Ask the contact to message first, or use another number.": "WhatsApp ने मना किया: यह नंबर अभी इस संपर्क से बातचीत शुरू नहीं कर सकता। संपर्क से पहले संदेश भेजने को कहें, या दूसरा नंबर लें।",
- "WhatsApp refused messages from {label} to {n} contacts in the last 24 hours. Pause sending from it and check its phone.": "पिछले 24 घंटे में WhatsApp ने {label} से {n} संपर्कों के संदेश मना किए। इससे भेजना रोकें और फ़ोन जाँचें।",
  "WhatsApp rejected it (temporary session problem). Try again in a minute.": "WhatsApp ने अस्वीकार किया (अस्थायी सेशन समस्या)। एक मिनट बाद फिर भेजें।",
  "WhatsApp reported an error.": "WhatsApp ने गलती बताई।",
  "WhatsApp templates": "WhatsApp टेम्पलेट",
@@ -1243,7 +1241,6 @@
  "for a short list": "छोटी सूची के लिए",
  "free": "बिना कॉलर",
  "full list": "पूरी सूची",
- "full number": "पूरा नंबर",
  "gone quiet of {total} · {pct}%": "{total} में से शांत · {pct}%",
  "health": "सिस्टम जाँच",
  "healthy": "ठीक",
@@ -1418,5 +1415,15 @@
  "— {minDays}+ days per week": "— हफ़्ते में {minDays}+ दिन",
  "… and {n} more errors": "… और {n} गलतियाँ",
  "← Back to sign in": "← साइन इन पर वापस",
- "⚠️ <strong>Pick the day the client actually arrived.</strong> Uploading the 1st's data on the 2nd? Set the date to <strong>the 1st</strong> — otherwise it counts on the wrong day in New Clients.": "⚠️ <strong>वही दिन चुनें जिस दिन क्लाइंट असल में आया।</strong> 1 तारीख का डेटा 2 को अपलोड कर रहे हैं? तारीख <strong>1</strong> रखें — वरना नए क्लाइंट में गलत दिन गिना जाएगा।"
+ "⚠️ <strong>Pick the day the client actually arrived.</strong> Uploading the 1st's data on the 2nd? Set the date to <strong>the 1st</strong> — otherwise it counts on the wrong day in New Clients.": "⚠️ <strong>वही दिन चुनें जिस दिन क्लाइंट असल में आया।</strong> 1 तारीख का डेटा 2 को अपलोड कर रहे हैं? तारीख <strong>1</strong> रखें — वरना नए क्लाइंट में गलत दिन गिना जाएगा।",
+ "WhatsApp refused this message: this number cannot start a chat with this contact right now (the number is restricted, or the contact has never chatted with it). Retrying straight away usually fails again. Ask the contact to message first, or use another number.": "WhatsApp ने यह संदेश मना किया: यह नंबर अभी इस संपर्क से बातचीत शुरू नहीं कर सकता (नंबर पर रोक है, या संपर्क ने इससे कभी बात नहीं की)। तुरंत दोबारा भेजना आम तौर पर फिर विफल होता है। संपर्क से पहले संदेश भेजने को कहें, या दूसरा नंबर लें।",
+ "Refused: can't start this chat": "मना किया: यह बातचीत शुरू नहीं हो सकती",
+ "Rejected: session problem": "अस्वीकार: सेशन समस्या",
+ "Never confirmed by WhatsApp": "WhatsApp ने पुष्टि नहीं की",
+ "WhatsApp error": "WhatsApp त्रुटि",
+ "WhatsApp refused messages to {n} contacts in the last 24 hours (error 463); {confirmed} went through.": "पिछले 24 घंटे में WhatsApp ने {n} संपर्कों के संदेश मना किए (त्रुटि 463); {confirmed} पहुँचे।",
+ "Can't start chats": "नई बातचीत बंद",
+ "Restricted?": "रोक लगी?",
+ "{label} is probably restricted by WhatsApp: it refused messages to {n} contacts in the last 24 hours and confirmed none. Pause sending from it and check its phone for a WhatsApp notice.": "{label} पर शायद WhatsApp की रोक है: पिछले 24 घंटे में {n} संपर्कों के संदेश मना हुए और एक भी पक्का नहीं हुआ। इससे भेजना रोकें और फ़ोन पर WhatsApp की सूचना देखें।",
+ "{label} cannot start new chats right now: WhatsApp refused messages to {n} contacts in the last 24 hours, although {confirmed} other messages went through. It can probably still answer people who wrote first. Use another number for new contacts.": "{label} अभी नई बातचीत शुरू नहीं कर सकता: पिछले 24 घंटे में {n} संपर्कों के संदेश मना हुए, जबकि {confirmed} दूसरे संदेश पहुँचे। पहले संदेश भेजने वालों को शायद जवाब दिया जा सकता है। नए संपर्कों के लिए दूसरा नंबर लें।"
 }

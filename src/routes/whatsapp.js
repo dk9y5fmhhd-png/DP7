@@ -16,7 +16,7 @@ const wa = require('../lib/wa-client');
 const inbox = require('../lib/whatsapp-inbox');
 const C = require('../lib/customers');
 const { normalizeNumber } = require('../lib/phone');
-const { describeDeliveryError } = require('../wa/delivery-error');
+const { describeDeliveryError, describeDeliveryErrorShort } = require('../wa/delivery-error');
 
 const router = express.Router();
 router.use(auth.requirePage('whatsapp'));
@@ -40,9 +40,10 @@ function present(m) {
   const failed = m.direction === 'out' && m.delivery_status === 0;
   return {
     ...m,
-    contact: m.customer_name || (m.number ? C.maskMobile(m.number, false) : 'Unknown contact'),
+    contact: m.customer_name || (m.number ? C.maskMobile(m.number) : 'Unknown contact'),
     state: m.direction === 'in' ? '' : failed ? 'Not delivered' : STATUS_TEXT[m.delivery_status] || '',
     failure: failed ? describeDeliveryError(m.delivery_error) : '',
+    failureShort: failed ? describeDeliveryErrorShort(m.delivery_error) : '',
   };
 }
 
@@ -131,7 +132,7 @@ async function sendContext(req, customer) {
   return {
     messages: messages.reverse().map(present), reply: await replyTarget(customer.id),
     me: req.session.user.id, isAdmin: isAdmin(req),
-    customer, mobileShown: C.maskMobile(customer.mobile, isAdmin(req)),
+    customer, mobileShown: C.maskMobile(customer.mobile),
     numbers: await usableNumbers(req.session.user),
     templates: await db.rows('SELECT id, name, language, body FROM whatsapp_templates WHERE is_active ORDER BY name, language'),
     optedOut: Boolean(await db.value('SELECT 1 FROM whatsapp_opt_outs WHERE number = $1', [normalizeNumber(customer.mobile)])),
@@ -217,7 +218,7 @@ router.get('/chat/:id', handle(async (req, res) => {
   const incoming = [...chat.messages].reverse().find((m) => m.direction === 'in' && m.number);
   res.render('whatsapp_chat', {
     title: 'WhatsApp chat', page: 'whatsapp', isAdmin: isAdmin(req), customer: null,
-    mobileShown: chat.number ? C.maskMobile(chat.number, isAdmin(req)) : 'number hidden by WhatsApp',
+    mobileShown: chat.number ? C.maskMobile(chat.number) : 'number hidden by WhatsApp',
     messages: chat.messages.map(present), me: req.session.user.id,
     reply: incoming ? { id: incoming.id, ...(await db.row('SELECT label, status FROM whatsapp_sessions WHERE id = $1', [chat.sessionId])) } : null,
     optedOut: Boolean(chat.number && await db.value('SELECT 1 FROM whatsapp_opt_outs WHERE number = $1', [chat.number])),
@@ -262,6 +263,8 @@ router.get('/numbers', admin, handle(async (req, res) => {
        FROM whatsapp_sessions s LEFT JOIN whatsapp_session_users su ON su.session_id = s.id
       WHERE s.deleted_at IS NULL GROUP BY s.id ORDER BY s.id`
   );
+  const refusals = await inbox.refusals();
+  numbers.forEach((n) => { n.refusal = refusals.get(n.id); });
   res.render('whatsapp_numbers', {
     title: 'WhatsApp numbers', page: 'whatsapp', tab: 'numbers', isAdmin: true, numbers,
     users: await db.rows("SELECT id, name FROM users WHERE role <> 'super_admin' ORDER BY name"),
@@ -361,7 +364,7 @@ router.post('/opt-outs', admin, handle(async (req, res) => {
   await db.query(
     `INSERT INTO whatsapp_opt_outs (number, source, created_by, updated_by) VALUES ($1,'manual',$2,$2)
      ON CONFLICT (number) DO NOTHING`, [number, req.session.user.id]);
-  await auth.audit(req, 'whatsapp_optout_add', C.maskMobile(number, false));
+  await auth.audit(req, 'whatsapp_optout_add', C.maskMobile(number));
   done(req, res, 'success', 'Added to the do-not-contact list.', NUMBERS);
 }));
 

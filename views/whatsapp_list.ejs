@@ -61,7 +61,7 @@
               <td class="cell-main"><%= m.contact %></td>
               <td><div class="muted tiny"><%= m.direction === 'in' ? _t('Received') : (m.sent_by_name ? _t('Sent by {name}', { name: m.sent_by_name }) : _t('Sent')) %></div><div class="cell-text"><%= m.body || ('[' + (m.media_type || 'message') + ']') %></div></td>
               <td class="tiny nowrap"><%= m.number_label %></td>
-              <td class="tiny"><% if (m.failure) { %><span class="badge badge-danger" title="<%= _t(m.failure) %>"><%= _t(m.state) %></span><% } else if (m.state) { %><span class="badge badge-neutral"><%= _t(m.state) %></span><% } %></td>
+              <td class="tiny"><% if (m.failure) { %><span class="badge badge-danger" title="<%= _t(m.failure) %>"><%= _t(m.state) %></span><div style="color:var(--danger);margin-top:4px"><%= _t(m.failureShort) %></div><% } else if (m.state) { %><span class="badge badge-neutral"><%= _t(m.state) %></span><% } %></td>
               <td class="tiny nowrap"><%= m.at.slice(0, 16) %></td>
               <td class="right"><a class="btn btn-sm" href="/whatsapp/chat/<%= m.id %>"><%= _t('Open') %></a></td>
             </tr>

@@ -36,7 +36,7 @@ const mock = http.createServer((req, res) => {
 });
 
 /* ---- stand-in WhatsApp socket ---- */
-const wa = { sockets: [], sent: [], n: 0 };
+const wa = { sockets: [], sent: [], n: 0, beforeReturn: null };
 async function fakeBaileys() {
   const real = await import('@whiskeysockets/baileys');
   return {
@@ -49,7 +49,12 @@ async function fakeBaileys() {
         ev: new EventEmitter(), auth, user: { id: '919000000000:1@s.whatsapp.net' },
         end() {}, async logout() {}, signalRepository: { lidMapping: { getPNForLID: async () => null } },
         async onWhatsApp(jid) { return [{ jid, exists: true }]; },
-        async sendMessage(jid, msg) { wa.sent.push({ jid, text: msg.text }); return { key: { id: `MSG-${++wa.n}` } }; },
+        async sendMessage(jid, msg) {
+          wa.sent.push({ jid, text: msg.text });
+          const key = { id: `MSG-${++wa.n}`, fromMe: true, remoteJid: jid };
+          if (wa.beforeReturn) await wa.beforeReturn(sock, key);
+          return { key };
+        },
       };
       wa.sockets.push(sock);
       return sock;
@@ -224,7 +229,7 @@ function client() {
   check('signal keys round-trip', Buffer.from(got['7'].private).toString() === 'b' && got['8'] === null);
 
   const chatPage = (await owner.req('/whatsapp/customer/IntCust1')).text;
-  check('send page: number masked', chatPage.includes('0001') && !chatPage.includes('9876500001'));
+  check('send page: number masked', chatPage.includes('98******01') && !chatPage.includes('9876500001'));
   check("another caller's customer page refused", (await other.req('/whatsapp/customer/IntCust1')).status === 403);
   const sendForm = { session_id: String(sid), template_id: String(tid), value: 'Ravi' };
   text = await owner.flash('/whatsapp/customer/IntCust1', sendForm, '/whatsapp/customer/IntCust1');
@@ -273,6 +278,53 @@ function client() {
   check('STOP adds to do-not-contact', (await db.value("SELECT source FROM whatsapp_opt_outs WHERE number='919876500001'")) === 'reply');
   text = await owner.flash(`/whatsapp/chat/${chat}`, { text: 'hello?' });
   check('opted-out contact cannot be messaged', /do-not-contact list/.test(text) && wa.sent.length === 3);
+
+  const row = (messageId) => db.row('SELECT delivery_status, delivery_error FROM whatsapp_messages WHERE provider_message_id = $1', [messageId]);
+  const refusal = { status: 0, messageStubParameters: ['463'] };
+  const sendDirect = (body) => service.sendText(Number(sid), { to: '9876500009', text: body, isReply: true });
+  wa.beforeReturn = async (s, key) => { s.ev.emit('messages.update', [{ key, update: refusal }]); await wait(150); };
+  let out = await sendDirect('refused before it was saved');
+  wa.beforeReturn = null;
+  let saved = await row(out.messageId);
+  check('a refusal that arrives before the message is saved shows', saved.delivery_status === 0 && saved.delivery_error === '463');
+  out = await sendDirect('refused inside the echo');
+  sock.ev.emit('messages.upsert', { type: 'append', messages: [{ key: { id: out.messageId, fromMe: true }, ...refusal }] });
+  await wait(300);
+  saved = await row(out.messageId);
+  check('a refusal folded into our own message shows', saved.delivery_status === 0 && saved.delivery_error === '463');
+  out = await sendDirect('plain echo');
+  sock.ev.emit('messages.upsert', { type: 'append', messages: [{ key: { id: out.messageId, fromMe: true }, status: 0, messageStubParameters: [] }] });
+  await wait(300);
+  check('an ordinary echo is not read as a refusal', (await row(out.messageId)).delivery_status === 1);
+
+  const failedHistory = (await admin.req('/whatsapp/history')).text;
+  check('history says why a message failed', failedHistory.includes('Refused: can'));
+  const banner = async () => (await admin.req('/whatsapp/numbers')).text;
+  check('one refused contact raises no alarm', !(await banner()).includes('Start chats') && !(await banner()).includes('cannot start new chats'));
+  for (const n of ['919876500021', '919876500022']) {
+    await db.query(`INSERT INTO whatsapp_messages (session_id, direction, remote_jid, number, conversation_key, body, provider_message_id, delivery_status, delivery_error, message_at)
+      VALUES ($1,'out','x',$2,$2,'hi',$2,0,'463',NOW())`, [sid, n]);
+  }
+  const warned = await banner();
+  check('three refused contacts warn the Super Admin', warned.includes('cannot start new chats right now') && /Can(&#39;|')t start chats/.test(warned));
+  await db.query('INSERT INTO whatsapp_opt_outs (number, source) VALUES ($1, $2)', ['919876500033', 'manual']);
+  const screens = [];
+  for (const p of ['/', '/customers', '/customers/IntCust1', '/calling', '/calling/my?all=1', '/followups', '/assign', '/new-clients', '/reports', '/whatsapp', '/whatsapp/history', '/whatsapp/numbers', '/whatsapp/customer/IntCust1', '/whatsapp/customer/IntCust1/dialog']) {
+    if (/(91)?9876500\d{3}/.test((await admin.req(p)).text)) screens.push(p);
+  }
+  check('Super Admin never sees a whole number', !screens.length, screens.join(', '));
+  check('masked like Ringline', require('../src/lib/customers').maskMobile('9876500001') === '98******01');
+
+  const printed = [];
+  const catcher = {};
+  for (const level of ['log', 'info', 'warn', 'error']) catcher[level] = (...a) => printed.push(a);
+  require('../src/wa/quiet-libsignal').install(catcher);
+  const keys = { _chains: {}, currentRatchet: { ephemeralKeyPair: { privKey: Buffer.from('secret') } }, indexInfo: {} };
+  catcher.info('Closing session:', keys);
+  catcher.warn('Session already closed', keys);
+  catcher.info('Removing old closed session:', keys);
+  catcher.log('ordinary line', { a: 1 });
+  check('session keys are not printed', printed.length === 4 && !require('util').inspect(printed, { depth: 9 }).includes('privKey') && printed[0][0] === 'Closing session:' && printed[3][1].a === 1);
 
   for (const p of ['/whatsapp/numbers', '/whatsapp/templates', `/whatsapp/numbers/${sid}/link`, '/settings', '/calls', '/calling', `/customers/IntCust1`]) {
     check(`page opens ${p}`, (await admin.req(p)).status === 200);

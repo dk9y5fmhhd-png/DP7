@@ -216,14 +216,14 @@ function priorityFor(c, cfg) {
 }
 
 /* ------------------------------------------------------------------ *
- * Mobile masking — caller ko poora number nahi dikhta
+ * Mobile masking: nobody sees a whole number on screen, whatever their
+ * role. First two and last two digits, as in Ringline.
  * ------------------------------------------------------------------ */
 
-function maskMobile(mobile, canSeeFull) {
+function maskMobile(mobile) {
   const m = String(mobile || '');
-  if (canSeeFull) return m;
-  if (m.length < 4) return m ? '••••' : '';
-  return '•'.repeat(Math.max(0, m.length - 4)) + m.slice(-4);
+  if (m.length < 5) return m ? '****' : '';
+  return m.slice(0, 2) + '*'.repeat(m.length - 4) + m.slice(-2);
 }
 
 module.exports = {

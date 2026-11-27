@@ -129,7 +129,7 @@
               <td class="num muted"><%= p.line %></td>
               <% if (result.kind === 'customers') { %>
                 <td><strong><%= p.username %></strong></td>
-                <td class="num"><%= p.mobile || '—' %></td>
+                <td class="num"><%= mask(p.mobile) || '—' %></td>
                 <td class="muted"><%= p.date %></td>
                 <td class="muted tiny"><%= p.note %></td>
               <% } else { %>

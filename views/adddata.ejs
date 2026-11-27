@@ -98,7 +98,7 @@
                 <td class="num muted"><%= r.line %></td>
                 <td class="nowrap muted"><%= r.date %></td>
                 <td><strong><%= r.username %></strong></td>
-                <td class="num"><%= r.mobile %></td>
+                <td class="num"><%= mask(r.mobile) %></td>
                 <td class="money right"><%= helpers.moneyExact(r.amount) %></td>
               </tr>
             <% }); %>

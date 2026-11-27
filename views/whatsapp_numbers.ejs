@@ -33,6 +33,7 @@
         <div class="card-header">
           <h3><span style="color:#25D366"><%- icon('whatsapp', 16) %></span> <%= n.label %></h3>
           <span class="badge <%= state[1] %>" style="margin-left:auto"><%= _t(state[0]) %></span>
+          <% if (n.refusal) { %><span class="badge badge-danger" title="<%= _t('WhatsApp refused messages to {n} contacts in the last 24 hours (error 463); {confirmed} went through.', { n: n.refusal.refused, confirmed: n.refusal.confirmed }) %>"><%= n.refusal.confirmed ? _t("Can't start chats") : _t('Restricted?') %></span><% } %>
         </div>
         <div class="card-body">
           <div class="muted tiny"><%= n.phone_number && n.status === 'connected' ? '+' + n.phone_number : _t('No phone linked') %></div>
@@ -85,7 +86,7 @@
         <tbody>
           <% optOuts.forEach(function (o) { %>
             <tr>
-              <td class="num">+<%= o.number %></td>
+              <td class="num">+<%= mask(o.number) %></td>
               <td class="muted"><%= o.source === 'reply' ? _t('Replied "{text}"', { text: o.trigger_text || '' }) : _t('added by an admin') %></td>
               <td>
                 <form method="post" action="/whatsapp/opt-outs/<%= o.id %>/delete" class="row-actions">

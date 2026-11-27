@@ -32,7 +32,7 @@
     <div class="value" style="font-size:17px"><%= c.last_deposit || '—' %></div>
     <div class="hint"><%= c.days_inactive < 9999 ? c.days_inactive + _t(' days ago') : _t('never') %></div>
   </div>
-  <div class="stat"><div class="label"><%= _t('Mobile') %></div><div class="value" style="font-size:17px"><%= mobileShown %></div><div class="hint"><%= canSeeFull ? _t('full number') : _t('masked') %></div></div>
+  <div class="stat"><div class="label"><%= _t('Mobile') %></div><div class="value" style="font-size:17px"><%= mobileShown %></div><div class="hint"><%= _t('masked') %></div></div>
 </div>
 
 <div class="grid-2">

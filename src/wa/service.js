@@ -11,6 +11,7 @@ const { NO_CONFIRMATION, STALE_PENDING_MINUTES } = require('./delivery-error');
 const { useDbAuthState, deleteSessionAuth } = require('./auth-state');
 
 const MAX_PENDING_SENDS = 5;
+const REMEMBERED_UPDATES = 200;
 const RECONNECT_BASE_MS = 2_000;
 const RECONNECT_MAX_MS = 60_000;
 // 'qr' is left out: a session only showing a QR was never linked.
@@ -64,6 +65,7 @@ class WhatsappService {
     this.queues = new Map();
     this.pending = new Map();
     this.lastSentAt = new Map();
+    this.recentUpdates = new Map();
     this.sweepTimer = null;
     this.logger = pino({ level: 'warn' });
   }
@@ -199,6 +201,16 @@ class WhatsappService {
   }
 
   async onIncoming(id, live, event, b) {
+    // Baileys can fold a refusal into the echo of our own message, in which
+    // case no 'messages.update' arrives for it.
+    const refused = event.messages.filter(
+      (m) => m.key?.fromMe && m.status === 0 && m.messageStubParameters?.length
+    );
+    if (refused.length) {
+      await this.onStatus(id, refused.map((m) => ({
+        key: m.key, update: { status: 0, messageStubParameters: m.messageStubParameters },
+      })));
+    }
     if (event.type !== 'notify') return; // 'append' is history backfill
     for (const m of event.messages) {
       const jid = m.key?.remoteJid;
@@ -248,26 +260,37 @@ class WhatsappService {
     return null;
   }
 
-  // Statuses repeat and arrive out of order, so they only ever move up. A
-  // refusal (0) is recorded only for a message that is still pending.
+  // WhatsApp can answer before the sent message is saved, so each update is
+  // also kept for a while and applied again right after the insert.
   async onStatus(id, updates) {
     for (const u of updates) {
-      const status = u.update?.status;
-      if (typeof status !== 'number' || !u.key?.id) continue;
-      if (status <= 0) {
-        const code = String(u.update?.messageStubParameters?.[0] ?? '').slice(0, 64);
-        await db.query(
-          `UPDATE whatsapp_messages SET delivery_status = 0, delivery_error = $3, updated_at = NOW()
-            WHERE session_id = $1 AND provider_message_id = $2 AND direction = 'out' AND delivery_status = 1`,
-          [id, u.key.id, code || null]
-        );
-      } else {
-        await db.query(
-          `UPDATE whatsapp_messages SET delivery_status = $1, delivery_error = NULL, updated_at = NOW()
-            WHERE session_id = $2 AND provider_message_id = $3 AND direction = 'out' AND delivery_status < $1`,
-          [status, id, u.key.id]
-        );
+      if (typeof u.update?.status !== 'number' || !u.key?.id || u.key.fromMe === false) continue;
+      const key = `${id}:${u.key.id}`;
+      this.recentUpdates.set(key, [...(this.recentUpdates.get(key) ?? []), u.update]);
+      if (this.recentUpdates.size > REMEMBERED_UPDATES) {
+        this.recentUpdates.delete(this.recentUpdates.keys().next().value);
       }
+      await this.applyStatus(id, u.key.id, u.update);
+    }
+  }
+
+  // Statuses repeat and arrive out of order, so they only ever move up. A
+  // refusal (0) is recorded only for a message that is still pending.
+  async applyStatus(id, messageId, update) {
+    const { status } = update;
+    if (status <= 0) {
+      const code = String(update.messageStubParameters?.[0] ?? '').slice(0, 64);
+      await db.query(
+        `UPDATE whatsapp_messages SET delivery_status = 0, delivery_error = $3, updated_at = NOW()
+          WHERE session_id = $1 AND provider_message_id = $2 AND direction = 'out' AND delivery_status = 1`,
+        [id, messageId, code || null]
+      );
+    } else {
+      await db.query(
+        `UPDATE whatsapp_messages SET delivery_status = $1, delivery_error = NULL, updated_at = NOW()
+          WHERE session_id = $2 AND provider_message_id = $3 AND direction = 'out' AND delivery_status < $1`,
+        [status, id, messageId]
+      );
     }
   }
 
@@ -354,6 +377,9 @@ class WhatsappService {
        ON CONFLICT (session_id, provider_message_id) DO NOTHING`,
       [id, input.customerId || null, found.jid, to, text, providerId, input.sentBy || null, input.sentByName || null]
     );
+    for (const update of this.recentUpdates.get(`${id}:${providerId}`) ?? []) {
+      await this.applyStatus(id, providerId, update);
+    }
     return { messageId: providerId };
   }
 }
