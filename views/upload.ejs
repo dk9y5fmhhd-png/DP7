@@ -81,9 +81,9 @@
     </div>
     <div class="card-body">
       <dl class="kv">
-        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers / ID bane (username + mobile + caller)' : 'Deposit transactions' %></dd>
+        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'New customers / IDs created (username + mobile + caller)' : 'Deposit transactions' %></dd>
         <% if (result.autoAssigned) { %>
-          <dt>Assigned to caller</dt><dd><strong><%= result.autoAssigned %></strong> customers went straight to the caller</dd>
+          <dt>Assigned to caller</dt><dd><strong><%= result.autoAssigned %></strong> customers are assigned to their caller</dd>
         <% } %>
         <% if (result.badCaller) { %>
           <dt>Caller not found</dt><dd><strong><%= result.badCaller %></strong> rows — the caller login_id was wrong</dd>

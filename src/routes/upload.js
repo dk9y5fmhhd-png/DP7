@@ -211,7 +211,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             );
             if (existing) {
               // purana customer — sirf mobile/date/caller update, deposit data nahi chhedte
-              await db.query(
+              const out = await db.query(
                 `UPDATE customers
                     SET mobile = COALESCE(NULLIF($2,''), mobile),
                         reg_date = COALESCE($3, reg_date),
@@ -222,6 +222,10 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
                   WHERE id = $1`,
                 [existing.id, mobile, regDate, callerUser ? callerUser.id : null]
               );
+              // assign hua ya nahi — result me dikhana zaroori hai, warna lagta hai
+              // kuch hua hi nahi (same file dobara upload karne par yahi hota hai)
+              if (callerUser && existing.assigned_to === null) autoAssigned++;
+              void out;
               skipped++;
             } else {
               await db.query(
