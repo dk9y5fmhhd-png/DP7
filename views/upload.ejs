@@ -2,28 +2,32 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Daily Upload') %></h1>
-    <div class="sub"><%= _t('Two daily files — the new-customer list and deposit transactions. The customer master updates itself after upload.') %></div>
+    <h1>Daily Upload</h1>
+    <div class="sub">Two daily files — the new-customer list and deposit transactions. The customer master updates itself after upload.</div>
   </div>
 </div>
 
 <% if (result && result.blocked) { %>
   <div class="flash flash-error">
     <span>
-      <%- _th('<strong>This file was already uploaded.</strong> Its <strong>{batchRows}</strong> rows already exist in the database — uploading again would double the count, so it was blocked. <br>To upload again, first clear the old data with <strong>"Remove bad upload"</strong> below, then upload the file.', { batchRows: (result.batchRows) }) %></span>
+      <strong>This file was already uploaded.</strong> Its <strong><%= result.batchRows %></strong> rows already exist in the database —
+      uploading again would double the count, so it was blocked.
+      <br>To upload again, first clear the old data with <strong>"Remove bad upload"</strong> below, then upload the file.</span>
   </div>
 <% } %>
 
 <% if (perUser && perUser.length) { %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('users', 15) %><%= _t('Result for this file — per customer') %></h3>
+      <h3><%- icon('users', 15) %>Result for this file — per customer</h3>
       <span class="muted tiny" style="margin-left:auto">
-        <%= _t('{users} customers · {rows} rows · {amount} total', { users: (perUserTotal.users), rows: (perUserTotal.rows), amount: (helpers.money(perUserTotal.amount)) }) %> </span>
+        <%= perUserTotal.users %> customers · <%= perUserTotal.rows %> rows ·
+        <%= helpers.money(perUserTotal.amount) %> total
+      </span>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>#</th><th><%= _t('Username') %></th><th class="right"><%= _t('Rows (deposits)') %></th><th class="right"><%= _t('Total amount') %></th></tr></thead>
+        <thead><tr><th>#</th><th>Username</th><th class="right">Rows (deposits)</th><th class="right">Total amount</th></tr></thead>
         <tbody>
           <% perUser.forEach(function (u, i) { %>
             <tr>
@@ -37,7 +41,7 @@
       </table>
     </div>
     <% if (perUserTotal.users > perUser.length) { %>
-      <div class="card-footer muted tiny"><%= _t('Top {n} shown (of {users} customers).', { n: (perUser.length), users: (perUserTotal.users) }) %></div>
+      <div class="card-footer muted tiny">Top <%= perUser.length %>shown (total<%= perUserTotal.users %> customers).</div>
     <% } %>
   </div>
 <% } %>
@@ -45,10 +49,13 @@
 <% if (result && result.kind === 'deposits' && hasDateCol === false) { %>
   <div class="card" style="border-color:rgba(255,176,32,0.4)">
     <div class="card-header" style="background:rgba(255,176,32,0.07)">
-      <h3><%- icon('alert', 15) %> <%= _t('The file has no "deposit date" column') %></h3>
+      <h3><%- icon('alert', 15) %> The file has no "deposit date" column</h3>
     </div>
     <div class="card-body">
-      <p class="soft" style="margin:0"><%- _th('All rows will be saved on <strong>{playDate}</strong>. The count and total stay correct, but "last deposit" and "days inactive" will be wrong because the real date is unknown. For accuracy add a <code>deposit date</code> column.', { playDate: (result.playDate) }) %> </p>
+      <p class="soft" style="margin:0">All rows<strong><%= result.playDate %></strong> will be saved. That keeps<strong>the count and total correct</strong> will be set, but "last deposit" and
+        "days inactive" will be wrong — the real date is unknown.
+        For accuracy add a <code>deposit date</code> column jodein.
+      </p>
     </div>
   </div>
 <% } %>
@@ -57,35 +64,37 @@
   <div class="flash flash-<%= result.errors && result.errors.length ? 'info' : 'success' %>">
     <span>
       <% if (result.empty) { %>
-        <%- _th('<strong>No valid row found.</strong> Download the template and use that format.') %> <% } else if (result.dryRun) { %>
-        <%- _th('<strong>Preview</strong> — {count} rows are valid. Nothing saved yet; review the list below and <strong>Save</strong> to save.', { count: (result.count) }) %><% } else { %>
-        <%- _th('<strong>{inserted}</strong> rows saved{n}.', { inserted: (result.inserted), n: (result.skipped ? _t(', {n} skipped', { n: result.skipped }) : '') }) %> <% if (result.sync) { %> <%- _th('Customer master sync: <strong>{total}</strong> total, {created} new, {updated} updated.', { total: (result.sync.total), created: (result.sync.created), updated: (result.sync.updated) }) %><% } %>
+        <strong>No valid row found.</strong> Download the template and use that format.
+      <% } else if (result.dryRun) { %>
+        <strong>Preview</strong> — <%= result.count %> rows are valid. Nothing saved yet; review the list below and <strong>Save</strong> to save.<% } else { %>
+        <strong><%= result.inserted %></strong> rows save<%= result.skipped ? ', ' + result.skipped + ' skip' : '' %>.
+        <% if (result.sync) { %> Customer master sync: <strong><%= result.sync.total %></strong> total, <%= result.sync.created %>new,<%= result.sync.updated %> update.<% } %>
       <% } %>
-      <% if (result.errors && result.errors.length) { %> <%- _th('· <strong>{n}</strong> lines skipped.', { n: (result.errors.length) }) %><% } %>
+      <% if (result.errors && result.errors.length) { %> · <strong><%= result.errors.length %></strong> lines skipped.<% } %>
     </span>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('file', 15) %> <%= _t('File') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= result.fileName %><% if (result.sheet) { %> <%= _t('· sheet "{sheet}"', { sheet: (result.sheet) }) %><% } %></span>
+      <h3><%- icon('file', 15) %> File</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= result.fileName %><% if (result.sheet) { %> · sheet "<%= result.sheet %>"<% } %></span>
     </div>
     <div class="card-body">
       <dl class="kv">
-        <dt><%= _t('Type') %></dt><dd><%= result.kind === 'customers' ? _t('New customers / IDs created (username + mobile + caller)') : _t('Deposit transactions') %></dd>
-        <% if (result.kind === 'customers' && result.autoAssigned) { %>
-          <dt><%= _t('Assigned to caller') %></dt><dd><%- _th('<strong>{autoAssigned}</strong> customers went straight to the caller', { autoAssigned: (result.autoAssigned) }) %></dd>
+        <dt>Type</dt><dd><%= result.kind === 'customers' ? 'Naye customers / ID bane (username + mobile + caller)' : 'Deposit transactions' %></dd>
+        <% if (result.autoAssigned) { %>
+          <dt>Assigned to caller</dt><dd><strong><%= result.autoAssigned %></strong> customers went straight to the caller</dd>
         <% } %>
-        <% if (result.kind === 'customers' && result.badCaller) { %>
-          <dt><%= _t('Caller not found') %></dt><dd><%- _th('<strong>{badCaller}</strong> rows — the caller login_id was wrong', { badCaller: (result.badCaller) }) %></dd>
+        <% if (result.badCaller) { %>
+          <dt>Caller not found</dt><dd><strong><%= result.badCaller %></strong> rows — the caller login_id was wrong</dd>
         <% } %>
-        <dt><%= _t('Valid rows') %></dt><dd><%= result.count %></dd>
-        <dt><%= _t('Saved') %></dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
+        <dt>Valid rows</dt><dd><%= result.count %></dd>
+        <dt>Saved</dt><dd><%= result.dryRun ? '— (preview)' : result.inserted %></dd>
         <% if (result.headerMap) { %>
-          <dt><%= _t('Columns') %></dt>
+          <dt>Columns</dt>
           <dd>
             <% Object.keys(result.headerMap).forEach(function (k) { %>
-              <span class="badge badge-neutral"><%= _t('{k} → col {n}', { k: (k), n: (result.headerMap[k] + 1) }) %></span>
+              <span class="badge badge-neutral"><%= k %> → col <%= result.headerMap[k] + 1 %></span>
             <% }); %>
           </dd>
         <% } %>
@@ -95,13 +104,13 @@
 
   <% if (result.errors && result.errors.length) { %>
     <div class="card">
-      <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('Skipped lines') %></h3></div>
+      <div class="card-header"><h3><%- icon('alert', 15) %> Skipped lines</h3></div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th style="width:70px"><%= _t('Line') %></th><th><%= _t('Content') %></th><th><%= _t('Reason') %></th></tr></thead>
+          <thead><tr><th style="width:70px">Line</th><th>Content</th><th>Reason</th></tr></thead>
           <tbody>
             <% result.errors.slice(0, 60).forEach(function (e) { %>
-              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= _t(e.reason) %></span></td></tr>
+              <tr><td class="num"><%= e.line %></td><td><code><%= e.text %></code></td><td><span class="badge badge-danger"><%= e.reason %></span></td></tr>
             <% }); %>
           </tbody>
         </table>
@@ -110,16 +119,16 @@
   <% } %>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('list', 15) %> <%= _t('Preview') %></h3></div>
+    <div class="card-header"><h3><%- icon('list', 15) %> Preview</h3></div>
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
-            <th style="width:60px"><%= _t('Line') %></th>
+            <th style="width:60px">Line</th>
             <% if (result.kind === 'customers') { %>
-              <th><%= _t('Username') %></th><th><%= _t('Mobile') %></th><th><%= _t('Reg date') %></th><th></th>
+              <th>Username</th><th>Mobile</th><th>Reg date</th><th></th>
             <% } else { %>
-              <th><%= _t('Username') %></th><th><%= _t('Date') %></th><th class="right"><%= _t('Amount') %></th><th><%= _t('Txn ID') %></th><th><%= _t('Status') %></th><th class="right"><%= _t('Count') %></th>
+              <th>Username</th><th>Date</th><th class="right">Amount</th><th>Txn ID</th><th>Status</th><th class="right">Count</th><th>Caller</th>
             <% } %>
           </tr>
         </thead>
@@ -129,7 +138,7 @@
               <td class="num muted"><%= p.line %></td>
               <% if (result.kind === 'customers') { %>
                 <td><strong><%= p.username %></strong></td>
-                <td class="num"><%= mask(p.mobile) || '—' %></td>
+                <td class="num"><%= p.mobile || '—' %></td>
                 <td class="muted"><%= p.date %></td>
                 <td class="muted tiny"><%= p.note %></td>
               <% } else { %>
@@ -137,8 +146,9 @@
                 <td class="muted nowrap"><%= p.date %></td>
                 <td class="money right"><%= helpers.money(p.amount) %></td>
                 <td class="muted tiny"><%= p.txn || '—' %></td>
-                <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= _t(p.status) %></span></td>
+                <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= p.status %></span></td>
                 <td class="right num"><%= p.count || 1 %></td>
+                <td class="tiny"><%= p.caller || '—' %></td>
               <% } %>
             </tr>
           <% }); %>
@@ -151,26 +161,33 @@
 <div class="grid-2 grid-equal">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('team', 15) %><%= _t('A. New customers') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('username · mobile · reg date · caller') %></span>
+      <h3><%- icon('team', 15) %>A. New customers</h3>
+      <span class="muted tiny" style="margin-left:auto">username · mobile · reg date · caller</span>
     </div>
     <form method="post" action="/upload/customers" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <p class="muted tiny" style="margin:0 0 10px">
-          <%- _th('<strong>ID created, no deposit yet</strong> — this is how such customers arrive. They join the follow-up queue immediately (tier N, every day), even with zero deposits. <br><br> <code>caller</code> column is optional — put the login_id there ({callerLogins}) and the customer is assigned straight to that caller and their follow-up is created. <br> Usernames are unique: a repeat only updates mobile/date, it does not create a new record.', { callerLogins: (callerLogins) }) %> </p>
+          <strong>ID created, no deposit yet</strong> — this is how such customers arrive. They join the
+          follow-up queue immediately (tier N, every day), even with zero deposits.
+          <br><br>
+          <code>caller</code> column is optional — put the login_id there (<%= callerLogins %>) and the customer
+          is assigned straight to that caller and their follow-up is created.
+          <br>
+          Usernames are unique: a repeat only updates mobile/date, it does not create a new record.
+        </p>
         <label class="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
           <span class="dz-icon"><%- icon('upload', 22) %></span>
-          <span class="dz-title"><%= _t('Choose Excel or CSV') %></span>
-          <span class="dz-sub"><%= _t('.xlsx / .csv · max 20 MB') %></span>
+          <span class="dz-title">Choose Excel or CSV</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
         </label>
       </div>
       <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
-        <a class="tiny" href="/upload/template/customers"><%= _t('Template ↓') %></a>
+        <a class="tiny" href="/upload/template/customers">Template ↓</a>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" name="dry" value="1" type="submit"><%= _t('Preview') %></button>
-          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit"><%= _t('Save') %></button>
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
         </div>
       </div>
     </form>
@@ -178,31 +195,37 @@
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('money', 15) %> <%= _t('B. Deposit transactions') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('username · txn id · date · amount · status') %></span>
+      <h3><%- icon('money', 15) %> B. Deposit transactions</h3>
+      <span class="muted tiny" style="margin-left:auto">username · txn id · date · amount · status</span>
     </div>
     <form method="post" action="/upload/deposits" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <p class="muted tiny" style="margin:0 0 10px">
-          <%- _th('<strong>Successful only</strong> deposits count toward the customer. Duplicate transaction IDs are rejected. Multiple genuine deposits for one username are allowed.') %> </p>
+          <strong>Successful only</strong> deposits count toward the customer. Duplicate transaction IDs are rejected.
+          Multiple genuine deposits for one username are allowed.
+        </p>
         <label class="dropzone">
           <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
           <span class="dz-icon"><%- icon('upload', 22) %></span>
-          <span class="dz-title"><%= _t('Choose Excel or CSV') %></span>
-          <span class="dz-sub"><%= _t('.xlsx / .csv · max 20 MB') %></span>
+          <span class="dz-title">Choose Excel or CSV</span>
+          <span class="dz-sub">.xlsx / .csv · max 20 MB</span>
         </label>
         <div class="form-group" style="margin-top:10px">
-          <label><%= _t('Date') %> <span class="muted tiny"><%= _t('(if the file has no date)') %></span></label>
+          <label>Date <span class="muted tiny">(if the file has no date)</span></label>
           <input type="date" name="play_date" value="<%= today %>">
-          <span class="muted tiny"> <%- _th('⚠️ <strong>Pick the day the client actually arrived.</strong> Uploading the 1st\'s data on the 2nd? Set the date to <strong>the 1st</strong> — otherwise it counts on the wrong day in New Clients.') %> </span>
+          <span class="muted tiny">
+            ⚠️ <strong>Pick the day the client actually arrived.</strong>
+            Uploading the 1st's data on the 2nd? Set the date to <strong>the 1st</strong> —
+            otherwise it counts on the wrong day in New Clients.
+          </span>
         </div>
       </div>
       <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center">
-        <a class="tiny" href="/upload/template/deposits"><%= _t('Template ↓') %></a>
+        <a class="tiny" href="/upload/template/deposits">Template ↓</a>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" name="dry" value="1" type="submit"><%= _t('Preview') %></button>
-          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit"><%= _t('Save') %></button>
+          <button class="btn btn-sm" name="dry" value="1" type="submit">Preview</button>
+          <button class="btn btn-sm btn-primary" name="dry" value="0" type="submit">Save</button>
         </div>
       </div>
     </form>
@@ -211,45 +234,50 @@
 
 <div class="grid-2 grid-equal">
   <div class="card">
-    <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How deposit count is calculated') %></h3></div>
+    <div class="card-header"><h3><%- icon('alert', 15) %> How deposit count is calculated</h3></div>
     <div class="card-body">
       <p class="soft" style="margin-top:0">
-        <%- _th('<strong>Deposits</strong> count = how many deposits that customer holds. One row = one deposit. <strong>Total amount</strong> is a separate thing from <strong>count</strong>.') %> </p>
+        <strong>Deposits</strong> count = how many deposits that customer holds. One row = one deposit. <strong>Total amount</strong> is a separate thing from <strong>count</strong>.
+      </p>
       <dl class="kv">
-        <dt><%= _t('Wrong file') %></dt>
-        <dd><%- _th('One row per customer holding the lifetime total, <strong>with no count column</strong> → count <strong>1</strong>, the level comes from the total (e.g. ₹30,000 → Level 4)') %></dd>
-        <dt><%= _t('Summary + count') %></dt>
-        <dd><%- _th('Same summary file with one extra column — <code>deposit count</code> = 25 → level from total, VIP from count. Both correct') %></dd>
-        <dt><%= _t('Correct file') %></dt>
-        <dd><%- _th('A separate row per deposit (₹500, ₹700, ₹900…) → <strong>count 3</strong>, and VIP from 25+') %></dd>
+        <dt>Wrong file</dt>
+        <dd>One row per customer holding the lifetime total, <strong>with no count column</strong> →
+          count <strong>1</strong>, the level comes from the total (e.g. ₹30,000 → Level 4)</dd>
+        <dt>Summary + count</dt>
+        <dd>Same summary file with one extra column — <code>deposit count</code> = 25 →
+          level from total, VIP from count. Both correct</dd>
+        <dt>Correct file</dt>
+        <dd>A separate row per deposit (₹500, ₹700, ₹900…) → <strong>count 3</strong>, and VIP from 25+</dd>
       </dl>
       <p class="muted tiny" style="margin:12px 0 0">
-        <%- _th('<strong>Two deposits on the same day are separate rows</strong> — the system now counts both (previously one merged away). VIP count only <strong>successful</strong> rows.') %> </p>
+        <strong>Two deposits on the same day are separate rows</strong> — the system now counts both (previously one merged away).
+        VIP count only <strong>successful</strong> rows.
+      </p>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('trash', 15) %> <%= _t('Remove a bad upload') %></h3></div>
+    <div class="card-header"><h3><%- icon('trash', 15) %> Remove a bad upload</h3></div>
     <form method="post" action="/upload/clear">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
-        <p class="muted tiny" style="margin:0 0 10px"><%= _t('If a summary file went in by mistake, remove it first, then upload the transaction-wise file. After this delete the customer master rebuilds itself.') %></p>
+        <p class="muted tiny" style="margin:0 0 10px">If a summary file went in by mistake, remove it first, then upload the transaction-wise file. After this delete the customer master rebuilds itself.</p>
         <div class="form-group">
-          <label><%= _t('What to delete') %></label>
+          <label>What to delete</label>
           <select name="scope">
-            <option value="excel"><%= _t('Excel-uploaded data only') %></option>
-            <option value="all"><%= _t('All deposits (manual and demo included)') %></option>
+            <option value="excel">Excel-uploaded data only</option>
+            <option value="all">All deposits (manual and demo included)</option>
           </select>
         </div>
         <div class="form-group">
-          <label><%- _th('To confirm type <code>DELETE</code>') %></label>
-          <input type="text" name="confirm" placeholder="<%= _t('DELETE') %>" autocomplete="off">
+          <label>To confirm type <code>DELETE</code></label>
+          <input type="text" name="confirm" placeholder="DELETE" autocomplete="off">
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
         <button class="btn btn-danger" type="submit"
-                data-confirm="<%= _t('Deposits will be deleted and the customer master rebuilt. Confirm?') %>">
-          <%- icon('trash', 15) %><%= _t('Delete and re-sync') %></button>
+                data-confirm="Deposits will be deleted and the customer master rebuilt. Confirm?">
+          <%- icon('trash', 15) %>Delete and re-sync</button>
       </div>
     </form>
   </div>
@@ -257,10 +285,10 @@
 
 <div class="grid-2">
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %><%= _t('Where the data came from') %></h3></div>
+    <div class="card-header"><h3><%- icon('clock', 15) %>Where the data came from</h3></div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('Source') %></th><th class="right"><%= _t('Rows') %></th><th class="right"><%= _t('Last upload') %></th></tr></thead>
+        <thead><tr><th>Source</th><th class="right">Rows</th><th class="right">Last upload</th></tr></thead>
         <tbody>
           <% (recent || []).forEach(function (r) { %>
             <tr>
@@ -269,23 +297,24 @@
               <td class="right muted tiny"><%= r.last_at ? helpers.prettyDateTime(r.last_at) : '—' %></td>
             </tr>
           <% }); %>
-          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty"><%= _t('No data yet.') %></div></td></tr><% } %>
+          <% if (!recent || !recent.length) { %><tr><td colspan="3"><div class="empty">No data yet.</div></td></tr><% } %>
         </tbody>
       </table>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('alert', 15) %><%= _t('Upload rules') %></h3></div>
+    <div class="card-header"><h3><%- icon('alert', 15) %>Upload rules</h3></div>
     <div class="card-body">
       <dl class="kv">
-        <dt><%= _t('Column order') %></dt><dd><%= _t('Any of these — the header is detected') %></dd>
-        <dt><%= _t('Dates') %></dt><dd><%- _th('<code>2026-11-20</code>, <code>20/11/2026</code>, <code>20 Nov 2026</code>') %></dd>
-        <dt><%= _t('Duplicate txn') %></dt><dd><%= _t('Same transaction ID again → row rejected') %></dd>
-        <dt><%= _t('Same username') %></dt><dd><%= _t('Multiple deposits allowed (if genuine)') %></dd>
-        <dt><%= _t('Status') %></dt><dd><%= _t('successful / failed / pending / reversed — blank = successful') %></dd>
-        <dt><%= _t('Deposit count') %></dt><dd><%- _th('<strong>Optional.</strong> Leave blank on transaction-wise rows (=1). On a summary row (one row = lifetime total) write how many deposits it holds — VIP comes from this') %></dd>
-        <dt><%= _t('After upload') %></dt><dd><%= _t('The customer master syncs itself') %></dd>
+        <dt>Column order</dt><dd>Any of these — the header is detected</dd>
+        <dt>Dates</dt><dd><code>2026-11-20</code>, <code>20/11/2026</code>, <code>20 Nov 2026</code></dd>
+        <dt>Duplicate txn</dt><dd>Same transaction ID again → row rejected</dd>
+        <dt>Same username</dt><dd>Multiple deposits allowed (if genuine)</dd>
+        <dt>Status</dt><dd>successful / failed / pending / reversed — khaali = successful</dd>
+        <dt>Deposit count</dt><dd><strong>Optional.</strong> Leave blank on transaction-wise rows (=1).
+          On a summary row (one row = lifetime total) write how many deposits it holds — VIP comes from this</dd>
+        <dt>After upload</dt><dd>The customer master syncs itself</dd>
       </dl>
     </div>
   </div>

@@ -1,6 +1,6 @@
 {
   "name": "dp7",
-  "version": "4.7.0",
+  "version": "4.7.1",
   "private": true,
   "description": "DP7 — client deposit tracking & retention reports",
   "main": "src/server.js",
@@ -9,9 +9,6 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "start:wa": "node src/wa/server.js",
-    "test:integrations": "node tests/integrations.js",
-    "test:i18n": "node tests/i18n.js",
     "migrate": "node scripts/migrate.js",
     "demo-data": "node scripts/demo-data.js",
     "test": "node tests/smoke.js",
@@ -19,7 +16,6 @@
     "screenshots": "node tests/screenshot.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcryptjs": "^2.4.3",
     "connect-pg-simple": "^9.0.1",
     "dotenv": "^16.4.5",
@@ -30,7 +26,6 @@
     "multer": "^1.4.5-lts.1",
     "otplib": "^12.0.1",
     "pg": "^8.12.0",
-    "pino": "^9.14.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

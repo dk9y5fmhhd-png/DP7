@@ -141,7 +141,7 @@ function parseCsv(text) {
 async function readMatrix(buffer, filename) {
   const ext = String(filename || '').toLowerCase().split('.').pop();
   if (ext === 'csv' || ext === 'txt') return { matrix: parseCsv(buffer.toString('utf8')), sheet: filename };
-  if (ext === 'xls') throw new Error('Old .xls format is not supported — in Excel use File → Save As → .xlsx and upload that.');
+  if (ext === 'xls') throw new Error('Purana .xls format support nahi hai — Excel me File → Save As → .xlsx split it:');
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer);
   const ws = wb.worksheets.find((w) => w.rowCount > 1) || wb.worksheets[0];
@@ -249,17 +249,19 @@ async function buildTemplate(kind) {
       { header: 'amount', width: 12 },
       { header: 'status', width: 12 },
       { header: 'deposit count', width: 15 },
+      { header: 'mobile', width: 16 },
+      { header: 'caller', width: 18 },
     ];
     const head = ws.getRow(1);
     head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6D5EFC' } };
     // transaction-wise (count khaali = 1)
-    ws.addRow(['rahul123', 'TXN10001', '2026-11-20', 500, 'successful', '']);
-    ws.addRow(['rahul123', 'TXN10002', '2026-11-22', 300, 'successful', '']);
-    ws.addRow(['priya_s', 'TXN10003', '2026-11-21', 1200, 'successful', '']);
-    ws.addRow(['amit99', 'TXN10004', '2026-11-21', 200, 'failed', '']);
+    ws.addRow(['rahul123', 'TXN10001', '2026-11-20', 500, 'successful', '', '9876543210', 'arun']);
+    ws.addRow(['rahul123', 'TXN10002', '2026-11-22', 300, 'successful', '', '', '']);
+    ws.addRow(['priya_s', 'TXN10003', '2026-11-21', 1200, 'successful', '', '9123456780', 'kamal']);
+    ws.addRow(['amit99', 'TXN10004', '2026-11-21', 200, 'failed', '', '', '']);
     // summary row — ek row me 25 deposits
-    ws.addRow(['vijayst1', '', '2026-04-30', 30000, 'successful', 25]);
+    ws.addRow(['vijayst1', '', '2026-04-30', 30000, 'successful', 25, '', '']);
     ws.addRow([]);
     ws.addRow(['Note:']).font = { bold: true };
     [
@@ -267,7 +269,9 @@ async function buildTemplate(kind) {
       'Only status = successful deposits count toward the customer.',
       'A duplicate transaction id rejects that row.',
       'Multiple genuine deposits for one username are allowed.',
-      'A blank status counts as "successful".',
+      'Blank status is treated as "successful".',
+      'mobile and caller are optional. If caller is filled and the customer is not assigned yet, they get that caller automatically.',
+      'In caller put the login_id (not the name) — e.g. arun, kamal, dikshadp7.',
     ].forEach((t) => ws.addRow([t]).font = { size: 10, color: { argb: 'FF666666' } });
   }
 
