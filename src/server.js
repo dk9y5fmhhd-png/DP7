@@ -64,6 +64,8 @@ app.use((req, res, next) => {
     prettyDateTime: D.prettyDateTime,
     relativeDays: D.relativeDays,
     today: D.todayISO,
+    addDays: D.addDays,
+    shiftDate: D.addDays,
   };
   res.locals.title = 'DP7';
   // Mobile masking — sirf Super Admin ko poora number

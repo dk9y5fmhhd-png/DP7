@@ -166,7 +166,7 @@ router.get('/', async (req, res, next) => {
     );
 
     res.render('daily_report', {
-      title: 'Daily Report',
+      title: 'Caller Daily',
       page: 'daily',
       date,
       tomorrow,
