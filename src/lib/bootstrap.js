@@ -17,7 +17,6 @@ const DEFAULT_SETTINGS = {
   cohort_weekly_min: 0.75,
   delete_pin: '969696',
   site_name: 'DP7',
-  default_language: 'en',
   site_tagline: 'Client deposit tracking & retention',
   // ---- retention CRM (spec) ----
   inactive_days: 7,
@@ -25,11 +24,14 @@ const DEFAULT_SETTINGS = {
   vip_min_count: 25,
   vip_premium_count: 51,
   vip_high_count: 101,
+  telecmi_app_id: '',
+  telecmi_secret: '',
+  telecmi_agent: '',
 };
 
 async function run() {
   const root = path.join(__dirname, '..', '..', 'db');
-  for (const f of ['schema.sql', 'schema-v3.sql', 'schema-v3.2.sql', 'schema-v3.4.sql', 'schema-v3.5.sql', 'schema-v3.8.sql', 'schema-v3.8.1.sql', 'schema-v3.9.sql', 'schema-v4.1.sql', 'schema-v4.2.sql', 'schema-v4.3.sql', 'schema-v4.4.sql', 'schema-v4.5.sql', 'schema-v5.0.sql']) {
+  for (const f of ['schema.sql', 'schema-v3.sql', 'schema-v3.2.sql', 'schema-v3.4.sql', 'schema-v3.5.sql', 'schema-v3.8.sql', 'schema-v3.8.1.sql', 'schema-v3.9.sql', 'schema-v4.1.sql', 'schema-v4.2.sql', 'schema-v4.3.sql', 'schema-v4.4.sql', 'schema-v4.5.sql', 'schema-v4.8.sql', 'schema-v4.9.sql']) {
     const file = path.join(root, f);
     if (!fs.existsSync(file)) continue;
     await db.query(fs.readFileSync(file, 'utf8'));

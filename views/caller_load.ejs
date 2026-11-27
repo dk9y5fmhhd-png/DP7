@@ -2,79 +2,82 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Caller Load') %></h1>
-    <div class="sub"> <%- _th('How much work each caller holds — and from here you can <strong>split customers evenly</strong>. Every caller gets a share of each priority, so VIP customers never pile up with one caller.') %> </div>
+    <h1>Caller Load</h1>
+    <div class="sub">
+      How much work each caller holds — and from here you can <strong>barabar auto-split</strong> split it:
+      Every caller gets a share of each priority, so VIP customers never pile up with one caller.
+    </div>
   </div>
   <div class="chips">
-    <a class="chip <%= team === '' ? 'on' : '' %>" href="/callers"><%= _t('All') %></a>
-    <a class="chip <%= team === 'retention' ? 'on' : '' %>" href="/callers?team=retention"><%= _t('Retention') %></a>
-    <a class="chip <%= team === 'acquisition' ? 'on' : '' %>" href="/callers?team=acquisition"><%= _t('Acquisition') %></a>
+    <a class="chip <%= team === '' ? 'on' : '' %>" href="/callers">All</a>
+    <a class="chip <%= team === 'retention' ? 'on' : '' %>" href="/callers?team=retention">Retention</a>
+    <a class="chip <%= team === 'acquisition' ? 'on' : '' %>" href="/callers?team=acquisition">Acquisition</a>
   </div>
 </div>
 
 <div class="stat-grid">
   <div class="stat">
-    <div class="label"><%= _t('Assigned') %></div>
+    <div class="label">Assigned</div>
     <div class="value"><%= totals.assigned.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('{callers} callers', { callers: (totals.callers) }) %></div>
+    <div class="hint"><%= totals.callers %>callers</div>
   </div>
   <div class="stat <%= totals.overdue ? 'bad' : 'ok' %>">
-    <div class="label"><%= _t('Overdue') %></div>
+    <div class="label">Overdue</div>
     <div class="value"><%= totals.overdue.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('date has passed') %></div>
+    <div class="hint">date nikal gayi</div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('Total pending') %></div>
+    <div class="label">Total pending</div>
     <div class="value"><%= totals.pending.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('overdue + due today') %></div>
+    <div class="hint">overdue + due today</div>
   </div>
   <div class="stat ok">
-    <div class="label"><%= _t('Done today') %></div>
+    <div class="label">Done today</div>
     <div class="value"><%= totals.done.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('customers touched') %></div>
+    <div class="hint">customers touch kiye</div>
   </div>
   <div class="stat <%= unassigned.total ? 'warn' : 'ok' %>">
-    <div class="label"><%= _t('Unassigned') %></div>
+    <div class="label">Unassigned</div>
     <div class="value"><%= unassigned.total.toLocaleString('en-IN') %></div>
     <div class="hint">P1: <%= unassigned.p1 %> · P2: <%= unassigned.p2 %> · P3: <%= unassigned.p3 %></div>
   </div>
   <div class="stat <%= totals.empty ? 'warn' : 'ok' %>">
-    <div class="label"><%= _t('Empty callers') %></div>
+    <div class="label">Empty callers</div>
     <div class="value"><%= totals.empty %></div>
-    <div class="hint"><%= _t('{over} callers overloaded', { over: (totals.over) }) %></div>
+    <div class="hint"><%= totals.over %> callers overloaded</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('users', 15) %> <%= _t('Callers') %></h3>
-    <span class="muted tiny" style="margin-left:auto"><%= _t('Load health = assigned ÷ (target × 4 days)') %></span>
+    <h3><%- icon('users', 15) %> Callers</h3>
+    <span class="muted tiny" style="margin-left:auto">Load health = assigned ÷ (target × 4 days)</span>
   </div>
   <div class="table-wrapper">
     <table>
       <thead>
         <tr>
-          <th><%= _t('Caller') %></th>
-          <th><%= _t('Team') %></th>
-          <th class="right"><%= _t('Target') %></th>
-          <th><%= _t('Load') %></th>
+          <th>Caller</th>
+          <th>Team</th>
+          <th class="right">Target<br><span class="muted tiny" style="font-weight:400">ND / Dep</span></th>
+          <th>Load</th>
           <th class="right">P1</th>
           <th class="right">P2</th>
-          <th class="right"><%= _t('Pending') %></th>
-          <th class="right"><%= _t('Overdue') %></th>
-          <th class="right"><%= _t('Done today') %></th>
-          <th><%= _t('Last login') %></th>
+          <th class="right">Pending</th>
+          <th class="right">Overdue</th>
+          <th class="right">Done today</th>
+          <th>Last login</th>
         </tr>
       </thead>
       <tbody>
         <% if (!rows.length) { %>
           <tr><td colspan="10"><div class="empty">
-            <span class="big">—</span><%= _t('No caller accounts.') %><a href="/users"><%= _t('Users') %></a><%= _t('page to create one.') %></div></td></tr>
+            <span class="big">—</span>No caller accounts.<a href="/users">Users</a>page to create one.</div></td></tr>
         <% } %>
         <% rows.forEach(function (c) {
              const healthLabel = {
-               empty: 'empty', light: 'light', ok: 'healthy',
-               heavy: 'heavy', over: 'overloaded'
+               empty: 'khaali', light: 'halka', ok: 'theek',
+               heavy: 'bhaari', over: 'zyada'
              }[c.health];
              const healthClass = {
                empty: 'badge-neutral', light: 'badge-info', ok: 'badge-success',
@@ -89,12 +92,16 @@
               <form method="post" action="/callers/<%= c.id %>/team" style="margin:0">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                 <select name="team" onchange="this.form.submit()" style="font-size:11.5px;padding:3px 6px;min-height:26px">
-                  <option value="retention" <%= c.team === 'retention' ? 'selected' : '' %>><%= _t('Retention') %></option>
-                  <option value="acquisition" <%= c.team === 'acquisition' ? 'selected' : '' %>><%= _t('Acquisition') %></option>
+                  <option value="retention" <%= c.team === 'retention' ? 'selected' : '' %>>Retention</option>
+                  <option value="acquisition" <%= c.team === 'acquisition' ? 'selected' : '' %>>Acquisition</option>
                 </select>
               </form>
             </td>
-            <td class="right num"><%= c.daily_target %></td>
+            <td class="right num nowrap">
+              <span title="No deposit"><%= c.nodep_target != null ? c.nodep_target : 40 %></span>
+              <span class="muted">/</span>
+              <span title="Deposited"><%= c.dep_target != null ? c.dep_target : 35 %></span>
+            </td>
             <td style="min-width:170px">
               <div style="display:flex;align-items:center;gap:8px">
                 <span class="num" style="font-size:12.5px;min-width:62px">
@@ -106,7 +113,7 @@
                        style="width:<%= Math.min(100, c.utilisation) %>%;
                               <%= c.health === 'over' || c.health === 'heavy' ? 'background:linear-gradient(90deg,#b23b48,#ff6b74)' : (c.health === 'light' ? 'background:linear-gradient(90deg,#2b6f8f,#7fc9d8)' : '') %>"></div>
                 </div>
-                <span class="badge <%= healthClass %>" style="font-size:10px"><%= _t(healthLabel) %></span>
+                <span class="badge <%= healthClass %>" style="font-size:10px"><%= healthLabel %></span>
               </div>
             </td>
             <td class="right num"><%= c.p1 %></td>
@@ -116,7 +123,7 @@
               <% if (c.overdue) { %><span class="badge badge-danger"><%= c.overdue %></span><% } else { %><span class="muted">0</span><% } %>
             </td>
             <td class="right num"><%= c.done_today %></td>
-            <td class="muted tiny nowrap"><%= c.last_login_at ? helpers.prettyDateTime(c.last_login_at) : _t('never') %></td>
+            <td class="muted tiny nowrap"><%= c.last_login_at ? helpers.prettyDateTime(c.last_login_at) : 'never' %></td>
           </tr>
         <% }); %>
       </tbody>
@@ -127,16 +134,18 @@
 <% if (preview) { %>
   <div class="card" id="preview" style="border-color:rgba(245,197,66,0.45)">
     <div class="card-header" style="background:rgba(245,197,66,0.06)">
-      <h3><%- icon('alert', 15) %> <%= _t('Preview — nothing saved yet') %></h3>
-      <span class="badge badge-warn" style="margin-left:auto"><%= _t('{total} customers', { total: (preview.total) }) %></span>
+      <h3><%- icon('alert', 15) %> Preview — nothing saved yet</h3>
+      <span class="badge badge-warn" style="margin-left:auto"><%= preview.total %> customers</span>
     </div>
     <div class="card-body">
       <p class="soft" style="margin-top:0">
-        <%- _th('{n} {n2} · total available <strong>{available}</strong> · about <strong>{perCaller}</strong>', { n: (preview.scope === 'all' ? 'All customers (re-split)' : 'Unassigned'), n2: (preview.priority ? '· sirf ' + preview.priority : ''), available: (preview.available), perCaller: (preview.perCaller) }) %>
+        <%= preview.scope === 'all' ? 'All customers (re-split)' : 'Unassigned' %>
+        <%= preview.priority ? '· sirf ' + preview.priority : '' %>
+        · total available <strong><%= preview.available %></strong>· about<strong><%= preview.perCaller %></strong>
       </p>
       <div class="table-wrapper" style="border:1px solid var(--border);border-radius:10px">
         <table>
-          <thead><tr><th style="width:34%"><%= _t('Caller') %></th><th class="right" style="width:22%"><%= _t('Will get') %></th><th class="right">P1</th><th class="right">P2</th><th class="right">P3</th><th class="right">P4</th></tr></thead>
+          <thead><tr><th style="width:34%">Caller</th><th class="right" style="width:22%">Milenge</th><th class="right">P1</th><th class="right">P2</th><th class="right">P3</th><th class="right">P4</th></tr></thead>
           <tbody>
             <% preview.rows.forEach(function (r) { %>
               <tr>
@@ -151,7 +160,7 @@
           </tbody>
           <tfoot>
             <tr style="background:rgba(245,197,66,0.05)">
-              <td><strong><%= _t('Total') %></strong></td>
+              <td><strong>Total</strong></td>
               <td class="right num"><strong><%= preview.total %></strong></td>
               <td colspan="4"></td>
             </tr>
@@ -162,13 +171,14 @@
     <div class="card-footer" style="display:flex;gap:9px;justify-content:flex-end">
       <form method="post" action="/callers/cancel" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-        <button class="btn btn-ghost" type="submit"><%= _t('Cancel') %></button>
+        <button class="btn btn-ghost" type="submit">Cancel</button>
       </form>
       <form method="post" action="/callers/apply" style="margin:0">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <button class="btn btn-primary" type="submit"
-                data-confirm="<%= _t('{total} customers will be assigned. Confirm?', { total: (preview.total) }) %>">
-          <%- icon('check', 15) %> <%= _t('Assign') %> </button>
+                data-confirm="<%= preview.total %> customers will be assigned. Confirm?">
+          <%- icon('check', 15) %> Assign
+        </button>
       </form>
     </div>
   </div>
@@ -176,44 +186,46 @@
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('layers', 15) %> <%= _t('Even auto-split') %></h3>
+    <h3><%- icon('layers', 15) %> Barabar auto-split</h3>
   </div>
   <form method="post" action="/callers/preview">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="card-body">
-      <p class="muted tiny" style="margin:0 0 14px"><%- _th('Split customers evenly in one click. A <strong>Preview</strong> is shown first — until you press Assign, nothing changes.') %> </p>
+      <p class="muted tiny" style="margin:0 0 14px">Split customers evenly in one click. A<strong>Preview</strong> is shown first — until you press
+        Assign, nothing changes.
+      </p>
 
       <div class="form-row">
         <div class="form-group">
-          <label><%= _t('Which customers') %></label>
+          <label>Which customers</label>
           <select name="scope">
-            <option value="unassigned"><%= _t('Unassigned ({total})', { total: (unassigned.total.toLocaleString('en-IN')) }) %></option>
-            <option value="all"><%= _t('All customers (re-split)') %></option>
+            <option value="unassigned">Unassigned wale (<%= unassigned.total.toLocaleString('en-IN') %>)</option>
+            <option value="all">All customers (re-split)</option>
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('Priority') %> <span class="muted tiny"><%= _t('(optional)') %></span></label>
+          <label>Priority <span class="muted tiny">(optional)</span></label>
           <select name="priority">
-            <option value=""><%= _t('All priorities') %></option>
-            <option value="P1"><%= _t('P1 only — inactive VIP') %></option>
-            <option value="P2"><%= _t('P2 only') %></option>
-            <option value="P3"><%= _t('P3 only') %></option>
+            <option value="">All priorities</option>
+            <option value="P1">P1 only — inactive VIP</option>
+            <option value="P2">P2 only</option>
+            <option value="P3">P3 only</option>
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('How many per caller') %><span class="muted tiny"><%= _t('(blank = even)') %></span></label>
-          <input type="number" name="per_caller" min="0" step="1" placeholder="<%= _t('auto') %>">
+          <label>How many per caller<span class="muted tiny">(khaali = barabar)</span></label>
+          <input type="number" name="per_caller" min="0" step="1" placeholder="auto">
         </div>
         <div class="form-group">
-          <label><%= _t('How many to distribute in total') %> <span class="muted tiny"><%= _t('(blank = all)') %></span></label>
-          <input type="number" name="take" min="0" step="1" placeholder="<%= _t('all') %>">
+          <label>How many to distribute in total <span class="muted tiny">(blank = all)</span></label>
+          <input type="number" name="take" min="0" step="1" placeholder="sab">
         </div>
       </div>
 
       <div class="form-group" style="margin-top:6px">
-        <label><%= _t('Which callers to distribute to') %></label>
+        <label>Which callers to distribute to</label>
         <div class="check-row" data-check-scope>
-          <label class="check-pill"><input type="checkbox" data-check-all> <span><%= _t('Select all') %></span></label>
+          <label class="check-pill"><input type="checkbox" data-check-all> <span>Select all</span></label>
           <% const previewIds = preview ? preview.rows.map(function (r) { return r.id; }) : []; %>
           <% callers.forEach(function (c) {
                const ticked = preview
@@ -221,25 +233,25 @@
                  : (c.assigned === 0 && c.team === 'retention'); %>
             <label class="check-pill">
               <input type="checkbox" name="caller_id" value="<%= c.id %>" data-checkable <%= ticked ? 'checked' : '' %>>
-              <span><%= c.name %> <span class="muted tiny">(<%= c.assigned %> · <%= c.team === 'acquisition' ? _t('acq') : _t('ret') %>)</span></span>
+              <span><%= c.name %> <span class="muted tiny">(<%= c.assigned %> · <%= c.team === 'acquisition' ? 'acq' : 'ret' %>)</span></span>
             </label>
           <% }); %>
         </div>
-        <span class="muted tiny"><%= _t('Empty callers are pre-selected.') %></span>
+        <span class="muted tiny">Empty callers are pre-selected.</span>
       </div>
     </div>
     <div class="card-footer" style="text-align:right">
-      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> <%= _t('Build preview') %></button>
+      <button class="btn btn-primary" type="submit"><%- icon('search', 15) %> Build preview</button>
     </div>
   </form>
 </div>
 
 <% if (lastRuns.length) { %>
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Past splits') %></h3></div>
+    <div class="card-header"><h3><%- icon('clock', 15) %> Pichhle splits</h3></div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('When') %></th><th><%= _t('By') %></th><th><%= _t('Scope') %></th><th class="right"><%= _t('Total') %></th><th class="right"><%= _t('Callers') %></th><th class="right"><%= _t('Per caller') %></th></tr></thead>
+        <thead><tr><th>Kab</th><th>By</th><th>Scope</th><th class="right">Total</th><th class="right">Callers</th><th class="right">Per caller</th></tr></thead>
         <tbody>
           <% lastRuns.forEach(function (r) { %>
             <tr>
@@ -258,19 +270,20 @@
 <% } %>
 
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How auto-split works') %></h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How auto-split works</h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt><%= _t('Even') %></dt>
-      <dd><%= _t('Every caller gets roughly the same count — 2,786 across 8 callers is 348 each') %></dd>
-      <dt><%= _t('Priority mix') %></dt>
-      <dd><%- _th('Each priority (P1, P2, P3, P4) is shared out <strong>separately</strong> in turn — so VIP customers do not all land on one caller; each gets an equal share') %></dd>
-      <dt><%= _t('P0 skip') %></dt>
-      <dd><%= _t('"Do Not Contact" customers are never assigned') %></dd>
-      <dt><%= _t('Load health') %></dt>
-      <dd><%= _t('assigned ÷ (target × 4 days) — around 100% is healthy, above 130% is heavy') %></dd>
-      <dt><%= _t('Team') %></dt>
-      <dd><%- _th('<strong>Retention</strong> = follow-up on existing clients · <strong>Acquisition</strong>= bringing in new clients') %></dd>
+      <dt>Barabar</dt>
+      <dd>Every caller gets roughly the same count — 2,786 across 8 callers is 348 each</dd>
+      <dt>Priority mix</dt>
+      <dd>Har priority (P1, P2, P3, P4) <strong>alag-alag</strong> is round-robin —
+        so VIP customers do not all land on one caller; each gets an equal share</dd>
+      <dt>P0 skip</dt>
+      <dd>"Do Not Contact" customers are never assigned</dd>
+      <dt>Load health</dt>
+      <dd>assigned ÷ (target × 4 days) — around 100% is healthy, above 130% is heavy</dd>
+      <dt>Team</dt>
+      <dd><strong>Retention</strong> = follow-up on existing clients · <strong>Acquisition</strong>= bringing in new clients</dd>
     </dl>
   </div>
 </div>

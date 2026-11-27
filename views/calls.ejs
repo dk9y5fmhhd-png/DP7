@@ -2,62 +2,63 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Call Log') %></h1>
+    <h1>Call Log</h1>
     <div class="sub">
-      <% if (isAdmin) { %><%= _t('Who called whom and when — TeleCMI or manual.') %><% } else { %><%= _t('Your own call record.') %><% } %>
+      <% if (isAdmin) { %>Who called whom and when — TeleCMI or manual.<% } else { %>Your own call record.<% } %>
     </div>
   </div>
   <div class="chips">
-    <a class="chip" href="/calling/due"><%- icon('alert', 13) %> <%= _t('Follow-ups Due') %></a>
+    <a class="chip" href="/calling/due"><%- icon('alert', 13) %> Follow-ups Due</a>
     <% if (cfg.enabled) { %>
-      <span class="chip on"><%- icon('check', 13) %> <%= _t('TeleCMI connected') %></span>
+      <span class="chip on"><%- icon('check', 13) %> TeleCMI connected</span>
     <% } else { %>
-      <span class="chip"><%- icon('alert', 13) %><%= _t('TeleCMI not set up') %></span>
+      <span class="chip"><%- icon('alert', 13) %>TeleCMI not set up</span>
     <% } %>
   </div>
 </div>
 
 <% if (!cfg.enabled) { %>
   <div class="flash flash-info">
-    <span><strong><%= _t('TeleCMI is not set up.') %></strong> <% if (isAdmin) { %><%= _t('Add an account in') %> <a href="/settings/calling"><%= _t('Settings → Calling') %></a>.<% } else { %><%= _t('Ask your admin to set it up.') %><% } %></span>
+    <span>
+      <strong>TeleCMI keys are not set.</strong> The Call button only logs the call and shows the number — to auto-dial, add<a href="/settings?tab=telecmi">Settings → TeleCMI</a>App ID, Secret and Agent number.</span>
   </div>
 <% } %>
 
 <div class="stat-grid">
-  <div class="stat"><div class="label"><%= _t('Calls') %></div><div class="value"><%= rows.length %></div><div class="hint"><%= _t('in this range') %></div></div>
+  <div class="stat"><div class="label">Calls</div><div class="value"><%= rows.length %></div><div class="hint">in this range</div></div>
   <% byCaller.slice(0, 3).forEach(function (c) { %>
     <div class="stat">
       <div class="label"><%= c.caller_name || '—' %></div>
       <div class="value"><%= c.calls %></div>
-      <div class="hint"><%= _t('{customers} customers · {n} min', { customers: (c.customers), n: (Math.round(c.seconds / 60)) }) %></div>
+      <div class="hint"><%= c.customers %> customers · <%= Math.round(c.seconds / 60) %> min</div>
     </div>
   <% }); %>
 </div>
 
 <div class="card">
   <form method="get" action="/calls" class="filter-bar">
-    <div><label><%= _t('From') %></label><input type="date" name="from" value="<%= filters.from %>"></div>
-    <div><label><%= _t('To') %></label><input type="date" name="to" value="<%= filters.to %>"></div>
+    <div><label>From</label><input type="date" name="from" value="<%= filters.from %>"></div>
+    <div><label>To</label><input type="date" name="to" value="<%= filters.to %>"></div>
     <% if (isAdmin) { %>
     <div>
-      <label><%= _t('Caller') %></label>
+      <label>Caller</label>
       <select name="caller" data-autosubmit>
-        <option value=""><%= _t('All callers') %></option>
+        <option value="">All callers</option>
         <% callers.forEach(function (c) { %>
           <option value="<%= c.id %>" <%= filters.caller === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
         <% }); %>
       </select>
     </div>
     <% } %>
-    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %><%= _t('View') %></button></div>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %>View</button></div>
   </form>
 
   <div class="table-wrapper">
     <table>
-      <thead><tr><th><%= _t('When') %></th><th><%= _t('Customer') %></th><th><%= _t('Caller') %></th><th><%= _t('Provider') %></th><th><%= _t('Status') %></th><th class="right"><%= _t('Duration') %></th><th><%= _t('Note') %></th></tr></thead>
+      <thead><tr><th>Kab</th><th>Customer</th><th>Caller</th><th>Provider</th><th>Status</th><th class="right">Duration</th><th>Note</th></tr></thead>
       <tbody>
         <% if (!rows.length) { %>
-          <tr><td colspan="7"><div class="empty"><span class="big">—</span><%= _t('No calls in this range.') %></div></td></tr>
+          <tr><td colspan="7"><div class="empty"><span class="big">—</span>No calls in this range.</div></td></tr>
         <% } %>
         <% rows.forEach(function (k) { %>
           <tr>
@@ -65,7 +66,7 @@
             <td><a href="/customers/<%= encodeURIComponent(k.username) %>"><strong><%= k.username %></strong></a></td>
             <td class="tiny"><%= k.caller_name || '—' %></td>
             <td><span class="badge badge-neutral"><%= k.provider %></span></td>
-            <td class="tiny"><%= _t(k.status) %></td>
+            <td class="tiny"><%= k.status %></td>
             <td class="right num"><%= k.duration_sec || 0 %>s</td>
             <td class="muted tiny"><%= k.note || '—' %></td>
           </tr>

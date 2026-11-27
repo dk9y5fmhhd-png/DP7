@@ -68,7 +68,7 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
     res.render('priority', {
       title: 'Calling List',
       page: 'priority',
-      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
+      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
       priority, counts: new Map(counts.map((c) => [c.priority, c])),
       filters: { caller: caller || '', free: onlyFree },
       isAdmin: admin,
@@ -77,9 +77,9 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
       today,
       roleWeights: {
         PD: 'ID created with no deposit yet — first in queue',
-        P1: 'VIP inactive + recently inactive (14 days)',
-        P2: 'Normal inactive + new customer',
-        P3: 'Reactivated — active again',
+        P1: 'VIP inactive + recently inactive (14 din)',
+        P2: 'Normal inactive + naya customer',
+        P3: 'Reactivated — dobara active hua',
       },
     });
   } catch (err) {
@@ -91,18 +91,41 @@ router.get('/', auth.requirePage('priority'), async (req, res, next) => {
 
 const DEFAULT_TARGET = 40;
 
-async function targetInfo(userId) {
-  const target = Number(await db.value('SELECT daily_target FROM users WHERE id = $1', [userId]));
-  const doneRow = await db.value(
-    `SELECT customers FROM caller_daily_work
-      WHERE caller_id = $1 AND work_date = CURRENT_DATE`,
-    [userId]
+// Har tab ka apna target: "No deposit" ke liye nodep_target,
+// "Deposited" ke liye dep_target. Done bhi usi tab ke customers ka ginte hain —
+// warna no-deposit me 20 call karke deposited tab bhi "20/35 poora" dikha deta.
+async function targetInfo(userId, tab = 'nodep') {
+  const scope = tab === 'dep' ? 'dep' : 'nodep';
+  const col = scope === 'dep' ? 'dep_target' : 'nodep_target';
+
+  const target = Number(
+    await db.value(`SELECT ${col} FROM users WHERE id = $1`, [userId]).catch(() => NaN)
   );
-  const done = Number(doneRow || 0);
+  // schema v4.8 se pehle column nahi hota — tab purana daily_target use karo
+  const fallback = Number(await db.value('SELECT daily_target FROM users WHERE id = $1', [userId]));
+
+  const done = Number(await db.value(
+    `WITH touched AS (
+       SELECT LOWER(f.username) AS uname FROM followups f
+        WHERE f.created_by = $1 AND f.action_date = CURRENT_DATE
+       UNION
+       SELECT LOWER(k.username) FROM calls k
+        WHERE k.caller_id = $1 AND k.called_at::date = CURRENT_DATE
+     )
+     SELECT COUNT(*)::int
+       FROM touched t JOIN customers c ON LOWER(c.username) = t.uname
+      WHERE CASE WHEN $2 = 'nodep'
+                   THEN (c.status = 'no_deposit' AND c.deposit_claimed_at IS NULL)
+                   ELSE NOT (c.status = 'no_deposit' AND c.deposit_claimed_at IS NULL) END`,
+    [userId, scope]
+  ).catch(() => 0) || 0);
+
   // 0 = koi limit nahi (admin ne jaan-boojh ke off kiya)
-  const t = Number.isFinite(target) && target >= 0 ? target : DEFAULT_TARGET;
+  const raw = Number.isFinite(target) ? target : fallback;
+  const t = Number.isFinite(raw) && raw >= 0 ? raw : DEFAULT_TARGET;
   const unlimited = t === 0;
   return {
+    scope,
     target: t,
     done,
     unlimited,
@@ -141,21 +164,18 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const showAll = req.query.all === '1';
     const forceAll = req.query.full === '1'; // target poora hone par bhi poori list
 
-    const waWaiting = await require('../lib/whatsapp-inbox').waitingFor(me);
-
     const base = mineCte();
-    const tgt = await targetInfo(me);
 
     // Do alag queue — bina deposit (naye ID) aur deposit wale.
     // Pehle dono ek hi list me mila-jula aate the, isliye caller ko pata nahi
     // chalta tha kis line par naya lead hai aur kis par purana customer.
     const tCounts = await db.row(
       `${base}
-       SELECT COUNT(*) FILTER (WHERE status = 'no_deposit')::int AS nodep,
-              COUNT(*) FILTER (WHERE status <> 'no_deposit')::int AS dep,
-              COUNT(*) FILTER (WHERE status = 'no_deposit'
+       SELECT COUNT(*) FILTER (WHERE is_nodep)::int AS nodep,
+              COUNT(*) FILTER (WHERE NOT is_nodep)::int AS dep,
+              COUNT(*) FILTER (WHERE is_nodep
                                  AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS nodep_due,
-              COUNT(*) FILTER (WHERE status <> 'no_deposit'
+              COUNT(*) FILTER (WHERE NOT is_nodep
                                  AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS dep_due
          FROM mine`,
       [me, today]
@@ -164,6 +184,37 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
     const tab = req.query.tab === 'nodep' ? 'nodep'
       : req.query.tab === 'dep' ? 'dep'
         : (tCounts.nodep_due > 0 ? 'nodep' : 'dep');
+
+    // Target bhi usi tab ka
+    const tgt = await targetInfo(me, tab);
+
+    // Tab headers par dono ka progress dikhane ke liye
+    const tRow = await db
+      .row('SELECT nodep_target, dep_target, daily_target FROM users WHERE id = $1', [me])
+      .catch(() => null);
+    const targets = {
+      nodep: tRow && Number.isFinite(Number(tRow.nodep_target))
+        ? Number(tRow.nodep_target)
+        : (tRow ? Number(tRow.daily_target) : 40),
+      dep: tRow && Number.isFinite(Number(tRow.dep_target))
+        ? Number(tRow.dep_target)
+        : 35,
+    };
+    // Dono tab ka aaj ka kaam — tab headers par progress dikhane ke liye
+    const doneRow = await db.row(
+      `WITH touched AS (
+         SELECT LOWER(f.username) AS uname FROM followups f
+          WHERE f.created_by = $1 AND f.action_date = CURRENT_DATE
+         UNION
+         SELECT LOWER(k.username) FROM calls k
+          WHERE k.caller_id = $1 AND k.called_at::date = CURRENT_DATE
+       )
+       SELECT COUNT(*) FILTER (WHERE (c.status = 'no_deposit' AND c.deposit_claimed_at IS NULL))::int AS nodep,
+              COUNT(*) FILTER (WHERE NOT (c.status = 'no_deposit' AND c.deposit_claimed_at IS NULL))::int AS dep
+         FROM touched t JOIN customers c ON LOWER(c.username) = t.uname`,
+      [me]
+    ).catch(() => null);
+    const doneFor = { nodep: doneRow ? doneRow.nodep : 0, dep: doneRow ? doneRow.dep : 0 };
 
     // List sirf baaki target jitni — target poora ho to koi row nahi
     const limit = showAll || forceAll || tgt.unlimited ? null : tgt.remaining;
@@ -176,8 +227,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
               (next_touch_on IS NULL) AS never_scheduled
          FROM mine
         WHERE ($3::boolean OR next_touch_on IS NULL OR next_touch_on <= $2::date)
-          AND CASE WHEN $4::text = 'nodep' THEN status = 'no_deposit'
-                   ELSE status <> 'no_deposit' END
+          AND CASE WHEN $4::text = 'nodep' THEN is_nodep ELSE NOT is_nodep END
         ORDER BY
           -- 1. ID bana par deposit nahi — sabse pehle (yahi sabse garam lead hai)
           CASE WHEN cadence_tier = 'N'
@@ -212,8 +262,7 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
          COUNT(*) FILTER (WHERE cadence_tier = 'C' AND (next_touch_on IS NULL OR next_touch_on <= $2::date))::int AS due_c,
          COUNT(*)::int AS total
        FROM mine
-      WHERE CASE WHEN $3::text = 'nodep' THEN status = 'no_deposit'
-                 ELSE status <> 'no_deposit' END`,
+      WHERE CASE WHEN $3::text = 'nodep' THEN is_nodep ELSE NOT is_nodep END`,
       [me, today, tab]
     );
 
@@ -230,20 +279,19 @@ router.get('/my', auth.requirePage('mycalls'), async (req, res, next) => {
        SELECT username, next_touch_on, cadence_tier, last_remark, ($2::date - next_touch_on) AS in_days
          FROM mine
         WHERE next_touch_on > $2::date
-          AND CASE WHEN $3::text = 'nodep' THEN status = 'no_deposit'
-                   ELSE status <> 'no_deposit' END
+          AND CASE WHEN $3::text = 'nodep' THEN is_nodep ELSE NOT is_nodep END
         ORDER BY next_touch_on ASC LIMIT 12`,
       [me, today, tab]
     );
 
     res.render('mycalls', {
-      waWaiting,
       title: 'My Calls',
       page: 'mycalls',
-      rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
+      rows: visibleRows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, false) })),
       target: tgt,
       tab,
       tabCounts: tCounts,
+      targets, doneFor,
       queueCount,
       stats, doneToday, upcoming,
       hiddenCount: queueCount - visibleRows.length,
@@ -265,22 +313,45 @@ router.get('/due', auth.requirePage('due'), async (req, res, next) => {
   try {
     const today = D.todayISO();
 
+    // Done ko tab ke hisaab se alag ginte hain — no-deposit calls aur
+    // deposited calls dono ka apna target hai.
     const perCaller = await db.rows(
-      `SELECT u.id, u.name AS caller_name, u.daily_target,
-              COALESCE(cdw.customers, 0)::int AS done_today,
-              GREATEST(u.daily_target - COALESCE(cdw.customers, 0), 0)::int AS left_today,
+      `WITH touched AS (
+         SELECT f.created_by AS caller_id, LOWER(f.username) AS uname
+           FROM followups f
+          WHERE f.action_date = CURRENT_DATE AND f.created_by IS NOT NULL
+         UNION
+         SELECT k.caller_id, LOWER(k.username)
+           FROM calls k
+          WHERE k.called_at::date = CURRENT_DATE AND k.caller_id IS NOT NULL
+       ),
+       done AS (
+         SELECT t.caller_id,
+                COUNT(DISTINCT t.uname) FILTER (WHERE c.status = 'no_deposit')::int AS nodep,
+                COUNT(DISTINCT t.uname) FILTER (WHERE c.status <> 'no_deposit')::int AS dep,
+                COUNT(DISTINCT t.uname)::int AS all_done
+           FROM touched t
+           JOIN customers c ON LOWER(c.username) = t.uname
+          GROUP BY t.caller_id
+       )
+       SELECT u.id, u.name AS caller_name,
+              u.nodep_target, u.dep_target, u.daily_target,
+              COALESCE(d.nodep, 0)::int AS done_nodep,
+              COALESCE(d.dep, 0)::int AS done_dep,
+              COALESCE(d.all_done, 0)::int AS done_today,
               COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on = CURRENT_DATE)::int AS due,
               COUNT(*) FILTER (WHERE lf.follow_up_on IS NULL OR lf.follow_up_on <= CURRENT_DATE)::int AS pending,
               COUNT(*) FILTER (WHERE lf.follow_up_on < CURRENT_DATE)::int AS overdue,
               COUNT(*) FILTER (WHERE lf.follow_up_on > CURRENT_DATE)::int AS snoozed,
+              COUNT(*) FILTER (WHERE b.status = 'no_deposit')::int AS nodep_total,
               COUNT(*)::int AS total
          FROM customer_board b
          JOIN users u ON u.id = b.assigned_to
          LEFT JOIN latest_followup lf ON lf.uname = LOWER(b.username)
-         LEFT JOIN caller_daily_work cdw
-                ON cdw.caller_id = u.id AND cdw.work_date = CURRENT_DATE
+         LEFT JOIN done d ON d.caller_id = u.id
         WHERE b.do_not_contact = FALSE
-        GROUP BY u.id, u.name, u.daily_target, cdw.customers
+        GROUP BY u.id, u.name, u.nodep_target, u.dep_target, u.daily_target,
+                 d.nodep, d.dep, d.all_done
         ORDER BY overdue DESC, due DESC`
     );
 
@@ -309,8 +380,11 @@ router.get('/due', auth.requirePage('due'), async (req, res, next) => {
       due: perCaller.reduce((a, c) => a + c.due, 0),
       pending: perCaller.reduce((a, c) => a + c.pending, 0),
       done: perCaller.reduce((a, c) => a + c.done_today, 0),
+      done_nodep: perCaller.reduce((a, c) => a + c.done_nodep, 0),
+      done_dep: perCaller.reduce((a, c) => a + c.done_dep, 0),
       target: perCaller.reduce((a, c) => a + Number(c.daily_target || 0), 0),
-      left: perCaller.reduce((a, c) => a + c.left_today, 0),
+      target_nodep: perCaller.reduce((a, c) => a + Number(c.nodep_target || 0), 0),
+      target_dep: perCaller.reduce((a, c) => a + Number(c.dep_target || 0), 0),
     };
 
     res.render('followups_due', {
@@ -333,11 +407,8 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     const note = String(req.body.response || '').trim().slice(0, 2000);
     const date = D.isDate(req.body.action_date) ? req.body.action_date : D.todayISO();
 
-    if (!username) throw new Error('Choose a customer.');
-    if (!(await require('../lib/access').canTouch(req.session.user, username))) {
-      throw new Error('That customer is not assigned to you.');
-    }
-    if (!R.ALL_ACTIONS.includes(action)) throw new Error('Choose a remark.');
+    if (!username) throw new Error('Customer chunein.');
+    if (!R.ALL_ACTIONS.includes(action)) throw new Error('Remark chunein.');
 
     const q = R.info(action);
 
@@ -352,9 +423,39 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
       followUpOn = D.addDays(date, q.days);
     }
 
-    // Do Not Contact → koi follow-up nahi
-    if (R.SUPPRESS.has(action)) followUpOn = null;
+    // Do Not Contact / Deposited / Fake → koi follow-up nahi
+    if (R.SUPPRESS.has(action) || R.MOVES_OUT.has(action) || R.DELETES.has(action)) followUpOn = null;
 
+    const cust = await db.row(
+      `SELECT id, username, status, assigned_to FROM customers WHERE LOWER(username) = LOWER($1)`,
+      [username]
+    );
+
+    // ---- Fake: customer permanently delete ----
+    // Remark pehle log hota hai (remark_events me), taaki admin ka roz ka
+    // hisaab delete ke baad bhi rahe.
+    if (R.DELETES.has(action)) {
+      await db.query(
+        `INSERT INTO remark_events (caller_id, username, action_type, action_date, note)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [req.session.user.id, username, action, date, note]
+      ).catch(() => null);
+
+      if (cust) {
+        await db.query('DELETE FROM calls WHERE customer_id = $1', [cust.id]).catch(() => null);
+      }
+      await db.query('DELETE FROM followups WHERE LOWER(username) = LOWER($1)', [username]).catch(() => null);
+      const del = await db.query('DELETE FROM customers WHERE LOWER(username) = LOWER($1)', [username]);
+
+      await auth.audit(req, 'remark_fake_delete', `${username} deleted (rows=${del.rowCount})`);
+      req.session.flash = {
+        type: 'success',
+        message: `${username} marked Fake and deleted permanently (${del.rowCount} record).`,
+      };
+      return res.redirect(req.get('referer') || '/calling/my');
+    }
+
+    // ---- Remark save ----
     await db.query(
       `INSERT INTO followups
          (username, action_type, action_date, response, next_action, follow_up_on, caller_id, created_by)
@@ -362,8 +463,34 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
       [username, action, date, note, q.next, followUpOn, req.session.user.id]
     );
 
+    // Roz ke hisaab ke liye permanent log
+    await db.query(
+      `INSERT INTO remark_events (caller_id, username, action_type, action_date, note)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [req.session.user.id, username, action, date, note]
+    ).catch(() => null);
+
     if (R.SUPPRESS.has(action)) {
       await db.query('UPDATE customers SET do_not_contact = TRUE WHERE LOWER(username) = LOWER($1)', [username]);
+    }
+
+    // ---- Deposited: queue se nikal kar Deposited tab me ----
+    if (R.MOVES_OUT.has(action)) {
+      await db.query(
+        `UPDATE customers
+            SET deposit_claimed_at = NOW(),
+                deposit_claimed_by = $2,
+                next_touch_on = NULL,
+                last_touched_at = $3::date
+          WHERE LOWER(username) = LOWER($1)`,
+        [username, req.session.user.id, date]
+      );
+      await auth.audit(req, 'remark_deposited', `${username} → Deposited`);
+      req.session.flash = {
+        type: 'success',
+        message: `${username} marked Deposited — moved out of No deposit, same caller kept.`,
+      };
+      return res.redirect(req.get('referer') || '/calling/my');
     }
 
     // Cadence clock reset — remark save hote hi agla touch schedule ho jata hai
@@ -374,8 +501,8 @@ router.post('/remark', auth.requireLogin, async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: nextTouch
-        ? `Remark saved — ${username}: ${action}. Next touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
-        : `Remark saved — ${username}: ${action}. Removed from the cycle.`,
+        ? `Remark save — ${username}: ${action}. Next touch ${D.prettyDate(nextTouch)} (${D.relativeDays(nextTouch, date)}).`
+        : `Remark save — ${username}: ${action}. Cycle se hata diya.`,
     };
     res.redirect(req.get('referer') || '/calling/my');
   } catch (err) {

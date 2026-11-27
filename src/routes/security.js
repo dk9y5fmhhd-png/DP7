@@ -42,15 +42,15 @@ router.post('/password', auth.requireLogin, async (req, res, next) => {
 
     const me = await db.row('SELECT * FROM users WHERE id = $1', [req.session.user.id]);
     if (!(await bcrypt.compare(current, me.password_hash))) {
-      req.session.flash = { type: 'error', message: 'The current password is wrong.' };
+      req.session.flash = { type: 'error', message: 'Purana password galat hai.' };
       return res.redirect('/security?tab=password');
     }
     if (next1.length < 6) {
-      req.session.flash = { type: 'error', message: 'The new password needs at least 6 characters.' };
+      req.session.flash = { type: 'error', message: 'Naya password kam se kam 6 character ka hona calls.' };
       return res.redirect('/security?tab=password');
     }
     if (next1 !== next2) {
-      req.session.flash = { type: 'error', message: 'The two new passwords do not match.' };
+      req.session.flash = { type: 'error', message: 'Dono naye password match nahi kar rahe.' };
       return res.redirect('/security?tab=password');
     }
 
@@ -59,7 +59,7 @@ router.post('/password', auth.requireLogin, async (req, res, next) => {
       await bcrypt.hash(next1, 10),
     ]);
     await auth.audit(req, 'change_password', null);
-    req.session.flash = { type: 'success', message: 'Password changed.' };
+    req.session.flash = { type: 'success', message: 'Password change ho gaya.' };
     res.redirect('/security?tab=password');
   } catch (err) {
     next(err);
@@ -100,7 +100,7 @@ router.post('/2fa/confirm', auth.requireLogin, async (req, res, next) => {
     const token = String(req.body.token || '').replace(/\s+/g, '');
     if (!secret) return res.redirect('/security?tab=2fa');
     if (token.length !== 6 || !authenticator.check(token, secret)) {
-      req.session.flash = { type: 'error', message: 'The code did not match. Check the new code in the app.' };
+      req.session.flash = { type: 'error', message: 'Code match nahi hua. App me naya code check kijiye.' };
       return res.redirect('/security?tab=2fa');
     }
     await db.query('UPDATE users SET totp_secret = $2, totp_enabled = TRUE WHERE id = $1', [
@@ -109,7 +109,7 @@ router.post('/2fa/confirm', auth.requireLogin, async (req, res, next) => {
     ]);
     delete req.session.newTotpSecret;
     await auth.audit(req, '2fa_enabled', null);
-    req.session.flash = { type: 'success', message: 'Two-factor turned on.' };
+    req.session.flash = { type: 'success', message: 'Two-factor on ho gaya.' };
     res.redirect('/security?tab=2fa');
   } catch (err) {
     next(err);
@@ -120,12 +120,12 @@ router.post('/2fa/disable', auth.requireLogin, async (req, res, next) => {
   try {
     const me = await db.row('SELECT * FROM users WHERE id = $1', [req.session.user.id]);
     if (!(await bcrypt.compare(String(req.body.password || ''), me.password_hash))) {
-      req.session.flash = { type: 'error', message: 'Wrong password — 2FA stays on.' };
+      req.session.flash = { type: 'error', message: 'Password galat hai — 2FA on hi rahega.' };
       return res.redirect('/security?tab=2fa');
     }
     await db.query('UPDATE users SET totp_secret = NULL, totp_enabled = FALSE WHERE id = $1', [me.id]);
     await auth.audit(req, '2fa_disabled', null);
-    req.session.flash = { type: 'success', message: 'Two-factor turned off.' };
+    req.session.flash = { type: 'success', message: 'Two-factor off ho gaya.' };
     res.redirect('/security?tab=2fa');
   } catch (err) {
     next(err);

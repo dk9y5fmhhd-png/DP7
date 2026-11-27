@@ -2,15 +2,16 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Dashboard') %></h1>
+    <h1>Dashboard</h1>
     <div class="sub">
-      <%= _t('{today} · active window {windowDays} days', { today: (helpers.prettyDateLong(data.today)), windowDays: (data.windowDays) }) %></div>
+      <%= helpers.prettyDateLong(data.today) %> ·
+      active window <%= data.windowDays %>days</div>
   </div>
   <div class="chips">
-    <a class="chip" href="/add-data"><%- icon('plus', 13) %> <%= _t('Add data') %></a>
-    <a class="chip" href="/reports"><%- icon('list', 13) %> <%= _t('Client reports') %></a>
-    <a class="chip" href="/new-clients"><%- icon('day', 13) %> <%= _t('New clients') %></a>
-    <a class="chip" href="/reports/weekly"><%- icon('week', 13) %> <%= _t('This week') %></a>
+    <a class="chip" href="/add-data"><%- icon('plus', 13) %> Add data</a>
+    <a class="chip" href="/reports"><%- icon('list', 13) %> Client reports</a>
+    <a class="chip" href="/new-clients"><%- icon('day', 13) %> New clients</a>
+    <a class="chip" href="/reports/weekly"><%- icon('week', 13) %> This week</a>
   </div>
 </div>
 
@@ -19,56 +20,58 @@
   <div class="grid-2">
     <div class="card">
       <div class="card-header">
-        <h3><%- icon('alert', 15) %> <%= _t('Today\'s calling queue') %></h3>
-        <a href="/calling" class="tiny" style="margin-left:auto"><%= _t('Calling list →') %></a>
+        <h3><%- icon('alert', 15) %> Today's calling queue</h3>
+        <a href="/calling" class="tiny" style="margin-left:auto">Calling list →</a>
       </div>
       <div class="card-body">
         <div class="stat-grid" style="margin-bottom:0">
           <div class="stat bad">
             <div class="label">P1</div><div class="value"><%= data.crm.p1 %></div>
-            <div class="hint"><%= _t('VIP / recently inactive') %></div>
+            <div class="hint">VIP / recently inactive</div>
           </div>
           <div class="stat warn">
             <div class="label">P2</div><div class="value"><%= data.crm.p2 %></div>
-            <div class="hint"><%= _t('normal inactive + new') %></div>
+            <div class="hint">normal inactive + new</div>
           </div>
           <div class="stat">
             <div class="label">P3</div><div class="value"><%= data.crm.p3 %></div>
-            <div class="hint"><%= _t('reactivated') %></div>
+            <div class="hint">reactivated</div>
           </div>
           <div class="stat ok">
-            <div class="label"><%= _t('Call today') %></div><div class="value"><%= data.crm.callsToday %></div>
-            <div class="hint"><%= _t('{remarksToday} remarks', { remarksToday: (data.crm.remarksToday) }) %></div>
+            <div class="label">Call today</div><div class="value"><%= data.crm.callsToday %></div>
+            <div class="hint"><%= data.crm.remarksToday %> remark<%= data.crm.remarksToday === 1 ? '' : 's' %></div>
           </div>
         </div>
         <div class="chips" style="margin-top:14px">
-          <a class="chip <%= data.crm.overdue ? 'on' : '' %>" href="/calling/due"> <%- _th('Overdue <strong>{overdue}</strong>', { overdue: (data.crm.overdue) }) %>
+          <a class="chip <%= data.crm.overdue ? 'on' : '' %>" href="/calling/due">
+            Overdue <strong><%= data.crm.overdue %></strong>
           </a>
-          <span class="chip"><%- _th('Due today <strong>{dueNow}</strong>', { dueNow: (data.crm.dueNow) }) %></span>
-          <span class="chip"><%- _th('Total pending <strong>{pendingNow}</strong>', { pendingNow: (data.crm.pendingNow) }) %></span>
-          <span class="chip"><%- _th('Scheduled ahead <strong>{snoozed}</strong>', { snoozed: (data.crm.snoozed) }) %></span>
+          <span class="chip">Due today <strong><%= data.crm.dueNow %></strong></span>
+          <span class="chip">Total pending <strong><%= data.crm.pendingNow %></strong></span>
+          <span class="chip">Scheduled ahead <strong><%= data.crm.snoozed %></strong></span>
         </div>
         <p class="muted tiny" style="margin:12px 0 0">
-          <%- _th('<strong>{free}</strong> customers have no caller — assign them from the Customers page.', { free: (data.crm.free) }) %> </p>
+          <strong><%= data.crm.free %></strong> customers have no caller — assign them from the Customers page.
+        </p>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header">
-        <h3><%- icon('award', 15) %><%= _t('VIP customers (by count)') %></h3>
-        <a href="/customers?vip=vip" class="tiny" style="margin-left:auto"><%= _t('Customers →') %></a>
+        <h3><%- icon('award', 15) %>VIP customers (by count)</h3>
+        <a href="/customers?vip=vip" class="tiny" style="margin-left:auto">Customers →</a>
       </div>
       <div class="card-body">
         <div class="stat-grid" style="margin-bottom:0">
-          <div class="stat ok"><div class="label">VIP</div><div class="value"><%= data.crm.vip %></div><div class="hint"><%= _t('25+ deposits') %></div></div>
-          <div class="stat warn"><div class="label"><%= _t('Premium VIP') %></div><div class="value"><%= data.crm.premium %></div><div class="hint"><%= _t('51+ deposits') %></div></div>
-          <div class="stat"><div class="label"><%= _t('High Value') %></div><div class="value"><%= data.crm.high %></div><div class="hint"><%= _t('101+ deposits') %></div></div>
+          <div class="stat ok"><div class="label">VIP</div><div class="value"><%= data.crm.vip %></div><div class="hint">25+ deposits</div></div>
+          <div class="stat warn"><div class="label">Premium VIP</div><div class="value"><%= data.crm.premium %></div><div class="hint">51+ deposits</div></div>
+          <div class="stat"><div class="label">High Value</div><div class="value"><%= data.crm.high %></div><div class="hint">101+ deposits</div></div>
         </div>
         <div class="chips" style="margin-top:14px">
-          <span class="chip"><%= _t('New {new}', { new: (data.crm.new) }) %></span>
-          <span class="chip"><%= _t('Active {active}', { active: (data.crm.active) }) %></span>
-          <span class="chip"><%= _t('Inactive {inactive}', { inactive: (data.crm.inactive) }) %></span>
-          <span class="chip"><%= _t('Reactivated {reactivated}', { reactivated: (data.crm.reactivated) }) %></span>
+          <span class="chip">New <%= data.crm.new %></span>
+          <span class="chip">Active <%= data.crm.active %></span>
+          <span class="chip">Inactive <%= data.crm.inactive %></span>
+          <span class="chip">Reactivated <%= data.crm.reactivated %></span>
         </div>
       </div>
     </div>
@@ -77,44 +80,46 @@
 
 <div class="stat-grid">
   <div class="stat">
-    <div class="label"><%= _t('Total clients') %></div>
+    <div class="label">Total clients</div>
     <div class="value"><%= data.totals.total.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('lifetime deposit history') %></div>
+    <div class="hint">lifetime deposit history</div>
   </div>
   <div class="stat ok">
-    <div class="label"><%= _t('Active') %></div>
+    <div class="label">Active</div>
     <div class="value"><%= data.totals.active.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('deposit since {cutoff}', { cutoff: (helpers.prettyDate(data.cutoff)) }) %></div>
+    <div class="hint">deposit since <%= helpers.prettyDate(data.cutoff) %></div>
   </div>
   <div class="stat bad">
-    <div class="label"><%= _t('Inactive') %></div>
+    <div class="label">Inactive</div>
     <div class="value"><%= data.totals.inactive.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('follow-up needed') %></div>
+    <div class="hint">follow-up needed</div>
   </div>
   <div class="stat warn">
-    <div class="label"><%= _t('Activity') %></div>
+    <div class="label">Activity</div>
     <div class="value"><%= data.totals.activityPct %>%</div>
-    <div class="hint"><%= _t('active ÷ total') %></div>
+    <div class="hint">active ÷ total</div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('New clients') %></div>
+    <div class="label">New clients</div>
     <div class="value"><%= data.totals.newClients.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('first deposit in window') %></div>
+    <div class="hint">first deposit in window</div>
   </div>
   <div class="stat bad">
-    <div class="label"><%= _t('Duplicate mobiles') %></div>
+    <div class="label">Duplicate mobiles</div>
     <div class="value"><%= data.totals.duplicates.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('same number, 2+ usernames') %></div>
+    <div class="hint">same number, 2+ usernames</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('clock', 15) %> <%= _t('Retention by habit group') %></h3>
-    <span class="muted tiny" style="margin-left:auto"><%= _t(data.weekPeriod.label) %></span>
+    <h3><%- icon('clock', 15) %> Retention by habit group</h3>
+    <span class="muted tiny" style="margin-left:auto"><%= data.weekPeriod.label %></span>
   </div>
   <div class="card-body">
-    <p class="muted tiny" style="margin:0 0 14px"> <%= _t('How many clients did not deposit this week, against their usual habit.') %> </p>
+    <p class="muted tiny" style="margin:0 0 14px">
+      How many clients did not deposit this week, against their usual habit.
+    </p>
     <%
       const cohortRows = [
         { key: 'daily',    label: 'Daily',     hint: 'almost every day' },
@@ -128,9 +133,9 @@
            const s = data.cohorts[c.key] || { quiet: 0, total: 0, deposited: 0 };
            const pct = s.total ? Math.round((s.quiet / s.total) * 100) : 0; %>
         <div class="stat <%= s.quiet ? 'bad' : 'ok' %>">
-          <div class="label"><%= _t(c.label) %></div>
+          <div class="label"><%= c.label %></div>
           <div class="value"><%= s.quiet.toLocaleString('en-IN') %></div>
-          <div class="hint"><%= _t('gone quiet of {total} · {pct}%', { total: (s.total.toLocaleString('en-IN')), pct: (pct) }) %></div>
+          <div class="hint">gone quiet of <%= s.total.toLocaleString('en-IN') %> · <%= pct %>%</div>
           <div class="bar-track" style="margin-top:9px">
             <div class="bar-fill <%= pct > 60 ? 'bad' : (pct > 30 ? 'warn' : '') %>" style="width:<%= pct %>%"></div>
           </div>
@@ -143,19 +148,19 @@
 <div class="grid-2">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('list', 15) %> <%= _t('Activity trend') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('last 14 days') %></span>
+      <h3><%- icon('list', 15) %> Activity trend</h3>
+      <span class="muted tiny" style="margin-left:auto">last 14 days</span>
     </div>
     <div class="card-body">
       <% if (!data.trend.length) { %>
-        <div class="empty"><span class="big">—</span><%= _t('No deposit data yet.') %></div>
+        <div class="empty"><span class="big">—</span>No deposit data yet.</div>
       <% } else {
            const maxClients = Math.max.apply(null, data.trend.map(function (t) { return t.clients; }));
       %>
         <div class="trend">
           <% data.trend.forEach(function (t) {
                const h = maxClients ? Math.max(3, Math.round((t.clients / maxClients) * 100)) : 3; %>
-            <div class="bar-wrap" title="<%= _t('{d} · {clients} clients · {amount}', { d: (t.d), clients: (t.clients), amount: (helpers.moneyExact(t.amount)) }) %>">
+            <div class="bar-wrap" title="<%= t.d %> · <%= t.clients %> clients · <%= helpers.moneyExact(t.amount) %>">
               <div class="bar" style="height:<%= h %>%"></div>
             </div>
           <% }); %>
@@ -165,26 +170,28 @@
             <span title="<%= t.d %>"><%= t.d.slice(8) %></span>
           <% }); %>
         </div>
-        <div class="muted tiny" style="margin-top:10px"> <%= _t('Peak: {maxClients} clients/day · hover a bar to see the amount', { maxClients: (maxClients) }) %> </div>
+        <div class="muted tiny" style="margin-top:10px">
+          Peak: <%= maxClients %> clients/day · hover a bar to see the amount
+        </div>
       <% } %>
     </div>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('phone', 15) %> <%= _t('Follow-up types') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('last 30 days') %></span>
+      <h3><%- icon('phone', 15) %> Follow-up types</h3>
+      <span class="muted tiny" style="margin-left:auto">last 30 days</span>
     </div>
     <div class="card-body">
       <% if (!data.followupTypes.length) { %>
-        <div class="empty"><span class="big">—</span><%= _t('No follow-up logged yet.') %></div>
+        <div class="empty"><span class="big">—</span>No follow-up logged yet.</div>
       <% } else {
            const maxF = Math.max.apply(null, data.followupTypes.map(function (f) { return f.c; }));
       %>
         <div class="bar-list">
           <% data.followupTypes.forEach(function (f) { %>
             <div class="bar-row">
-              <span><%= _t(f.action_type) %></span>
+              <span><%= f.action_type %></span>
               <div class="bar-track"><div class="bar-fill" style="width:<%= Math.round((f.c / maxF) * 100) %>%"></div></div>
               <span class="num right"><%= f.c %></span>
             </div>
@@ -198,23 +205,23 @@
 <div class="grid-2">
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('money', 15) %> <%= _t('Top clients') %></h3>
-      <a href="/reports/level" class="tiny" style="margin-left:auto"><%= _t('Full level report →') %></a>
+      <h3><%- icon('money', 15) %> Top clients</h3>
+      <a href="/reports/level" class="tiny" style="margin-left:auto">Full level report →</a>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('Username') %></th><th><%= _t('Level') %></th><th class="right"><%= _t('Deposited') %></th><th class="right"><%= _t('Last') %></th></tr></thead>
+        <thead><tr><th>Username</th><th>Level</th><th class="right">Deposited</th><th class="right">Last</th></tr></thead>
         <tbody>
           <% data.topClients.forEach(function (c) { %>
             <tr>
               <td class="who"><strong><%= c.username %></strong><div class="muted tiny"><%= mask(c.mobile) %></div></td>
-              <td><span class="badge <%= c.levelClass %>"><%= c.levelName || _t('No level') %></span></td>
+              <td><span class="badge <%= c.levelClass %>"><%= c.levelName || 'No level' %></span></td>
               <td class="money right"><%= helpers.money(c.total_deposited) %></td>
               <td class="right muted tiny"><%= helpers.relativeDays(c.last_deposit, data.today) %></td>
             </tr>
           <% }); %>
           <% if (!data.topClients.length) { %>
-            <tr><td colspan="4"><div class="empty"><%= _t('No clients.') %></div></td></tr>
+            <tr><td colspan="4"><div class="empty">No clients.</div></td></tr>
           <% } %>
         </tbody>
       </table>
@@ -223,25 +230,25 @@
 
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('phone', 15) %> <%= _t('Recent follow-ups') %></h3>
-      <a href="/followups" class="tiny" style="margin-left:auto"><%= _t('All →') %></a>
+      <h3><%- icon('phone', 15) %> Recent follow-ups</h3>
+      <a href="/followups" class="tiny" style="margin-left:auto">All →</a>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('Username') %></th><th><%= _t('Action') %></th><th><%= _t('Date') %></th><th><%= _t('By') %></th></tr></thead>
+        <thead><tr><th>Username</th><th>Action</th><th>Date</th><th>By</th></tr></thead>
         <tbody>
           <% data.recentFollowups.forEach(function (f) { %>
             <tr>
               <td class="who"><strong><%= f.username %></strong>
                 <% if (f.response) { %><div class="muted tiny"><%= f.response.slice(0, 44) %></div><% } %>
               </td>
-              <td><span class="badge badge-neutral"><%= _t(f.action_type) %></span></td>
+              <td><span class="badge badge-neutral"><%= f.action_type %></span></td>
               <td class="muted tiny nowrap"><%= f.action_date %></td>
               <td class="muted tiny"><%= f.by_name || '—' %></td>
             </tr>
           <% }); %>
           <% if (!data.recentFollowups.length) { %>
-            <tr><td colspan="4"><div class="empty"><%= _t('No follow-up yet.') %></div></td></tr>
+            <tr><td colspan="4"><div class="empty">No follow-up yet.</div></td></tr>
           <% } %>
         </tbody>
       </table>

@@ -133,7 +133,7 @@ router.post('/approve-all', async (req, res, next) => {
       [req.session.user.id]
     );
     await auth.audit(req, 'login_approve_all', `rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: `${out.rowCount} requests approved.` };
+    req.session.flash = { type: 'success', message: `${out.rowCount} requests approve ho gayi.` };
     res.redirect('/approvals');
   } catch (err) {
     next(err);
@@ -146,11 +146,11 @@ router.post('/user/:id/toggle', async (req, res, next) => {
     const id = Number(req.params.id);
     const target = await db.row('SELECT id, login_id, role, require_approval FROM users WHERE id = $1', [id]);
     if (!target) {
-      req.session.flash = { type: 'error', message: 'User not found.' };
+      req.session.flash = { type: 'error', message: 'User nahi mila.' };
       return res.redirect('/approvals');
     }
     if (target.role === 'super_admin') {
-      req.session.flash = { type: 'error', message: 'Approval is always off for the Super Admin.' };
+      req.session.flash = { type: 'error', message: 'Super Admin ke liye approval hamesha band rehta hai.' };
       return res.redirect('/approvals');
     }
     await db.query('UPDATE users SET require_approval = NOT require_approval WHERE id = $1', [id]);

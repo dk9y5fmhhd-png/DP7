@@ -78,15 +78,15 @@ async function saveLevels(list) {
 
   for (const b of clean) {
     if (b.max !== null && b.max < b.min) {
-      throw new Error(`"${b.name}" has a maximum smaller than its minimum.`);
+      throw new Error(`"${b.name}" me maximum amount minimum se chhota hai.`);
     }
   }
   const sorted = [...clean].sort((a, b) => a.min - b.min);
   for (let i = 1; i < sorted.length; i++) {
     const prev = sorted[i - 1];
-    if (prev.max === null) throw new Error(`"${prev.name}" has no maximum, so no band can follow it.`);
+    if (prev.max === null) throw new Error(`"${prev.name}" ka koi maximum nahi hai, uske baad koi band nahi ho sakta.`);
     if (sorted[i].min <= prev.max) {
-      throw new Error(`"${sorted[i].name}" overlaps with "${prev.name}".`);
+      throw new Error(`"${sorted[i].name}" "${prev.name}" se overlap kar raha hai.`);
     }
   }
 

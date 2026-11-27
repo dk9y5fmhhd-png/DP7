@@ -40,6 +40,7 @@ const TIER_SQL = `
   CASE
     WHEN c.do_not_contact THEN 'D'
     WHEN c.status = 'no_deposit'
+         AND c.deposit_claimed_at IS NULL
          AND COALESCE(CURRENT_DATE - COALESCE(c.reg_date, c.created_at::date), 9999) <= ${NO_DEPOSIT_DAYS}
       THEN 'N'
     WHEN c.vip_category <> 'normal' THEN 'A'

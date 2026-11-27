@@ -34,6 +34,16 @@ function addLevelRow() {
   body.appendChild(tr);
 }
 
+// Destructive confirmations
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('[data-confirm]');
+  if (!btn) return;
+  if (!window.confirm(btn.getAttribute('data-confirm'))) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+});
+
 // Print button
 document.addEventListener('click', function (e) {
   if (e.target.closest('[data-print]')) {
@@ -54,10 +64,7 @@ document.addEventListener('click', function (e) {
   if (!el) return;
   e.preventDefault();
   var text = el.getAttribute('data-copy');
-  if (!navigator.clipboard) return;
-  navigator.clipboard.writeText(text).then(function () {
-    UI.toast(el.getAttribute('data-copied') || document.body.dataset.tCopied, 'success');
-  });
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
 });
 
 /* ---------------------- Excel / CSV drop zone ---------------------- */
@@ -73,7 +80,7 @@ function showPickedFile(dz, file) {
   var title = dz.querySelector('.dz-title');
   var sub = dz.querySelector('.dz-sub');
   if (title) title.textContent = file.name;
-  if (sub) sub.textContent = humanSize(file.size) + ' · ' + document.body.dataset.tSave;
+  if (sub) sub.textContent = humanSize(file.size) + ' · press the button below to save';
   dz.classList.add('has-file');
 }
 
@@ -114,13 +121,13 @@ document.addEventListener('submit', function (e) {
   var input = form.querySelector('input[type="file"]');
   if (input && input.required && (!input.files || !input.files.length)) {
     e.preventDefault();
-    UI.toast(document.body.dataset.tNofile, 'error');
+    alert('Pehle Excel ya CSV file chunein.');
     return;
   }
   var btn = form.querySelector('button[type="submit"]:focus');
   if (btn) {
     btn.disabled = true;
-    btn.textContent = document.body.dataset.tUploading;
+    btn.textContent = 'Uploading…';
   }
 });
 

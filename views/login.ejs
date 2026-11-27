@@ -1,57 +1,52 @@
 <!DOCTYPE html>
-<html lang="<%= lang %>">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title><%= _t('Sign in · Dailyplay7 CRM') %></title>
-  <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>">
+  <title>Sign in · Dailyplay7 CRM</title>
+  <link rel="stylesheet" href="/style.css?v=<%= appVersion %>">
   <link rel="icon" href="/favicon.png">
   <link rel="apple-touch-icon" href="/brand/mark.png">
 </head>
-<body <%- include('partials/ui_text') %>>
+<body>
 <div class="auth-wrap">
   <div class="auth-card has-logo">
     <div class="auth-brand">
       <span class="wordmark wordmark--lg">Dailyplay<span class="wordmark-7">7</span></span>
       <hr class="brand-rule">
-      <div class="auth-title"><%= _t('Retention CRM') %></div>
+      <div class="auth-title">Retention CRM</div>
 
     <% if (typeof expired !== 'undefined' && expired) { %>
       <div class="flash flash-info">
         <span>
-          <strong><%= _t('Session expired (10 hours completed).') %></strong><br>
-          <span class="muted tiny"><%= _t('Log in again — admin approval will apply once more.') %></span>
+          <strong>Session expired (10 hours completed).</strong><br>
+          <span class="muted tiny">Log in again — admin approval will apply once more.</span>
         </span>
       </div>
     <% } %>
     </div>
 
-    <% if (flash) { %>
-      <div data-toast class="flash flash-<%= flash.type || 'info' %>"><%- icon('alert', 15) %> <span><%= _tm(flash.message) %></span></div>
-    <% } %>
     <% if (error) { %>
-      <div data-toast class="flash flash-error"><%- icon('alert', 15) %> <span><%= _tm(error) %></span></div>
+      <div class="flash flash-error"><%- icon('alert', 15) %> <span><%= error %></span></div>
     <% } %>
 
     <form method="post" action="/login">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="form-group">
-        <label><%= _t('Login ID') %></label>
-        <input type="text" name="login_id" value="<%= loginId %>" placeholder="<%= _t('Enter your login ID') %>" required autofocus autocomplete="username">
+        <label>Login ID</label>
+        <input type="text" name="login_id" value="<%= loginId %>" placeholder="Enter your login ID" required autofocus autocomplete="username">
       </div>
       <div class="form-group">
-        <label><%= _t('Password') %></label>
-        <input type="password" name="password" placeholder="<%= _t('Enter your password') %>" required autocomplete="current-password">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
       </div>
-      <button type="submit" class="btn btn-primary" style="margin-top:6px"><%= _t('Sign in') %></button>
+      <button type="submit" class="btn btn-primary" style="margin-top:6px">Sign in</button>
     </form>
 
-    <div class="auth-foot"><%= _t('Dailyplay7 · v{appVersion} · internal use only', { appVersion: (appVersion) }) %></div>
+    <div class="auth-foot">Dailyplay7 · v<%= appVersion %> · internal use only</div>
   </div>
 </div>
-<div style="position:fixed;top:14px;right:14px"><%- include('partials/lang_switch') %></div>
-<script src="/ui.js?v=<%= assetVersion %>"></script>
 </body>
 </html>
 

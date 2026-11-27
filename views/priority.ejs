@@ -2,14 +2,19 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Calling List') %></h1>
+    <h1>Calling List</h1>
     <div class="sub">
-      <% if (isAdmin) { %> <%- _th('Who to call today, in priority order — <strong>PD</strong> (ID created, no deposit) comes first. Each customer belongs to one caller only.') %> <% } else { %> <%= _t('Your assigned customers, in priority order.') %> <% } %>
+      <% if (isAdmin) { %>
+        Who to call today, in priority order — <strong>PD</strong> (ID created, no deposit) comes first.
+        Each customer belongs to one caller only.
+      <% } else { %>
+        Your assigned customers, in priority order.
+      <% } %>
     </div>
   </div>
   <div class="chips">
-    <a class="chip" href="/calling/my"><%- icon('phone', 13) %> <%= _t('Today\'s work') %></a>
-    <a class="chip" href="/customers"><%- icon('team', 13) %> <%= _t('Customers') %></a>
+    <a class="chip" href="/calling/my"><%- icon('phone', 13) %> Today's work</a>
+    <a class="chip" href="/customers"><%- icon('team', 13) %> Customers</a>
   </div>
 </div>
 
@@ -20,53 +25,51 @@
         <% const c = counts.get(p) || { c: 0, free: 0 }; %>
         <a class="chip <%= priority === p ? 'on' : '' %>" href="/calling?p=<%= p %><%= filters.free ? '&free=1' : '' %>"
            <%= p === 'PD' && c.c ? 'style="border-color:rgba(245,197,66,0.55)"' : '' %>>
-          <strong><%= p %></strong> · <%= c.c %> <span class="muted tiny"><%= _t('({free} free)', { free: (c.free) }) %></span>
+          <strong><%= p %></strong> · <%= c.c %> <span class="muted tiny">(<%= c.free %> free)</span>
         </a>
       <% }); %>
-      <span class="muted tiny" style="align-self:center;margin-left:6px"><%= _t(roleWeights[priority]) %></span>
+      <span class="muted tiny" style="align-self:center;margin-left:6px"><%= roleWeights[priority] %></span>
     </div>
   </div>
   <form method="get" action="/calling" class="filter-bar">
     <input type="hidden" name="p" value="<%= priority %>">
     <% if (isAdmin) { %>
     <div>
-      <label><%= _t('Caller') %></label>
+      <label>Caller</label>
       <select name="caller" data-autosubmit>
-        <option value=""><%= _t('All callers') %></option>
+        <option value="">All callers</option>
         <% callers.forEach(function (c) { %>
           <option value="<%= c.id %>" <%= filters.caller === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
         <% }); %>
       </select>
     </div>
     <div>
-      <label><%= _t('Assignment') %></label>
+      <label>Assignment</label>
       <select name="free" data-autosubmit>
-        <option value=""><%= _t('All') %></option>
-        <option value="1" <%= filters.free ? 'selected' : '' %>><%= _t('Unassigned only') %></option>
+        <option value="">All</option>
+        <option value="1" <%= filters.free ? 'selected' : '' %>>Unassigned only</option>
       </select>
     </div>
     <% } %>
-    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %><%= _t('View') %></button></div>
-    <div style="margin-left:auto" class="muted tiny align-self-center"><%- _th('<strong>{n}</strong> customers', { n: (rows.length) }) %></div>
+    <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %>View</button></div>
+    <div style="margin-left:auto" class="muted tiny align-self-center"><strong><%= rows.length %></strong> customers</div>
   </form>
 
-    <%# The assign form ends above the table: a form cannot hold the Call forms. %>
-    <% if (isAdmin) { %>
-    <form method="post" action="/customers/assign" id="bulkAssign">
+  <form method="post" action="/customers/assign">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+    <% if (isAdmin) { %>
     <div class="card-body" style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span class="muted tiny"><%= _t('Assign selected customers to:') %></span>
+      <span class="muted tiny">Assign selected customers to:</span>
       <select name="caller_id" style="min-width:170px">
-        <option value=""><%= _t('— choose caller —') %></option>
+        <option value="">— caller hatao —</option>
         <% callers.forEach(function (c) { %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
       </select>
-      <button class="btn btn-sm btn-primary" type="submit"><%= _t('Assign') %></button>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('Mobile is masked — use the Call button to dial') %></span>
+      <button class="btn btn-sm btn-primary" type="submit">Assign</button>
+      <span class="muted tiny" style="margin-left:auto">Mobile is masked — use the Call button to dial</span>
     </div>
-    </form>
     <% } else { %>
     <div class="card-body" style="padding:10px 18px;border-bottom:1px solid var(--border)">
-      <span class="muted tiny"><%= _t('Your assigned customers · number masked — use the Call button to dial') %></span>
+      <span class="muted tiny">Your assigned customers · number masked — use the Call button to dial</span>
     </div>
     <% } %>
 
@@ -75,40 +78,40 @@
         <thead>
           <tr>
             <% if (isAdmin) { %><th style="width:36px"><input type="checkbox" data-check-all></th><% } %>
-            <th><%= _t('Customer') %></th>
-            <th><%= _t('Mobile') %></th>
+            <th>Customer</th>
+            <th>Mobile</th>
             <th>VIP</th>
-            <th><%= _t('Status') %></th>
-            <th class="right"><%= _t('Deposits') %></th>
-            <th class="right"><%= _t('Inactive') %></th>
-            <th><%= _t('Last remark') %></th>
-            <th><%= _t('Follow-up') %></th>
-            <th><%= _t('Caller') %></th>
-            <th class="right"><%= _t('Action') %></th>
+            <th>Status</th>
+            <th class="right">Deposits</th>
+            <th class="right">Inactive</th>
+            <th>Last remark</th>
+            <th>Follow-up</th>
+            <th>Caller</th>
+            <th class="right">Action</th>
           </tr>
         </thead>
         <tbody data-check-scope>
           <% if (!rows.length) { %>
-            <tr><td colspan="11"><div class="empty"><span class="big"><%- icon('check', 26) %></span><%= _t('No customers in this list.') %></div></td></tr>
+            <tr><td colspan="11"><div class="empty"><span class="big"><%- icon('check', 26) %></span>No customers in this list.</div></td></tr>
           <% } %>
           <% rows.forEach(function (r) { %>
             <tr>
-              <% if (isAdmin) { %><td><input type="checkbox" name="username" value="<%= r.username %>" form="bulkAssign" data-checkable></td><% } %>
+              <% if (isAdmin) { %><td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td><% } %>
               <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
-                <% if (r.do_not_contact) { %><span class="badge badge-danger"><%= _t('DNC') %></span><% } %>
+                <% if (r.do_not_contact) { %><span class="badge badge-danger">DNC</span><% } %>
               </td>
               <td class="num nowrap"><%= r.mobile_shown %></td>
               <td>
                 <% if (r.vip_category !== 'normal') { %>
                   <span class="badge <%= r.vip_category === 'high_value_vip' ? 'badge-accent' : (r.vip_category === 'premium_vip' ? 'badge-warn' : 'badge-success') %>">
-                    <%= _t(labels.VIP_LABEL[r.vip_category]) %>
+                    <%= labels.VIP_LABEL[r.vip_category] %>
                   </span>
                 <% } else { %><span class="muted">—</span><% } %>
               </td>
-              <td><span class="badge <%= r.status === 'inactive' ? 'badge-danger' : (r.status === 'new' ? 'badge-info' : 'badge-success') %>"><%= _t(r.status) %></span></td>
+              <td><span class="badge <%= r.status === 'inactive' ? 'badge-danger' : (r.status === 'new' ? 'badge-info' : 'badge-success') %>"><%= r.status %></span></td>
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="right num"><%= r.days_inactive < 9999 ? r.days_inactive + 'd' : '—' %></td>
-              <td class="muted tiny"><%= _t(r.last_remark || '—') %></td>
+              <td class="muted tiny"><%= r.last_remark || '—' %></td>
               <td class="nowrap tiny">
                 <% if (!r.follow_up_on) { %><span class="muted">—</span>
                 <% } else if (r.follow_up_on < today) { %>
@@ -117,20 +120,20 @@
                   <span class="muted"><%= helpers.prettyDate(r.follow_up_on) %></span>
                 <% } %>
               </td>
-              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted"><%= _t('free') %></span><% } %></td>
+              <td class="tiny"><% if (r.caller_name) { %><%= r.caller_name %><% } else { %><span class="muted">free</span><% } %></td>
               <td class="right nowrap">
                 <form method="post" action="/calls/call" style="display:inline;margin:0">
                   <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                   <input type="hidden" name="username" value="<%= r.username %>">
-                  <button class="btn btn-sm btn-primary" type="submit" data-dial="<%= r.username %>" data-mobile="<%= r.mobile_shown %>"><%- icon('phone', 13) %></button>
+                  <button class="btn btn-sm btn-primary" type="submit"><%- icon('phone', 13) %></button>
                 </form>
-                <% if (can('whatsapp')) { %><a class="btn btn-sm" href="/whatsapp/customer/<%= encodeURIComponent(r.username) %>" data-wa title="WhatsApp"><span style="color:#25D366"><%- icon('whatsapp', 13) %></span></a><% } %>
               </td>
             </tr>
           <% }); %>
         </tbody>
       </table>
     </div>
+  </form>
 </div>
 
 <%- include('partials/foot') %>

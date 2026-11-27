@@ -294,7 +294,7 @@ async function parseFile(buffer, filename, fallbackDate) {
     const rowDate = usedDateColumn ? normaliseDate(col(r, 'date')) : null;
 
     if (!username) {
-      errors.push({ line: lineNo, text: r.map((c) => String(cellText(c) || '')).join(' | ').slice(0, 90), reason: 'Username is empty' });
+      errors.push({ line: lineNo, text: r.map((c) => String(cellText(c) || '')).join(' | ').slice(0, 90), reason: 'Username khaali hai' });
       continue;
     }
     // sirf number wala username (jaise total row) skip
@@ -303,15 +303,15 @@ async function parseFile(buffer, filename, fallbackDate) {
       continue;
     }
     if (!mobile || mobile.length < 10) {
-      errors.push({ line: lineNo, text: `${username} | ${mobile || '(empty)'}`, reason: 'Mobile number is wrong or missing' });
+      errors.push({ line: lineNo, text: `${username} | ${mobile || '(khaali)'}`, reason: 'Mobile number galat ya missing' });
       continue;
     }
     if (!Number.isFinite(amount) || amount < 0) {
-      errors.push({ line: lineNo, text: `${username} | ${String(cellText(col(r, 'amount')) || '')}`, reason: 'Amount is wrong' });
+      errors.push({ line: lineNo, text: `${username} | ${String(cellText(col(r, 'amount')) || '')}`, reason: 'Amount galat hai' });
       continue;
     }
     if (usedDateColumn && !rowDate) {
-      errors.push({ line: lineNo, text: `${username} | ${String(cellText(col(r, 'date')) || '(empty)')}`, reason: 'Date not understood' });
+      errors.push({ line: lineNo, text: `${username} | ${String(cellText(col(r, 'date')) || '(khaali)')}`, reason: 'Date samajh nahi aayi' });
       continue;
     }
 

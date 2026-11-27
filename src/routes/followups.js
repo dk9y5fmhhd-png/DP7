@@ -72,14 +72,8 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
     const response = String(req.body.response || '').trim().slice(0, 2000);
 
     if (!username || !ACTION_TYPES.includes(actionType)) {
-      req.session.flash = { type: 'error', message: 'Wrong username or action type.' };
+      req.session.flash = { type: 'error', message: 'Username ya action type galat hai.' };
       return res.redirect(req.get('referer') || '/reports');
-    }
-
-    // Callers may only write on customers assigned to them.
-    if (!(await require('../lib/access').canTouch(req.session.user, username))) {
-      req.session.flash = { type: 'error', message: 'That customer is not assigned to you.' };
-      return res.redirect(req.get('referer') || '/followups');
     }
 
     const R = require('../lib/remarks');
@@ -110,7 +104,7 @@ router.post('/', auth.requireLogin, async (req, res, next) => {
     req.session.flash = {
       type: 'success',
       message: followUpOn
-        ? `Remark saved for ${username} — next follow-up ${D.prettyDate(followUpOn)}.`
+        ? `${username} ka remark save — agla follow-up ${D.prettyDate(followUpOn)}.`
         : `Remark saved for ${username} (no follow-up).`,
     };
     res.redirect(req.get('referer') || '/followups');
@@ -123,7 +117,7 @@ router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     const out = await db.query('DELETE FROM followups WHERE id = $1', [req.params.id]);
     await auth.audit(req, 'delete_followup', `id=${req.params.id} rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: 'Follow-up deleted.' };
+    req.session.flash = { type: 'success', message: 'Follow-up delete ho gaya.' };
     res.redirect(req.get('referer') || '/followups');
   } catch (err) {
     next(err);

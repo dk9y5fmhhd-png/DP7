@@ -2,30 +2,35 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('My Calls') %></h1>
+    <h1>My Calls</h1>
     <div class="sub">
-      <%- _th('{today} · only <strong>due today</strong> customers. Anything scheduled ahead returns on its own day.', { today: (helpers.prettyDateLong(today)) }) %> </div>
+      <%= helpers.prettyDateLong(today) %> · only <strong>due today</strong> customers.
+      Anything scheduled ahead returns on its own day.
+    </div>
   </div>
   <div class="chips">
-    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my?tab=<%= tab %>"><%- icon('phone', 13) %> <%= _t('Due today') %></a>
-    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?tab=<%= tab %>&all=1"><%- icon('list', 13) %> <%= _t('Full list') %></a>
-    <% if (can('whatsapp')) { %><a class="chip <%= waWaiting ? 'on' : '' %>" href="/whatsapp"><span style="color:#25D366"><%- icon('whatsapp', 13) %></span> <%= _t('WhatsApp inbox') %><% if (waWaiting) { %> · <%= _t('{n} need a reply', { n: waWaiting }) %><% } %></a><% } %>
+    <a class="chip <%= showAll ? '' : 'on' %>" href="/calling/my?tab=<%= tab %>"><%- icon('phone', 13) %> Due today</a>
+    <a class="chip <%= showAll ? 'on' : '' %>" href="/calling/my?tab=<%= tab %>&all=1"><%- icon('list', 13) %> Full list</a>
   </div>
 </div>
 
 <%# Do alag queue — naya ID aur deposit wala customer kabhi mila-jula na dikhe %>
 <div class="tab-switch">
   <a class="tab-btn <%= tab === 'nodep' ? 'on' : '' %>" href="/calling/my?tab=nodep<%= showAll ? '&all=1' : '' %>">
-    <span class="tab-name"><%= _t('No deposit') %></span>
+    <span class="tab-name">No deposit</span>
     <span class="tab-meta">
-      <%- _th('<strong>{nodep_due}</strong> due · {nodep} total', { nodep_due: (tabCounts.nodep_due), nodep: (tabCounts.nodep) }) %> </span>
-    <span class="tab-note"><%= _t('ID created, first deposit pending') %></span>
+      <strong><%= doneFor.nodep %></strong>/<%= targets.nodep %> today ·
+      <strong><%= tabCounts.nodep_due %></strong> due · <%= tabCounts.nodep %> total
+    </span>
+    <span class="tab-note">ID created, first deposit pending</span>
   </a>
   <a class="tab-btn <%= tab === 'dep' ? 'on' : '' %>" href="/calling/my?tab=dep<%= showAll ? '&all=1' : '' %>">
-    <span class="tab-name"><%= _t('Deposited') %></span>
+    <span class="tab-name">Deposited</span>
     <span class="tab-meta">
-      <%- _th('<strong>{dep_due}</strong> due · {dep} total', { dep_due: (tabCounts.dep_due), dep: (tabCounts.dep) }) %> </span>
-    <span class="tab-note"><%= _t('Follow-up on existing customers') %></span>
+      <strong><%= doneFor.dep %></strong>/<%= targets.dep %> today ·
+      <strong><%= tabCounts.dep_due %></strong> due · <%= tabCounts.dep %> total
+    </span>
+    <span class="tab-note">Follow-up on existing customers</span>
   </a>
 </div>
 
@@ -33,22 +38,24 @@
   <div class="card-body">
     <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
       <div style="flex:1 1 240px">
-        <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700"> <%= _t('Today\'s target') %> </div>
+        <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700">
+          Today's target — <%= tab === 'nodep' ? 'No deposit' : 'Deposited' %>
+        </div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
           <span style="font-size:34px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;<%= target.complete ? 'color:var(--success)' : '' %>"><%= target.done %></span>
           <span style="font-size:18px;color:var(--fg-muted);font-weight:600">/ <%= target.target %></span>
           <% if (target.unlimited) { %>
-            <span class="badge badge-neutral" style="margin-left:4px"><%= _t('no limit') %></span>
+            <span class="badge badge-neutral" style="margin-left:4px">no limit</span>
           <% } else if (target.complete) { %>
-            <span class="badge badge-success" style="margin-left:4px"><%- icon('check', 12) %><%= _t('Target complete') %></span>
+            <span class="badge badge-success" style="margin-left:4px"><%- icon('check', 12) %>Target complete</span>
           <% } else { %>
-            <span class="badge badge-neutral" style="margin-left:4px"><%= _t('{remaining} left', { remaining: (target.remaining) }) %></span>
+            <span class="badge badge-neutral" style="margin-left:4px"><%= target.remaining %> left</span>
           <% } %>
         </div>
       </div>
       <div style="flex:0 0 220px;text-align:right">
-        <div class="muted tiny"><%= _t('Customers touched today') %></div>
-        <div class="muted tiny"><%- _th('Due in queue:<strong>{queueCount}</strong>', { queueCount: (queueCount) }) %></div>
+        <div class="muted tiny">Customers touched today</div>
+        <div class="muted tiny">Due in queue:<strong><%= queueCount %></strong></div>
       </div>
     </div>
 
@@ -57,8 +64,8 @@
       <div class="progress-fill <%= target.complete ? 'done' : '' %>" style="width:<%= target.pct %>%"></div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:6px" class="muted tiny">
-      <span><%= _t('{pct}% complete', { pct: (target.pct) }) %></span>
-      <span><%= target.complete ? _t('Well done — today\'s work is finished') : target.remaining + _t(' customers left') %></span>
+      <span><%= target.pct %>% complete</span>
+      <span><%= target.complete ? 'Well done — today\'s work is finished' : target.remaining + ' customers left' %></span>
     </div>
     <% } %>
   </div>
@@ -66,17 +73,17 @@
 
 <div class="stat-grid">
   <div class="stat">
-    <div class="label"><%= _t('Due today') %></div>
+    <div class="label">Due today</div>
     <div class="value"><%= stats.due + stats.overdue %></div>
-    <div class="hint"><%- _th('today + overdue · P1:<strong>{due_p1}</strong>', { due_p1: (stats.due_p1) }) %></div>
+    <div class="hint">today + overdue · P1:<strong><%= stats.due_p1 %></strong></div>
   </div>
   <div class="stat <%= stats.overdue ? 'bad' : 'ok' %>">
-    <div class="label"><%= _t('Overdue') %></div>
+    <div class="label">Overdue</div>
     <div class="value"><%= stats.overdue %></div>
-    <div class="hint"><%= stats.overdue ? _t('date passed — clear these first') : _t('nothing pending') %></div>
+    <div class="hint"><%= stats.overdue ? 'date passed — clear these first' : 'nothing pending' %></div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('Due today — tier') %></div>
+    <div class="label">Due today — tier</div>
     <div class="value" style="font-size:17px;letter-spacing:0">
       <span style="color:var(--accent-2)">N <%= stats.due_n %></span>
       <span class="muted" style="font-size:12px"> · </span>
@@ -86,50 +93,53 @@
       <span class="muted" style="font-size:12px"> · </span>
       <span class="muted">C <%= stats.due_c %></span>
     </div>
-    <div class="hint"><%= _t('VIP first, then normal, then dormant') %></div>
+    <div class="hint">VIP first, then normal, then dormant</div>
   </div>
   <div class="stat ok">
-    <div class="label"><%= _t('Done today') %></div>
+    <div class="label">Done today</div>
     <div class="value"><%= doneToday.remarks %></div>
-    <div class="hint"><%= _t('{customers} customers', { customers: (doneToday.customers) }) %></div>
+    <div class="hint"><%= doneToday.customers %> customers</div>
   </div>
   <div class="stat">
-    <div class="label"><%= _t('Scheduled ahead') %></div>
+    <div class="label">Scheduled ahead</div>
     <div class="value"><%= stats.snoozed %></div>
-    <div class="hint"><%= _t('they return on their scheduled day') %></div>
+    <div class="hint">they return on their scheduled day</div>
   </div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <h3><%- icon('phone', 15) %> <%= tab === 'nodep' ? _t('No deposit — new IDs') : _t('Deposited customers') %> · <%= showAll ? _t('full list') : _t('today\'s list') %></h3>
+    <h3><%- icon('phone', 15) %> <%= tab === 'nodep' ? 'No deposit — new IDs' : 'Deposited customers' %> · <%= showAll ? 'full list' : "today's list" %></h3>
     <span class="muted tiny" style="margin-left:auto">
       <% if (showAll || forceAll) { %>
-        <%= _t('{n} customers · overdue → VIP → normal → dormant', { n: (rows.length) }) %><% } else { %>
-        <%= _t('{n} shown (by today\'s target)', { n: (rows.length) }) %><% } %>
+        <%= rows.length %> customers · overdue → VIP → normal → dormant<% } else { %>
+        <%= rows.length %> shown (by today's target)<% } %>
     </span>
   </div>
 
   <% if (!showAll && !forceAll && target.complete) { %>
     <div class="card-body" style="padding:26px 18px;text-align:center">
       <div style="font-size:30px;line-height:1">✅</div>
-      <h3 style="margin:10px 0 6px"><%= _t('Today\'s target complete —{done} / {target}', { done: (target.done), target: (target.target) }) %></h3>
-      <p class="muted" style="margin:0 0 14px"> <%= _t('You have finished today\'s work. If you still want to call ahead, open the full list below — but do take a break first.') %> </p>
-      <a class="btn btn-primary" href="/calling/my?full=1"><%= _t('Show the full list anyway ({queueCount})', { queueCount: (queueCount) }) %></a>
+      <h3 style="margin:10px 0 6px">Today's target complete — <%= target.done %> / <%= target.target %></h3>
+      <p class="muted" style="margin:0 0 14px">
+        You have finished today's work. If you still want to call ahead, open the full list below —
+        but do take a break first.
+      </p>
+      <a class="btn btn-primary" href="/calling/my?full=1">Show the full list anyway (<%= queueCount %>)</a>
     </div>
   <% } %>
   <div class="table-wrapper">
     <table>
       <thead>
         <tr>
-          <th><%= _t('Customer') %></th>
-          <th><%= _t('Mobile') %></th>
+          <th>Customer</th>
+          <th>Mobile</th>
           <th>VIP</th>
-          <th><%= _t('Tier') %></th>
-          <th><%= _t('Cadence') %></th>
-          <th class="right"><%= _t('Deposits') %></th>
-          <th><%= _t('Last remark') %></th>
-          <th class="right"><%= _t('Action') %></th>
+          <th>Tier</th>
+          <th>Cadence</th>
+          <th class="right">Deposits</th>
+          <th>Last remark</th>
+          <th class="right">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -137,16 +147,24 @@
           <tr><td colspan="8"><div class="empty">
             <span class="big"><%- icon('check', 26) %></span>
             <% if (showAll) { %>
-              <%= tab === 'nodep' ? _t('No no-deposit customers right now.') : _t('No deposited customers assigned yet.') %>
-            <% } else if (target.complete) { %> <%= _t('Target complete — open the full list above.') %> <% } else if (tab === 'nodep') { %> <%= _t('No new ID is due today. Well done! 🎉') %> <div class="muted tiny" style="margin-top:8px"><%= _t('New IDs appear here automatically once uploaded.') %></div>
-            <% } else { %> <%= _t('No follow-up pending today. Well done! 🎉') %> <div class="muted tiny" style="margin-top:8px"><%= _t('Anything scheduled ahead returns here on its own day.') %></div>
+              <%= tab === 'nodep' ? 'No no-deposit customers right now.' : 'No deposited customers assigned yet.' %>
+            <% } else if (target.complete) { %>
+              Target complete — open the full list above.
+            <% } else if (tab === 'nodep') { %>
+              No new ID is due today. Well done! 🎉
+              <div class="muted tiny" style="margin-top:8px">New IDs appear here automatically once uploaded.</div>
+            <% } else { %>
+              No follow-up pending today. Well done! 🎉
+              <div class="muted tiny" style="margin-top:8px">Anything scheduled ahead returns here on its own day.</div>
             <% } %>
           </div></td></tr>
         <% } %>
         <% if (hiddenCount > 0) { %>
           <tr><td colspan="8" style="text-align:center;background:rgba(245,197,66,0.05)">
             <span class="muted tiny">
-              <%- _th('<strong>{hiddenCount}</strong> more customers are due, but they fall outside today\'s target — they sit at the top of tomorrow\'s list.', { hiddenCount: (hiddenCount) }) %> </span>
+              <strong><%= hiddenCount %></strong> more customers are due, but they fall outside today's target —
+              they sit at the top of tomorrow's list.
+            </span>
           </td></tr>
         <% } %>
         <% rows.forEach(function (r) {
@@ -154,14 +172,15 @@
           <tr style="<%= overdue ? 'background:rgba(255,107,116,0.06)' : '' %>">
             <td class="who">
               <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
-              <% if (r.status === 'no_deposit') { %><span class="badge badge-warn"><%= _t('ID created · no deposit') %></span><% } %>
-              <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= _t('{calls_today} call', { calls_today: (r.calls_today) }) %></span><% } %>
+              <% if (r.status === 'no_deposit') { %><span class="badge badge-warn">ID created · no deposit</span><% } %>
+              <% if (r.deposit_claimed_at) { %><span class="badge badge-success">marked Deposited</span><% } %>
+              <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= r.calls_today %> call</span><% } %>
             </td>
             <td class="num nowrap"><%= r.mobile_shown %></td>
             <td>
               <% if (r.vip_category !== 'normal') { %>
                 <span class="badge <%= r.vip_category === 'high_value_vip' ? 'badge-accent' : (r.vip_category === 'premium_vip' ? 'badge-warn' : 'badge-success') %>">
-                  <%= _t(labels.VIP_LABEL[r.vip_category]) %>
+                  <%= labels.VIP_LABEL[r.vip_category] %>
                 </span>
               <% } else { %><span class="muted">—</span><% } %>
             </td>
@@ -170,36 +189,35 @@
             </td>
             <td class="nowrap">
               <% if (r.days_late > 0) { %>
-                <span class="badge badge-danger"><%= _t('{days_late} days late', { days_late: (r.days_late) }) %></span>
+                <span class="badge badge-danger"><%= r.days_late %> days late</span>
                 <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
               <% } else if (r.never_scheduled) { %>
-                <span class="badge badge-warn"><%= _t('never scheduled') %></span>
+                <span class="badge badge-warn">never scheduled</span>
               <% } else if (r.days_late < 0) { %>
-                <span class="badge badge-neutral"><%= _t('{days_late} days later', { days_late: (-r.days_late) }) %></span>
+                <span class="badge badge-neutral"><%= -r.days_late %>days later</span>
                 <div class="muted tiny"><%= helpers.prettyDate(r.next_touch_on) %></div>
               <% } else { %>
-                <span class="badge badge-success"><%= _t('Today') %></span>
+                <span class="badge badge-success">Today</span>
               <% } %>
               <% if (r.last_touched_at) { %>
-                <div class="muted tiny"><%= _t('{days_since_touch} days since last touch', { days_since_touch: (r.days_since_touch) }) %></div>
+                <div class="muted tiny"><%= r.days_since_touch %> days since last touch</div>
               <% } %>
             </td>
             <td class="right num"><strong><%= r.deposit_count %></strong></td>
             <td class="muted tiny">
-              <%= _t(r.last_remark || '—') %>
+              <%= r.last_remark || '—' %>
               <% if (r.last_outcome) { %><div class="muted tiny"><%= r.last_outcome %></div><% } %>
             </td>
             <td class="right nowrap">
               <form method="post" action="/calls/call" style="display:inline;margin:0">
                 <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
                 <input type="hidden" name="username" value="<%= r.username %>">
-                <button class="btn btn-sm btn-primary" type="submit" data-dial="<%= r.username %>" data-mobile="<%= r.mobile_shown %>"><%- icon('phone', 13) %> <%= _t('Call') %></button>
+                <button class="btn btn-sm btn-primary" type="submit"><%- icon('phone', 13) %> Call</button>
               </form>
-              <% if (can('whatsapp')) { %><a class="btn btn-sm" href="/whatsapp/customer/<%= encodeURIComponent(r.username) %>" data-wa title="WhatsApp"><span style="color:#25D366"><%- icon('whatsapp', 13) %></span> WhatsApp</a><% } %>
               <button class="btn btn-sm" type="button"
                       data-username="<%= r.username %>"
                       data-remark="<%= r.last_remark || '' %>"
-                      onclick="openRemark(this)"><%= _t('Remark') %></button>
+                      onclick="openRemark(this)">Remark</button>
             </td>
           </tr>
         <% }); %>
@@ -211,19 +229,19 @@
 <% if (upcoming.length) { %>
   <div class="card">
     <div class="card-header">
-      <h3><%- icon('clock', 15) %> <%= _t('Upcoming follow-ups') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('they move into today\'s list on their day') %></span>
+      <h3><%- icon('clock', 15) %> Upcoming follow-ups</h3>
+      <span class="muted tiny" style="margin-left:auto">they move into today's list on their day</span>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('Customer') %></th><th><%= _t('Next follow-up') %></th><th><%= _t('In how many days') %></th><th><%= _t('Last remark') %></th></tr></thead>
+        <thead><tr><th>Customer</th><th>Next follow-up</th><th>In how many days</th><th>Last remark</th></tr></thead>
         <tbody>
           <% upcoming.forEach(function (u) { %>
             <tr>
               <td><a href="/customers/<%= encodeURIComponent(u.username) %>"><strong><%= u.username %></strong></a></td>
               <td class="nowrap"><strong><%= helpers.prettyDate(u.next_touch_on) %></strong></td>
-              <td class="num"><%= _t('{in_days} days', { in_days: (u.in_days) }) %></td>
-              <td class="muted tiny"><%= _t(u.last_remark || '—') %></td>
+              <td class="num"><%= u.in_days %>days</td>
+              <td class="muted tiny"><%= u.last_remark || '—' %></td>
             </tr>
           <% }); %>
         </tbody>
@@ -237,28 +255,30 @@
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <input type="hidden" name="username" id="rm_username">
     <div class="dialog-head">
-      <h3><%- icon('phone', 15) %> <%= _t('Remark') %></h3>
+      <h3><%- icon('phone', 15) %> Remark</h3>
       <button type="button" class="close-x" onclick="document.getElementById('remarkDialog').close()">&times;</button>
     </div>
     <div class="dialog-body">
-      <p class="muted tiny" style="margin:0 0 12px"><%= _t('Customer:') %> <strong id="rm_who" style="color:var(--fg)"></strong></p>
+      <p class="muted tiny" style="margin:0 0 12px">Customer: <strong id="rm_who" style="color:var(--fg)"></strong></p>
 
       <div class="form-group">
-        <label><%= _t('Remark') %></label>
+        <label>Remark</label>
         <select name="action_type" id="rm_action" required onchange="guessDate()">
-          <option value=""><%= _t('— choose —') %></option>
+          <option value="">— choose —</option>
           <% remarks.forEach(function (r) { %>
-            <option value="<%= r.key %>" data-days="<%= r.days %>"><%= _t(r.key) %></option>
+            <option value="<%= r.key %>" data-days="<%= r.days %>">
+              <%= r.key %><%= r.days ? ' — ' + (r.days === 1 ? 'tomorrow' : r.days + ' days') : (r.key === 'Deposited' ? ' — moves to Deposited' : (r.key === 'Fake' ? ' — delete' : '')) %>
+            </option>
           <% }); %>
         </select>
-        <span class="muted tiny" id="rm_hint"><%= _t('Picking a remark schedules the next follow-up automatically.') %></span>
+        <span class="muted tiny" id="rm_hint">Picking a remark schedules the next follow-up automatically.</span>
       </div>
 
       <div class="form-group">
-        <label><%= _t('Next follow-up') %> <span class="muted tiny"><%= _t('(change if needed)') %></span></label>
+        <label>Next follow-up <span class="muted tiny">(change if needed)</span></label>
         <div class="chips" style="margin-bottom:8px">
           <% quickDates.forEach(function (q) { %>
-            <button type="button" class="chip" onclick="setGap(<%= q.days %>, this)"><%= _t(q.label) %></button>
+            <button type="button" class="chip" onclick="setGap(<%= q.days %>, this)"><%= q.label %></button>
           <% }); %>
         </div>
         <input type="hidden" name="follow_gap" id="rm_gap">
@@ -266,17 +286,17 @@
       </div>
 
       <div class="form-group">
-        <label><%= _t('Date (today)') %></label>
+        <label>Date (today)</label>
         <input type="date" name="action_date" value="<%= today %>" required>
       </div>
       <div class="form-group">
-        <label><%= _t('Note') %></label>
-        <textarea name="response" rows="3" style="min-height:76px" placeholder="<%= _t('e.g. will deposit in 2 days') %>"></textarea>
+        <label>Note</label>
+        <textarea name="response" rows="3" style="min-height:76px" placeholder="e.g. will deposit ₹500 in 2 days"></textarea>
       </div>
     </div>
     <div class="dialog-foot">
-      <button type="button" class="btn btn-ghost" onclick="document.getElementById('remarkDialog').close()"><%= _t('Cancel') %></button>
-      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%- _th('Save &amp; next') %></button>
+      <button type="button" class="btn btn-ghost" onclick="document.getElementById('remarkDialog').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save &amp; next</button>
     </div>
   </form>
 </dialog>
@@ -289,7 +309,7 @@
     document.getElementById('rm_fu').value = '';
     document.getElementById('rm_gap').value = '';
     document.querySelectorAll('#remarkDialog .chip').forEach(function (c) { c.classList.remove('on'); });
-    document.getElementById('rm_hint').textContent = <%- _js('Picking a remark schedules the next follow-up automatically.') %>;
+    document.getElementById('rm_hint').textContent = 'Picking a remark schedules the next follow-up automatically.';
     document.getElementById('remarkDialog').showModal();
   }
 
@@ -320,12 +340,22 @@
     document.getElementById('rm_gap').value = '';
     document.querySelectorAll('#remarkDialog .chip').forEach(function (c) { c.classList.remove('on'); });
 
-    if (key === 'Do Not Contact') {
+    var hint = document.getElementById('rm_hint');
+
+    if (key === 'Deposited') {
       setDateIso('');
-      document.getElementById('rm_hint').textContent = <%- _js('This customer is removed from the list — no follow-up.') %>;
+      hint.textContent = 'Moves to the Deposited tab straight away — same caller stays. No follow-up needed.';
+    } else if (key === 'Fake') {
+      setDateIso('');
+      hint.textContent = 'This customer is deleted permanently, along with their remarks and calls.';
+    } else if (key === 'Do Not Contact') {
+      setDateIso('');
+      hint.textContent = 'This customer is removed from every calling list — no follow-up.';
     } else if (Number.isFinite(days)) {
       setDateIso(addDays(todayISO(), days));
-      document.getElementById('rm_hint').textContent = <%- _js('Next follow-up: {days} days later. You can change it below.') %>.replace('{days}', days);
+      hint.textContent = days <= 1
+        ? 'Comes back tomorrow in My Calls.'
+        : 'Comes back in ' + days + ' days. You can change the date below.';
     }
   }
 </script>

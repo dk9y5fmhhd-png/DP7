@@ -10,6 +10,11 @@ const router = express.Router();
 
 const PER_PAGE = 100;
 
+// caller/staff ko poora number nahi dikhta
+function canSeeFullMobile(user) {
+  return user && (user.role === 'super_admin' || (user.page_access || []).includes('all'));
+}
+
 // Super Admin sab dekhta hai (assign/DNC/delete bhi usi ke haath me).
 // Baaki har user (caller) sirf apne assigned customers dekhta hai.
 function isAdminUser(user) {
@@ -91,6 +96,7 @@ router.get('/', auth.requirePage('customers'), async (req, res, next) => {
       params
     );
 
+    const full = canSeeFullMobile(req.session.user);
     const vipCounts = await db.rows(
       `SELECT vip_category, COUNT(*)::int AS c FROM customer_board b
         WHERE ${ownScopeSql(me, [])} GROUP BY vip_category`,
@@ -100,13 +106,14 @@ router.get('/', auth.requirePage('customers'), async (req, res, next) => {
     res.render('customers', {
       title: 'Customers',
       page: 'customers',
-      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile) })),
+      rows: rows.map((r) => ({ ...r, mobile_shown: C.maskMobile(r.mobile, full) })),
       totals, count, page: safe, pages,
       callers: admin ? await callers() : [],
       isAdmin: admin,
       vipCounts: new Map(vipCounts.map((v) => [v.vip_category, v.c])),
       filters: { status, vip, priority, caller, q },
       labels: { STATUS_LABEL: C.STATUS_LABEL, VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
+      canSeeFull: full,
     });
   } catch (err) {
     next(err);
@@ -126,7 +133,7 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
         WHERE LOWER(b.username) = LOWER($1)`,
       [req.params.username]
     );
-    if (!c) return res.status(404).render('error', { title: 'Not found', heading: 'Customer not found', message: 'Try again from the Customers page.' });
+    if (!c) return res.status(404).render('error', { title: 'Not found', heading: 'Customer nahi mila', message: 'Customers page se dobara try kijiye.' });
 
     // caller kisi doosre ka customer na khole
     if (!admin && c.assigned_to !== me.id) {
@@ -166,7 +173,8 @@ router.get('/:username', auth.requirePage('customers'), async (req, res, next) =
       callers: admin ? await callers() : [],
       REMARKS: require('../lib/remarks').REMARKS,
       labels: { STATUS_LABEL: C.STATUS_LABEL, VIP_LABEL: C.VIP_LABEL, PRIORITY_LABEL: C.PRIORITY_LABEL },
-      mobileShown: C.maskMobile(c.mobile),
+      canSeeFull: canSeeFullMobile(req.session.user),
+      mobileShown: C.maskMobile(c.mobile, canSeeFullMobile(req.session.user)),
       today: D.todayISO(),
     });
   } catch (err) {
@@ -221,7 +229,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
         await db.value(`SELECT COUNT(*)::int FROM customer_board b WHERE ${where}`, params)
       );
       if (!total) {
-        req.session.flash = { type: 'error', message: 'No customer matches this filter.' };
+        req.session.flash = { type: 'error', message: 'Is filter me koi customer nahi mila.' };
         return res.redirect(back);
       }
 
@@ -244,14 +252,14 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       req.session.flash = {
         type: 'success',
         message: unassign
-          ? `${out.rowCount} customers no longer have a caller (now unassigned).`
-          : `${out.rowCount} customers assigned.`,
+          ? `${out.rowCount} customers se caller hata diya (ab unassigned).`
+          : `${out.rowCount} customers assign ho gaye.`,
       };
       return res.redirect(back);
     }
 
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Choose customers first.' };
+      req.session.flash = { type: 'error', message: 'Pehle customers chunein.' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
@@ -261,7 +269,7 @@ router.post('/assign', auth.requireSuperAdmin, async (req, res, next) => {
       [callerId, usernames.map((u) => String(u).toLowerCase())]
     );
     await auth.audit(req, 'assign', `caller=${callerId} rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: `${out.rowCount} customers assigned.` };
+    req.session.flash = { type: 'success', message: out.rowCount + ' customers assign ho gaye.' };
     res.redirect(req.get('referer') || '/customers');
   } catch (err) {
     next(err);
@@ -275,7 +283,7 @@ router.post('/:id/flags', auth.requireSuperAdmin, async (req, res, next) => {
     await auth.audit(req, 'customer_flag', `id=${req.params.id} dnc=${dnc}`);
     req.session.flash = {
       type: 'success',
-      message: dnc ? 'Customer marked "Do Not Contact".' : 'Customer put back in the call list.',
+      message: dnc ? 'Customer "Do Not Contact" me daal diya.' : 'Customer put back in the call list.',
     };
     res.redirect(req.get('referer') || '/customers');
   } catch (err) {
@@ -292,13 +300,13 @@ router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     const c = await db.row('SELECT id, username FROM customers WHERE id = $1', [req.params.id]);
     if (!c) {
-      req.session.flash = { type: 'error', message: 'Customer not found.' };
+      req.session.flash = { type: 'error', message: 'Customer nahi mila.' };
       return res.redirect('/customers');
     }
     await db.query('DELETE FROM customers WHERE id = $1', [c.id]);
     await db.query('DELETE FROM followups WHERE LOWER(username) = LOWER($1)', [c.username]);
     await auth.audit(req, 'customer_delete', c.username);
-    req.session.flash = { type: 'success', message: `Customer "${c.username}" deleted (remarks and calls too).` };
+    req.session.flash = { type: 'success', message: `Customer "${c.username}" delete ho gaya (remarks aur calls bhi).` };
     res.redirect(req.body.back === 'detail' ? '/customers' : (req.get('referer') || '/customers'));
   } catch (err) {
     next(err);
@@ -309,13 +317,13 @@ router.post('/:id/delete', auth.requireSuperAdmin, async (req, res, next) => {
 router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
-      req.session.flash = { type: 'error', message: 'Type DELETE in the confirm box — nothing was deleted.' };
+      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
     const usernames = [].concat(req.body.username || []).filter(Boolean);
     if (!usernames.length) {
-      req.session.flash = { type: 'error', message: 'Tick the customer checkboxes first.' };
+      req.session.flash = { type: 'error', message: 'Pehle customers ke checkbox tick split it:' };
       return res.redirect(req.get('referer') || '/customers');
     }
 
@@ -325,7 +333,7 @@ router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) =
     await auth.audit(req, 'customer_delete_selected', `${out.rowCount} rows`);
     req.session.flash = {
       type: 'success',
-      message: `${out.rowCount} customers deleted (with their remarks).`,
+      message: `${out.rowCount} customers delete ho gaye (remarks saath).`,
     };
     res.redirect('/customers');
   } catch (err) {
@@ -337,7 +345,7 @@ router.post('/delete-selected', auth.requireSuperAdmin, async (req, res, next) =
 router.post('/clear', auth.requireSuperAdmin, async (req, res, next) => {
   try {
     if (String(req.body.confirm || '').trim().toUpperCase() !== 'DELETE') {
-      req.session.flash = { type: 'error', message: 'Type DELETE in the confirm box — nothing was deleted.' };
+      req.session.flash = { type: 'error', message: 'Confirm box me DELETE likhein — kuch delete nahi hua.' };
       return res.redirect('/customers');
     }
 

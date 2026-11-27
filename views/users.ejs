@@ -2,72 +2,80 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Users') %></h1>
-    <div class="sub"><%= _t('Staff accounts, roles and page-level access.') %></div>
+    <h1>Users</h1>
+    <div class="sub">Staff accounts, roles and page-level access.</div>
   </div>
 </div>
 
-<div style="display:flex;flex-direction:column;gap:16px">
-  <div class="card" style="order:2;max-width:640px">
-    <div class="card-header"><h3><%- icon('plus', 15) %> <%= _t('Add new user') %></h3></div>
+<div class="grid-2" style="grid-template-columns: 1fr 1.5fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('plus', 15) %> Add new user</h3></div>
     <form method="post" action="/users/create">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <div class="form-group">
-          <label><%= _t('Full name') %></label>
-          <input type="text" name="name" required placeholder="<%= _t('e.g. Sarah') %>">
+          <label>Full name</label>
+          <input type="text" name="name" required placeholder="e.g. Sarah">
         </div>
         <div class="form-group">
-          <label><%= _t('Login ID') %></label>
-          <input type="text" name="login_id" required placeholder="<%= _t('e.g. sarah') %>" autocomplete="off">
+          <label>Login ID</label>
+          <input type="text" name="login_id" required placeholder="e.g. sarah" autocomplete="off">
         </div>
         <div class="form-group">
-          <label><%= _t('Password') %></label>
-          <input type="password" name="password" required minlength="6" placeholder="<%= _t('min 6 characters') %>" autocomplete="new-password">
+          <label>Password</label>
+          <input type="password" name="password" required minlength="6" placeholder="min 6 characters" autocomplete="new-password">
         </div>
-        <%- include('partials/telecmi_fields', { u: null }) %>
         <div class="form-group">
-          <label><%= _t('Team') %></label>
+          <label>Team</label>
           <select name="team">
-            <option value="retention"><%= _t('Retention — follow-up on existing clients') %></option>
-            <option value="acquisition"><%= _t('Acquisition — bringing in new clients') %></option>
+            <option value="retention">Retention — follow-up on existing clients</option>
+            <option value="acquisition">Acquisition — bringing in new clients</option>
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('Daily call target') %></label>
-          <input type="number" name="daily_target" value="150" min="0" max="500" step="1">
-          <span class="muted tiny"><%= _t('This is how much work My Calls shows. 150 = standard.') %></span>
+          <label>Daily targets</label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input type="number" name="nodep_target" value="40" min="0" max="500" step="1" placeholder="No deposit">
+              <span class="muted tiny">No deposit</span>
+            </div>
+            <div style="flex:1">
+              <input type="number" name="dep_target" value="35" min="0" max="500" step="1" placeholder="Deposited">
+              <span class="muted tiny">Deposited</span>
+            </div>
+          </div>
+          <span class="muted tiny">Two separate targets — one per tab. 40 + 35 = 75 (4 hours). 0 = no limit.</span>
         </div>
         <div class="form-group">
-          <label><%= _t('Role') %></label>
+          <label>Role</label>
           <select name="role" id="new_role" onchange="document.getElementById('new_access').style.display = this.value === 'super_admin' ? 'none' : 'block'">
-            <option value="admin"><%= _t('Admin') %></option>
-            <option value="super_admin"><%= _t('Super Admin') %></option>
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
           </select>
         </div>
         <div class="form-group" id="new_access">
-          <label><%= _t('Page access') %></label>
+          <label>Page access</label>
           <div class="check-row" data-check-scope>
-            <label class="check-pill"><input type="checkbox" name="page_access" value="all" data-check-all> <span><%= _t('All pages') %></span></label>
+            <label class="check-pill"><input type="checkbox" name="page_access" value="all" data-check-all> <span>All pages</span></label>
             <% grantable.filter(function (p) { return p.key !== 'security'; }).forEach(function (p) { %>
-              <label class="check-pill"><input type="checkbox" name="page_access" value="<%= p.key %>" data-checkable> <span><%= _t(p.label) %></span></label>
+              <label class="check-pill"><input type="checkbox" name="page_access" value="<%= p.key %>" data-checkable> <span><%= p.label %></span></label>
             <% }); %>
           </div>
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
-        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Create user') %></button>
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Create user</button>
       </div>
     </form>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('team', 15) %> <%= _t('Existing users') %></h3>
-      <span class="muted tiny" style="margin-left:auto"><%= _t('{n} accounts', { n: (users.length) }) %></span>
+    <div class="card-header"><h3><%- icon('team', 15) %> Existing users</h3>
+      <span class="muted tiny" style="margin-left:auto"><%= users.length %> account<%= users.length === 1 ? '' : 's' %></span>
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('User') %></th><th><%= _t('Role') %></th><th><%= _t('Team') %></th><th>TeleCMI</th><th><%= _t('Access') %></th><th class="right"><%= _t('Target') %></th><th><%= _t('2FA') %></th><th><%= _t('Last login') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
+        <thead><tr><th>User</th><th>Role</th><th>Team</th><th>Access</th><th class="right">Target (ND / Dep)</th><th>2FA</th><th>Last login</th><th class="right">Actions</th></tr></thead>
         <tbody>
           <% users.forEach(function (u) {
                const locked = u.locked_until && new Date(u.locked_until) > new Date(); %>
@@ -78,53 +86,45 @@
               </td>
               <td>
                 <span class="badge <%= u.role === 'super_admin' ? 'badge-accent' : 'badge-neutral' %>">
-                  <%= u.role === 'super_admin' ? _t('Super Admin') : _t('Admin') %>
+                  <%= u.role === 'super_admin' ? 'Super Admin' : 'Admin' %>
                 </span>
-                <% if (locked) { %><span class="badge badge-danger"><%= _t('Locked') %></span><% } %>
+                <% if (locked) { %><span class="badge badge-danger">Locked</span><% } %>
               </td>
               <td>
                 <% if (u.role === 'super_admin') { %><span class="muted">—</span>
                 <% } else { %>
                   <span class="badge <%= u.team === 'acquisition' ? 'badge-info' : 'badge-neutral' %>">
-                    <%= u.team === 'acquisition' ? _t('Acq') : _t('Ret') %>
+                    <%= u.team === 'acquisition' ? 'Acq' : 'Ret' %>
                   </span>
                 <% } %>
               </td>
-              <td class="tiny">
-                <% if (!u.telecmi_agent_id) { %>
-                  <span class="muted"><%= _t('Not set') %></span>
-                <% } else {
-                     const appId = (u.telecmi_agent_id.match(/_(\d+)$/) || [])[1];
-                     const account = appId ? telecmiAccounts.find((a) => a.app_id === appId) : telecmiAccounts.find((a) => a.is_active);
-                     const shared = users.filter((o) => o.id !== u.id && o.telecmi_agent_id === u.telecmi_agent_id).map((o) => o.name); %>
-                  <code><%= u.telecmi_agent_id %></code>
-                  <% if (!account) { %><div style="color:var(--danger)"><%= appId ? _t('No account for app {id}', { id: appId }) : _t('No active TeleCMI account') %></div>
-                  <% } else if (!account.is_active) { %><div style="color:var(--danger)"><%= _t('{name} is off', { name: account.label }) %></div>
-                  <% } else { %><div class="muted"><%= account.label %></div><% } %>
-                  <% if (shared.length) { %><div style="color:var(--warn)"><%= _t('Same ID as {names}', { names: shared.join(', ') }) %></div><% } %>
+              <td class="tiny muted">
+                <%= u.role === 'super_admin' ? 'All pages' : ((u.page_access || []).includes('all') ? 'All pages' : (u.page_access || []).length + ' pages') %>
+              </td>
+              <td class="right num nowrap">
+                <% if (u.role === 'super_admin') { %><span class="muted">—</span>
+                <% } else { %>
+                  <span title="No deposit"><%= u.nodep_target != null ? u.nodep_target : 40 %></span>
+                  <span class="muted">/</span>
+                  <span title="Deposited"><%= u.dep_target != null ? u.dep_target : 35 %></span>
                 <% } %>
               </td>
-              <td class="tiny muted">
-                <%= u.role === 'super_admin' ? _t('All pages') : ((u.page_access || []).includes('all') ? _t('All pages') : _t('{n} pages', { n: (u.page_access || []).length })) %>
-              </td>
-              <td class="right num"><%= u.daily_target != null ? u.daily_target : 40 %></td>
               <td>
-                <% if (u.totp_enabled) { %><span class="badge badge-success"><%= _t('On') %></span><% } else { %><span class="badge badge-neutral"><%= _t('Off') %></span><% } %>
+                <% if (u.totp_enabled) { %><span class="badge badge-success">On</span><% } else { %><span class="badge badge-neutral">Off</span><% } %>
               </td>
-              <td class="muted tiny nowrap"><%= u.last_login_at ? helpers.prettyDateTime(u.last_login_at) : _t('never') %></td>
+              <td class="muted tiny nowrap"><%= u.last_login_at ? helpers.prettyDateTime(u.last_login_at) : 'never' %></td>
               <td class="right nowrap">
-                <button type="button" class="btn btn-sm" onclick="document.getElementById('editUser<%= u.id %>').showModal()"><%= _t('Edit') %></button>
-                <button type="button" class="btn btn-sm" title="<%= _t('Set TeleCMI ID') %>" onclick="document.getElementById('agentUser<%= u.id %>').showModal()"><%- icon('phone', 13) %></button>
+                <button type="button" class="btn btn-sm" onclick="document.getElementById('editUser<%= u.id %>').showModal()">Edit</button>
                 <% if (locked) { %>
                   <form method="post" action="/users/<%= u.id %>/unlock" style="display:inline;margin:0">
                     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                    <button class="btn btn-sm btn-success" type="submit"><%= _t('Unlock') %></button>
+                    <button class="btn btn-sm btn-success" type="submit">Unlock</button>
                   </form>
                 <% } %>
                 <% if (u.id !== user.id) { %>
                   <form method="post" action="/users/<%= u.id %>/delete" style="display:inline;margin:0">
                     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                    <button class="btn btn-sm btn-danger" type="submit" data-confirm="<%= _t('User \'{login_id}\' — delete?', { login_id: (u.login_id) }) %>">×</button>
+                    <button class="btn btn-sm btn-danger" type="submit" data-confirm="User '<%= u.login_id %>' — delete?">×</button>
                   </form>
                 <% } %>
               </td>
@@ -141,85 +141,73 @@
     <form method="post" action="/users/<%= u.id %>/update">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="dialog-head">
-        <h3><%= _t('Edit {name}', { name: (u.name) }) %></h3>
+        <h3>Edit <%= u.name %></h3>
         <button type="button" class="close-x" onclick="document.getElementById('editUser<%= u.id %>').close()">&times;</button>
       </div>
       <div class="dialog-body">
         <div class="form-group">
-          <label><%= _t('Full name') %></label>
+          <label>Full name</label>
           <input type="text" name="name" value="<%= u.name %>" required>
         </div>
         <div class="form-group">
-          <label><%= _t('Login ID') %></label>
+          <label>Login ID</label>
           <input type="text" value="<%= u.login_id %>" disabled>
         </div>
         <div class="form-group">
-          <label><%= _t('Team') %></label>
+          <label>Team</label>
           <select name="team">
-            <option value="retention" <%= u.team !== 'acquisition' ? 'selected' : '' %>><%= _t('Retention') %></option>
-            <option value="acquisition" <%= u.team === 'acquisition' ? 'selected' : '' %>><%= _t('Acquisition') %></option>
+            <option value="retention" <%= u.team !== 'acquisition' ? 'selected' : '' %>>Retention</option>
+            <option value="acquisition" <%= u.team === 'acquisition' ? 'selected' : '' %>>Acquisition</option>
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('Daily call target') %></label>
-          <input type="number" name="daily_target" value="<%= u.daily_target != null ? u.daily_target : 40 %>" min="0" max="500" step="1">
-          <span class="muted tiny"><%= _t('0 = no limit (full list shown)') %></span>
+          <label>Daily targets</label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input type="number" name="nodep_target" value="<%= u.nodep_target != null ? u.nodep_target : 40 %>" min="0" max="500" step="1">
+              <span class="muted tiny">No deposit</span>
+            </div>
+            <div style="flex:1">
+              <input type="number" name="dep_target" value="<%= u.dep_target != null ? u.dep_target : 35 %>" min="0" max="500" step="1">
+              <span class="muted tiny">Deposited</span>
+            </div>
+          </div>
+          <span class="muted tiny">0 = no limit (full list shown)</span>
         </div>
         <div class="form-group">
-          <label><%= _t('Role') %></label>
+          <label>Role</label>
           <select name="role" onchange="document.getElementById('access<%= u.id %>').style.display = this.value === 'super_admin' ? 'none' : 'block'">
-            <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>><%= _t('Admin') %></option>
-            <option value="super_admin" <%= u.role === 'super_admin' ? 'selected' : '' %>><%= _t('Super Admin') %></option>
+            <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Admin</option>
+            <option value="super_admin" <%= u.role === 'super_admin' ? 'selected' : '' %>>Super Admin</option>
           </select>
         </div>
         <div class="form-group" id="access<%= u.id %>" style="<%= u.role === 'super_admin' ? 'display:none' : '' %>">
-          <label><%= _t('Page access') %></label>
+          <label>Page access</label>
           <div class="check-row" data-check-scope>
             <label class="check-pill"><input type="checkbox" name="page_access" value="all" data-check-all
-              <%= (u.page_access || []).includes('all') ? 'checked' : '' %>> <span><%= _t('All pages') %></span></label>
+              <%= (u.page_access || []).includes('all') ? 'checked' : '' %>> <span>All pages</span></label>
             <% grantable.filter(function (p) { return p.key !== 'security'; }).forEach(function (p) { %>
               <label class="check-pill">
                 <input type="checkbox" name="page_access" value="<%= p.key %>" data-checkable
                   <%= (u.page_access || []).includes(p.key) ? 'checked' : '' %>>
-                <span><%= _t(p.label) %></span>
+                <span><%= p.label %></span>
               </label>
             <% }); %>
           </div>
         </div>
-        <%- include('partials/telecmi_fields', { u: u }) %>
         <div class="form-group">
-          <label><%= _t('New password') %> <span class="muted tiny"><%= _t('(blank = keep)') %></span></label>
+          <label>New password <span class="muted tiny">(blank = keep)</span></label>
           <input type="password" name="password" placeholder="••••••" autocomplete="new-password">
         </div>
       </div>
       <div class="dialog-foot">
-        <button type="button" class="btn btn-ghost" onclick="document.getElementById('editUser<%= u.id %>').close()"><%= _t('Cancel') %></button>
-        <button type="submit" class="btn btn-primary"><%= _t('Save') %></button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="agentUser<%= u.id %>">
-    <form method="post" action="/users/<%= u.id %>/telecmi">
-      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-      <div class="dialog-head">
-        <h3><%= _t('TeleCMI ID for {name}', { name: u.name }) %></h3>
-        <button type="button" class="close-x" onclick="document.getElementById('agentUser<%= u.id %>').close()">&times;</button>
-      </div>
-      <div class="dialog-body"><%- include('partials/telecmi_fields', { u: u }) %></div>
-      <div class="dialog-foot">
-        <button type="button" class="btn btn-ghost" onclick="document.getElementById('agentUser<%= u.id %>').close()"><%= _t('Cancel') %></button>
-        <button type="submit" class="btn btn-primary"><%= _t('Save') %></button>
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('editUser<%= u.id %>').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
   </dialog>
 <% }); %>
 
-<script type="application/json" id="telecmiDirectory"><%- JSON.stringify({
-  accounts: telecmiAccounts,
-  users: users.filter((u) => u.telecmi_agent_id).map((u) => ({ id: u.id, name: u.name, agent: u.telecmi_agent_id })),
-  text: { noApp: _t('No account for app {id}'), off: _t('{name} is off'), shared: _t('Same ID as {names}'), uses: _t('Calls with {name}'), testing: _t('Testing…'), failed: _t('Could not check. Retrying…') },
-}).replace(/</g, '\\u003c') %></script>
 <%- include('partials/foot') %>
 
 

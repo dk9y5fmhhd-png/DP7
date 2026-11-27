@@ -48,7 +48,7 @@ function parseBulk(text, fallbackDate) {
     const parsed = parseLine(trimmed);
     if (!parsed) return;
     if (!parsed.username) {
-      errors.push({ line: i + 1, text: trimmed, reason: 'Username is empty' });
+      errors.push({ line: i + 1, text: trimmed, reason: 'Username khaali hai' });
       return;
     }
     if (parsed.username.length > 60) {
@@ -56,11 +56,11 @@ function parseBulk(text, fallbackDate) {
       return;
     }
     if (!parsed.mobile || parsed.mobile.length < 10) {
-      errors.push({ line: i + 1, text: trimmed, reason: 'Mobile number is wrong or missing' });
+      errors.push({ line: i + 1, text: trimmed, reason: 'Mobile number galat ya missing hai' });
       return;
     }
     if (!Number.isFinite(parsed.amount) || parsed.amount < 0) {
-      errors.push({ line: i + 1, text: trimmed, reason: 'Amount is wrong' });
+      errors.push({ line: i + 1, text: trimmed, reason: 'Amount galat hai' });
       return;
     }
     rows.push({ line: i + 1, date: fallbackDate, username: parsed.username, mobile: parsed.mobile, amount: parsed.amount });
@@ -153,7 +153,7 @@ router.post('/', auth.requirePage('adddata'), (req, res, next) => {
         type: 'error',
         message:
           uploadErr.code === 'LIMIT_FILE_SIZE'
-            ? 'The file is over 20 MB — upload it in smaller parts.'
+            ? 'The file is over 20 MB — upload it in smaller parts:'
             : uploadErr.message,
       };
       return res.redirect('/add-data');
@@ -237,7 +237,7 @@ router.post('/', auth.requirePage('adddata'), (req, res, next) => {
         req.session.flash = {
           type: 'error',
           message:
-            'Could not read the file. In Excel use File → Save As → "Excel Workbook (.xlsx)" and upload again.',
+            'Could not read the file. In Excel use File → Save As → "Excel Workbook (.xlsx)" and upload again:',
         };
         return res.redirect('/add-data');
       }
@@ -254,11 +254,11 @@ router.post('/delete-day', auth.requirePage('adddata'), async (req, res, next) =
     const realPin = String(await settings.get('delete_pin', '969696'));
 
     if (!D.isDate(playDate)) {
-      req.session.flash = { type: 'error', message: 'The date is wrong.' };
+      req.session.flash = { type: 'error', message: 'Date galat hai.' };
       return res.redirect('/add-data');
     }
     if (pin !== realPin) {
-      req.session.flash = { type: 'error', message: 'Wrong T-PIN. Nothing was deleted.' };
+      req.session.flash = { type: 'error', message: 'T-PIN galat hai. Kuch delete nahi hua.' };
       return res.redirect('/add-data');
     }
     const out = await db.query('DELETE FROM deposits WHERE play_date = $1', [playDate]);

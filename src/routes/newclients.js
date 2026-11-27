@@ -24,9 +24,6 @@ function parseMonth(v) {
 }
 function monthLabel(ym) {
   const [y, m] = ym.split('-');
-  if (require('../lib/i18n').current() === 'hi') {
-    return new Intl.DateTimeFormat('hi-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(y), Number(m) - 1, 1)));
-  }
   return `${MONTHS_HI[Number(m) - 1]} ${y}`;
 }
 function shiftMonth(ym, dir) {
@@ -155,6 +152,10 @@ router.get('/', auth.requirePage('newclients'), async (req, res, next) => {
       today,
       grid: days.map((d) => ({ ...d, pct: Math.round((d.count / maxCount) * 100) })),
       isAdmin: admin,
+      mask: (m) => {
+        const full = req.session.user && req.session.user.role === 'super_admin';
+        return require('../lib/customers').maskMobile(m, full);
+      },
     });
   } catch (err) {
     next(err);

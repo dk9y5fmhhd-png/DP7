@@ -95,8 +95,6 @@ router.get('/export/:what', async (req, res, next) => {
 
     if (what === 'settings') {
       const cfg = await settings.all();
-      // Secrets never leave the system in an export.
-      for (const key of Object.keys(cfg)) if (key === 'delete_pin' || key.startsWith('telecmi_')) delete cfg[key];
       const levels = await settings.levels();
       await auth.audit(req, 'export', 'settings');
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -116,12 +114,12 @@ router.post('/delete-day', async (req, res, next) => {
     const pin = String(req.body.pin || '').trim();
     const realPin = String(await settings.get('delete_pin', '969696'));
     if (!D.isDate(playDate) || pin !== realPin) {
-      req.session.flash = { type: 'error', message: 'Wrong date or T-PIN.' };
+      req.session.flash = { type: 'error', message: 'Date ya T-PIN galat hai.' };
       return res.redirect('/backup');
     }
     const out = await db.query('DELETE FROM deposits WHERE play_date = $1', [playDate]);
     await auth.audit(req, 'delete_day', `date=${playDate} rows=${out.rowCount}`);
-    req.session.flash = { type: 'success', message: `Data for ${playDate} deleted: ${out.rowCount} rows.` };
+    req.session.flash = { type: 'success', message: `${playDate} ka data delete: ${out.rowCount} rows.` };
     res.redirect('/backup');
   } catch (err) {
     next(err);

@@ -2,15 +2,14 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Settings') %></h1>
-    <div class="sub"><%= _t('Retention rules (7-day, VIP), TeleCMI calling, level bands and cohort limits — all from here.') %></div>
+    <h1>Settings</h1>
+    <div class="sub">Retention rules (7-day, VIP), TeleCMI calling, level bands and cohort limits — all from here.</div>
   </div>
   <div class="chips">
-    <a class="chip <%= tab === 'general' ? 'on' : '' %>" href="/settings?tab=general"><%- icon('settings', 13) %> <%= _t('General') %></a>
-    <a class="chip <%= tab === 'retention' ? 'on' : '' %>" href="/settings?tab=retention"><%- icon('alert', 13) %> <%= _t('Retention rules') %></a>
-    <a class="chip" href="/settings/calling"><%- icon('phone', 13) %> <%= _t('Calling') %></a>
-    <a class="chip" href="/whatsapp"><%- icon('whatsapp', 13) %> WhatsApp</a>
-    <a class="chip <%= tab === 'levels' ? 'on' : '' %>" href="/settings?tab=levels"><%- icon('award', 13) %> <%= _t('Level bands') %></a>
+    <a class="chip <%= tab === 'general' ? 'on' : '' %>" href="/settings?tab=general"><%- icon('settings', 13) %> General</a>
+    <a class="chip <%= tab === 'retention' ? 'on' : '' %>" href="/settings?tab=retention"><%- icon('alert', 13) %> Retention rules</a>
+    <a class="chip <%= tab === 'telecmi' ? 'on' : '' %>" href="/settings?tab=telecmi"><%- icon('phone', 13) %> TeleCMI</a>
+    <a class="chip <%= tab === 'levels' ? 'on' : '' %>" href="/settings?tab=levels"><%- icon('award', 13) %> Level bands</a>
   </div>
 </div>
 
@@ -18,107 +17,139 @@
 <% if (tab === 'retention') { %>
   <div class="grid-2">
     <div class="card">
-      <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Active / Inactive rules') %></h3></div>
+      <div class="card-header"><h3><%- icon('clock', 15) %> Active / Inactive niyam</h3></div>
       <form method="post" action="/settings/retention">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <div class="card-body">
-          <p class="muted tiny" style="margin:0 0 14px"> <%- _th('The countdown restarts on every successful deposit. No deposit for this many days → <strong>Inactive</strong>.') %> </p>
+          <p class="muted tiny" style="margin:0 0 14px">
+            The countdown restarts on every successful deposit.
+            No deposit for this many days → <strong>Inactive</strong>.
+          </p>
           <div class="form-group">
-            <label><%= _t('Inactive after (days)') %></label>
+            <label>Inactive after (days)</label>
             <input type="number" name="inactive_days" value="<%= cfg.inactive_days || 7 %>" min="1" max="90">
-            <span class="muted tiny"><%= _t('Default 7 — the 7-day rule') %></span>
+            <span class="muted tiny">Default 7 — the 7-day rule</span>
           </div>
           <div class="form-group">
-            <label><%= _t('"Recently inactive" days (for P1)') %></label>
+            <label>"Recently inactive" days (for P1)</label>
             <input type="number" name="recent_inactive_days" value="<%= cfg.recent_inactive_days || 14 %>" min="1" max="180">
-            <span class="muted tiny"><%= _t('Inactive for fewer days than this → P1') %></span>
+            <span class="muted tiny">Inactive for fewer days than this → P1</span>
           </div>
         </div>
         <div class="card-footer" style="text-align:right">
-          <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> <%= _t('Save rules') %></button>
+          <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> Save niyam</button>
         </div>
       </form>
     </div>
 
     <div class="card">
-      <div class="card-header"><h3><%- icon('award', 15) %><%= _t('VIP — by deposit COUNT') %></h3></div>
+      <div class="card-header"><h3><%- icon('award', 15) %>VIP — by deposit COUNT</h3></div>
       <form method="post" action="/settings/retention">
         <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
         <input type="hidden" name="inactive_days" value="<%= cfg.inactive_days || 7 %>">
         <input type="hidden" name="recent_inactive_days" value="<%= cfg.recent_inactive_days || 14 %>">
         <div class="card-body">
-          <p class="muted tiny" style="margin:0 0 14px"> <%- _th('Not by amount — by <strong>how many times they deposited</strong>. Once VIP, always VIP.') %></p>
+          <p class="muted tiny" style="margin:0 0 14px">
+            Not by amount — <strong>kitni baar deposit kiya</strong> it. Once VIP, always VIP.</p>
           <div class="form-group">
-            <label><%= _t('VIP — from this many deposits') %></label>
+            <label>VIP — from this many deposits</label>
             <input type="number" name="vip_min_count" value="<%= cfg.vip_min_count || 25 %>" min="1">
           </div>
           <div class="form-group">
-            <label><%= _t('Premium VIP — from this many') %></label>
+            <label>Premium VIP — from this many</label>
             <input type="number" name="vip_premium_count" value="<%= cfg.vip_premium_count || 51 %>" min="2">
           </div>
           <div class="form-group">
-            <label><%= _t('High Value VIP — from this many') %></label>
+            <label>High Value VIP — from this many</label>
             <input type="number" name="vip_high_count" value="<%= cfg.vip_high_count || 101 %>" min="3">
           </div>
         </div>
         <div class="card-footer" style="text-align:right">
-          <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> <%= _t('Save VIP rules') %></button>
+          <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> Save VIP rules</button>
         </div>
       </form>
     </div>
   </div>
 <% } %>
 
+<% if (tab === 'telecmi') { %>
+  <div class="card" style="max-width:640px">
+    <div class="card-header">
+      <h3><%- icon('phone', 15) %> TeleCMI click-to-call</h3>
+      <span class="badge <%= cfg.telecmi_app_id && cfg.telecmi_secret && cfg.telecmi_agent ? 'badge-success' : 'badge-neutral' %>" style="margin-left:auto">
+        <%= cfg.telecmi_app_id && cfg.telecmi_secret && cfg.telecmi_agent ? 'Connected' : 'Not configured' %>
+      </span>
+    </div>
+    <form method="post" action="/settings/telecmi">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="muted tiny" style="margin:0 0 14px">Get the App ID, Secret and your agent number from the TeleCMI dashboard. Once the keys are in, the "Call" button connects the phone directly — the customer's number is never shown to the caller.</p>
+        <div class="form-group">
+          <label>App ID</label>
+          <input type="text" name="telecmi_app_id" value="<%= cfg.telecmi_app_id || '' %>" placeholder="telecmi app id">
+        </div>
+        <div class="form-group">
+          <label>Secret</label>
+          <input type="password" name="telecmi_secret" value="<%= cfg.telecmi_secret || '' %>" placeholder="••••••" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Agent number (the phone that rings)</label>
+          <input type="text" name="telecmi_agent" value="<%= cfg.telecmi_agent || '' %>" placeholder="+919876543210">
+        </div>
+        <p class="muted tiny" style="margin:0">
+          If keys are empty the Call button only logs the call and shows the masked number — dial manually.
+        </p>
+      </div>
+      <div class="card-footer" style="text-align:right">
+        <button class="btn btn-primary" type="submit"><%- icon('check', 15) %> Save TeleCMI</button>
+      </div>
+    </form>
+  </div>
+<% } %>
+
 <% if (tab === 'general') { %>
 <div class="grid-2" id="general">
   <div class="card">
-    <div class="card-header"><h3><%- icon('settings', 15) %> <%= _t('General') %></h3></div>
+    <div class="card-header"><h3><%- icon('settings', 15) %> General</h3></div>
     <form method="post" action="/settings/general">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="card-body">
         <div class="form-row">
           <div class="form-group">
-            <label><%= _t('Default language') %></label>
-            <select name="default_language">
-              <% Object.keys(LANGUAGES).forEach(function (code) { %><option value="<%= code %>" <%= (cfg.default_language || 'en') === code ? 'selected' : '' %>><%= LANGUAGES[code] %></option><% }); %>
-            </select>
-            <p class="muted tiny" style="margin:4px 0 0"><%= _t('Used until someone picks their own language.') %></p>
-          </div>
-          <div class="form-group">
-            <label><%= _t('Site name') %></label>
+            <label>Site name</label>
             <input type="text" name="site_name" value="<%= cfg.site_name || 'DP7' %>" maxlength="40">
           </div>
           <div class="form-group">
-            <label><%= _t('Tagline') %></label>
+            <label>Tagline</label>
             <input type="text" name="site_tagline" value="<%= cfg.site_tagline || '' %>" maxlength="120">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label><%= _t('Active window (days)') %></label>
+            <label>Active window (days)</label>
             <input type="number" name="active_window_days" value="<%= cfg.active_window_days %>" min="1" max="365">
-            <span class="muted tiny"><%= _t('Deposit within this many days = Active') %></span>
+            <span class="muted tiny">Deposit within this many days = Active</span>
           </div>
           <div class="form-group">
-            <label><%= _t('Retention lookback (weeks)') %></label>
+            <label>Retention lookback (weeks)</label>
             <input type="number" name="retention_lookback_weeks" value="<%= cfg.retention_lookback_weeks %>" min="1" max="52">
-            <span class="muted tiny"><%= _t('Habit window') %></span>
+            <span class="muted tiny">Habit window</span>
           </div>
         </div>
         <div class="form-group">
-          <label><%= _t('Delete T-PIN') %></label>
+          <label>Delete T-PIN</label>
           <input type="password" name="delete_pin" value="<%= cfg.delete_pin || '969696' %>" maxlength="20" autocomplete="off">
-          <span class="muted tiny"><%= _t('This PIN is required to delete data.') %></span>
+          <span class="muted tiny">This PIN is required to delete data.</span>
         </div>
       </div>
       <div class="card-footer" style="text-align:right">
-        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Save general') %></button>
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save general</button>
       </div>
     </form>
   </div>
 
   <div class="card">
-    <div class="card-header"><h3><%- icon('clock', 15) %> <%= _t('Cohort limits (days per week)') %></h3></div>
+    <div class="card-header"><h3><%- icon('clock', 15) %> Cohort limits (days per week)</h3></div>
     <form method="post" action="/settings/general">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <input type="hidden" name="site_name" value="<%= cfg.site_name || 'DP7' %>">
@@ -126,25 +157,29 @@
       <input type="hidden" name="active_window_days" value="<%= cfg.active_window_days %>">
       <input type="hidden" name="retention_lookback_weeks" value="<%= cfg.retention_lookback_weeks %>">
       <input type="hidden" name="delete_pin" value="<%= cfg.delete_pin || '969696' %>">
-      <input type="hidden" name="default_language" value="<%= cfg.default_language || 'en' %>">
       <div class="card-body">
-        <p class="muted tiny" style="margin:0 0 14px"> <%- _th('Regularity = depositing days inside the lookback window ÷ weeks. <strong>Daily 7 will never work</strong> — a 7-day week holds at most 7, so keep it at 6 (six days a week).') %> </p>
+        <p class="muted tiny" style="margin:0 0 14px">
+          Regularity = depositing days inside the lookback window ÷ weeks.
+          <strong>Daily 7 will never work</strong> — a 7-day week holds at most 7,
+          so keep it at 6 (six days a week).
+        </p>
         <div class="form-group">
-          <label><%= _t('Daily band — above this') %></label>
+          <label>Daily band — above this</label>
           <input type="number" name="cohort_daily_min" value="<%= cfg.cohort_daily_min %>" min="0.5" max="7" step="0.05">
         </div>
         <div class="form-group">
-          <label><%= _t('Bi-weekly band — above this') %></label>
+          <label>Bi-weekly band — above this</label>
           <input type="number" name="cohort_byweekly_min" value="<%= cfg.cohort_byweekly_min %>" min="0.5" max="7" step="0.05">
         </div>
         <div class="form-group">
-          <label><%= _t('Weekly band — above this') %></label>
+          <label>Weekly band — above this</label>
           <input type="number" name="cohort_weekly_min" value="<%= cfg.cohort_weekly_min %>" min="0.05" max="7" step="0.05">
         </div>
-        <p class="muted tiny" style="margin:0"><%- _th('Everything below falls into the <strong>Monthly</strong> band.') %> </p>
+        <p class="muted tiny" style="margin:0">Everything below falls here<strong>Monthly</strong> bands.
+        </p>
       </div>
       <div class="card-footer" style="text-align:right">
-        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Save limits') %></button>
+        <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save limits</button>
       </div>
     </form>
   </div>
@@ -155,14 +190,14 @@
 <% if (tab === 'levels') { %>
 <div class="card" id="levels">
   <div class="card-header">
-    <h3><%- icon('award', 15) %> <%= _t('Level bands') %></h3>
-    <span class="muted tiny" style="margin-left:auto"><%= _t('A client\'s level comes from their lifetime deposit total') %></span>
+    <h3><%- icon('award', 15) %> Level bands</h3>
+    <span class="muted tiny" style="margin-left:auto">A client's level comes from their lifetime deposit total</span>
   </div>
   <form method="post" action="/settings/levels">
     <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('Level name') %></th><th><%= _t('Minimum amount') %></th><th><%= _t('Maximum amount') %></th><th class="right">—</th></tr></thead>
+        <thead><tr><th>Level name</th><th>Minimum amount</th><th>Maximum amount</th><th class="right">—</th></tr></thead>
         <tbody id="levelRows">
           <% levels.forEach(function (l) { %>
             <tr>
@@ -171,16 +206,16 @@
                 <input type="text" name="level_name" value="<%= l.name %>" maxlength="40" style="width:100%">
               </td>
               <td><input type="number" name="level_min" value="<%= l.min %>" min="0" step="1" style="width:100%"></td>
-              <td><input type="number" name="level_max" value="<%= l.max === null ? '' : l.max %>" min="0" step="1" placeholder="<%= _t('blank = and above') %>" style="width:100%"></td>
-              <td class="right"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()"><%= _t('Remove') %></button></td>
+              <td><input type="number" name="level_max" value="<%= l.max === null ? '' : l.max %>" min="0" step="1" placeholder="blank = and above" style="width:100%"></td>
+              <td class="right"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td>
             </tr>
           <% }); %>
         </tbody>
       </table>
     </div>
     <div class="card-footer" style="display:flex;gap:9px;justify-content:space-between;align-items:center">
-      <button type="button" class="btn btn-sm" onclick="addLevelRow()"><%- icon('plus', 14) %> <%= _t('Add band') %></button>
-      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> <%= _t('Save bands') %></button>
+      <button type="button" class="btn btn-sm" onclick="addLevelRow()"><%- icon('plus', 14) %> Add band</button>
+      <button type="submit" class="btn btn-primary"><%- icon('check', 15) %> Save bands</button>
     </div>
   </form>
 </div>
@@ -188,14 +223,14 @@
 
 <% if (tab === 'general' || tab === 'levels') { %>
 <div class="card">
-  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How it is checked') %></h3></div>
+  <div class="card-header"><h3><%- icon('alert', 15) %> How it is checked</h3></div>
   <div class="card-body">
     <dl class="kv">
-      <dt><%= _t('Level') %></dt><dd><%= _t('Lifetime total deposits → whichever band it fits') %></dd>
-      <dt><%= _t('Active') %></dt><dd><%= _t('Last deposit last {active_window_days} days', { active_window_days: (cfg.active_window_days) }) %></dd>
-      <dt><%= _t('Regularity') %></dt><dd><%= _t('Deposit days over the last {retention_lookback_weeks} weeks ÷ {retention_lookback_weeks}', { retention_lookback_weeks: (cfg.retention_lookback_weeks) }) %></dd>
-      <dt><%= _t('Gone quiet') %></dt><dd><%= _t('In the cohort, but did not deposit in the selected period') %></dd>
-      <dt><%= _t('Duplicate') %></dt><dd><%= _t('The same mobile number on two or more clients') %></dd>
+      <dt>Level</dt><dd>Lifetime total deposits → whichever band it fits</dd>
+      <dt>Active</dt><dd>Last deposit last <%= cfg.active_window_days %> days</dd>
+      <dt>Regularity</dt><dd>Pichhle <%= cfg.retention_lookback_weeks %> deposit days per week ÷ <%= cfg.retention_lookback_weeks %></dd>
+      <dt>Gone quiet</dt><dd>In the cohort, but did not deposit in the selected period</dd>
+      <dt>Duplicate</dt><dd>The same mobile number on two or more clients</dd>
     </dl>
   </div>
 </div>
