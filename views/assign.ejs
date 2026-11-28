@@ -16,7 +16,7 @@
   <div class="stat <%= totals.fresh ? 'warn' : 'ok' %>">
     <div class="label"><%= _t('New — not assigned') %></div>
     <div class="value"><%= totals.fresh.toLocaleString('en-IN') %></div>
-    <div class="hint"><%= _t('last {days} days', { days: (days) }) %></div>
+    <div class="hint"><%= _t('last {days} days', { days: (days) }) %> · <%- _th('<strong>{n}</strong> never deposited', { n: ((totals.no_dep || 0).toLocaleString('en-IN')) }) %></div>
   </div>
   <div class="stat <%= totals.older ? 'bad' : 'ok' %>">
     <div class="label"><%= _t('Older — unassigned') %></div>
@@ -137,7 +137,7 @@
             <th style="width:36px"><input type="checkbox" data-check-all></th>
             <th><%= _t('Username') %></th>
             <th><%= _t('Mobile') %></th>
-            <th><%= _t('First deposit') %></th>
+            <th><%= _t('Joined') %></th>
             <th class="right"><%= _t('Deposits') %></th>
             <th class="right"><%= _t('Total') %></th>
             <th><%= _t('Status') %></th>
@@ -156,10 +156,16 @@
               <td><input type="checkbox" name="username" value="<%= r.username %>" data-checkable></td>
               <td class="who"><a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a></td>
               <td class="num nowrap"><%= r.mobile ? mask(r.mobile) : '—' %></td>
-              <td class="nowrap tiny"><%= r.first_deposit ? helpers.prettyDate(r.first_deposit) : '—' %></td>
+              <td class="nowrap tiny"><%= r.joined_on ? helpers.prettyDate(r.joined_on) : '—' %></td>
               <td class="right num"><strong><%= r.deposit_count %></strong></td>
               <td class="money right"><%= helpers.money(r.deposit_amount) %></td>
-              <td><span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= _t(r.status) %></span></td>
+              <td>
+                <% if (r.status === 'no_deposit') { %>
+                  <span class="badge badge-warn"><%= _t('No deposit') %></span>
+                <% } else { %>
+                  <span class="badge <%= r.status === 'active' ? 'badge-success' : (r.status === 'inactive' ? 'badge-danger' : 'badge-info') %>"><%= _t(r.status) %></span>
+                <% } %>
+              </td>
               <td>
                 <% if (r.vip_category !== 'normal') { %>
                   <span class="badge badge-accent"><%= r.vip_category === 'high_value_vip' ? 'HV' : (r.vip_category === 'premium_vip' ? 'Prem' : 'VIP') %></span>

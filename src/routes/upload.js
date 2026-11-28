@@ -138,7 +138,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
 
       const opts = kind === 'customers'
         ? { required: ['username'], positional: ['username', 'mobile', 'date', 'caller'] }
-        : { required: ['username', 'qty'], positional: ['username', 'txn_id', 'date', 'qty', 'status'] };
+        : { required: ['username', 'qty'], positional: ['username', 'txn_id', 'date', 'qty', 'status', 'mobile', 'caller'] };
 
       if (kind === 'deposits' && !dryRun && batchInfo && batchInfo.rows > 0) {
         return res.status(409).render('upload', {
@@ -171,6 +171,8 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       let skipped = 0;
       let autoAssigned = 0;
       let badCaller = 0;
+      // deposit file ka caller map — sync ke baad naye customers ko dene ke liye
+      const callerFor = new Map();
 
       if (kind === 'customers') {
         // caller column optional — login_id ya naam se match
@@ -209,7 +211,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             );
             if (existing) {
               // purana customer — sirf mobile/date/caller update, deposit data nahi chhedte
-              await db.query(
+              const out = await db.query(
                 `UPDATE customers
                     SET mobile = COALESCE(NULLIF($2,''), mobile),
                         reg_date = COALESCE($3, reg_date),
@@ -220,6 +222,10 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
                   WHERE id = $1`,
                 [existing.id, mobile, regDate, callerUser ? callerUser.id : null]
               );
+              // assign hua ya nahi — result me dikhana zaroori hai, warna lagta hai
+              // kuch hua hi nahi (same file dobara upload karne par yahi hota hai)
+              if (callerUser && existing.assigned_to === null) autoAssigned++;
+              void out;
               skipped++;
             } else {
               await db.query(
@@ -235,6 +241,16 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
         }
       } else {
         // deposits
+        // Deposit file me caller column optional — jo naya customer banega use
+        // seedha usi caller ko denge (sirf jab wo abhi kisi ke paas na ho).
+        const depUsers = await db.rows(`SELECT id, name, login_id FROM users WHERE role <> 'super_admin'`);
+        const depByCaller = new Map();
+        for (const u of depUsers) {
+          depByCaller.set(String(u.login_id).toLowerCase(), u);
+          depByCaller.set(String(u.name).toLowerCase(), u);
+        }
+        // callerFor outer scope me hai (sync ke baad chahiye)
+
         for (const rec of parsed.rows) {
           const username = String(rec.username || '').trim();
           const qty = Number(rec.qty);
@@ -254,9 +270,17 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             continue;
           }
 
+          const cRaw = String(rec.caller || '').trim();
+          const cUser = cRaw ? depByCaller.get(cRaw.toLowerCase()) : null;
+          if (cRaw && !cUser) badCaller++;
+          if (cUser && !callerFor.has(username.toLowerCase())) {
+            callerFor.set(username.toLowerCase(), cUser.id);
+          }
+
           preview.push({
-            line: rec.line, username, mobile: '',
+            line: rec.line, username, mobile: rec.mobile || '',
             date, amount: qty, txn, status, count: txnCount,
+            caller: cUser ? cUser.name : (cRaw || ''),
           });
 
           if (dryRun) {
@@ -283,7 +307,7 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
             await db.query(
               `INSERT INTO deposits (play_date, username, mobile, amount, txn_id, status, txn_count, batch, source, created_by)
                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'excel',$9)`,
-              [date, username, '', qty, txn || null, status, txnCount, batch, req.session.user.id]
+              [date, username, rec.mobile || '', qty, txn || null, status, txnCount, batch, req.session.user.id]
             );
             inserted++;
           } catch (err) {
@@ -296,6 +320,21 @@ router.post('/:kind', auth.requirePage('upload'), (req, res, next) => {
       let sync = null;
       if (!dryRun) {
         sync = await C.syncCustomers();
+
+        // Deposit file se aaye naye customer bina caller ke bante hain.
+        // Agar file me caller likha tha, ab unhe usi caller ko de dein —
+        // par jo pehle se kisi ke paas hai unhe chhedte nahi.
+        if (callerFor.size) {
+          for (const [uname, cid] of callerFor) {
+            const out = await db.query(
+              `UPDATE customers SET assigned_to = $1
+                WHERE LOWER(username) = $2 AND assigned_to IS NULL`,
+              [cid, uname]
+            );
+            autoAssigned += out.rowCount;
+          }
+          if (autoAssigned) await require('../lib/cadence').refreshAll().catch(() => null);
+        }
         await auth.audit(req, 'upload_' + kind,
           `file=${req.file.originalname} inserted=${inserted} skipped=${skipped} errors=${errors.length}`);
       }

@@ -85,6 +85,8 @@ app.use((req, res, next) => {
     prettyDateTime: D.prettyDateTime,
     relativeDays: D.relativeDays,
     today: D.todayISO,
+    addDays: D.addDays,
+    shiftDate: D.addDays,
   };
   res.locals.title = 'DP7';
   res.locals.mask = require('./lib/customers').maskMobile;
@@ -133,6 +135,7 @@ app.use(async (req, res, next) => {
 app.use('/', require('./routes/language'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/dashboard'));
+app.use('/daily', require('./routes/daily'));
 app.use('/assign', require('./routes/assign'));
 app.use('/cadence', require('./routes/cadence'));
 app.use('/callers', require('./routes/callers'));

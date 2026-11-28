@@ -34,9 +34,18 @@
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('Daily call target') %></label>
-          <input type="number" name="daily_target" value="150" min="0" max="500" step="1">
-          <span class="muted tiny"><%= _t('This is how much work My Calls shows. 150 = standard.') %></span>
+          <label><%= _t('Daily targets') %></label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input type="number" name="nodep_target" value="40" min="0" max="500" step="1" placeholder="<%= _t('No deposit') %>">
+              <span class="muted tiny"><%= _t('No deposit') %></span>
+            </div>
+            <div style="flex:1">
+              <input type="number" name="dep_target" value="35" min="0" max="500" step="1" placeholder="<%= _t('Deposited') %>">
+              <span class="muted tiny"><%= _t('Deposited') %></span>
+            </div>
+          </div>
+          <span class="muted tiny"><%= _t('Two separate targets — one per tab. 40 + 35 = 75 (4 hours). 0 = no limit.') %></span>
         </div>
         <div class="form-group">
           <label><%= _t('Role') %></label>
@@ -67,7 +76,7 @@
     </div>
     <div class="table-wrapper">
       <table>
-        <thead><tr><th><%= _t('User') %></th><th><%= _t('Role') %></th><th><%= _t('Team') %></th><th>TeleCMI</th><th><%= _t('Access') %></th><th class="right"><%= _t('Target') %></th><th><%= _t('2FA') %></th><th><%= _t('Last login') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
+        <thead><tr><th><%= _t('User') %></th><th><%= _t('Role') %></th><th><%= _t('Team') %></th><th>TeleCMI</th><th><%= _t('Access') %></th><th class="right"><%= _t('Target (ND / Dep)') %></th><th><%= _t('2FA') %></th><th><%= _t('Last login') %></th><th class="right"><%= _t('Actions') %></th></tr></thead>
         <tbody>
           <% users.forEach(function (u) {
                const locked = u.locked_until && new Date(u.locked_until) > new Date(); %>
@@ -107,7 +116,14 @@
               <td class="tiny muted">
                 <%= u.role === 'super_admin' ? _t('All pages') : ((u.page_access || []).includes('all') ? _t('All pages') : _t('{n} pages', { n: (u.page_access || []).length })) %>
               </td>
-              <td class="right num"><%= u.daily_target != null ? u.daily_target : 40 %></td>
+              <td class="right num nowrap">
+                <% if (u.role === 'super_admin') { %><span class="muted">—</span>
+                <% } else { %>
+                  <span title="<%= _t('No deposit') %>"><%= u.nodep_target != null ? u.nodep_target : 40 %></span>
+                  <span class="muted">/</span>
+                  <span title="<%= _t('Deposited') %>"><%= u.dep_target != null ? u.dep_target : 35 %></span>
+                <% } %>
+              </td>
               <td>
                 <% if (u.totp_enabled) { %><span class="badge badge-success"><%= _t('On') %></span><% } else { %><span class="badge badge-neutral"><%= _t('Off') %></span><% } %>
               </td>
@@ -161,8 +177,17 @@
           </select>
         </div>
         <div class="form-group">
-          <label><%= _t('Daily call target') %></label>
-          <input type="number" name="daily_target" value="<%= u.daily_target != null ? u.daily_target : 40 %>" min="0" max="500" step="1">
+          <label><%= _t('Daily targets') %></label>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <input type="number" name="nodep_target" value="<%= u.nodep_target != null ? u.nodep_target : 40 %>" min="0" max="500" step="1">
+              <span class="muted tiny"><%= _t('No deposit') %></span>
+            </div>
+            <div style="flex:1">
+              <input type="number" name="dep_target" value="<%= u.dep_target != null ? u.dep_target : 35 %>" min="0" max="500" step="1">
+              <span class="muted tiny"><%= _t('Deposited') %></span>
+            </div>
+          </div>
           <span class="muted tiny"><%= _t('0 = no limit (full list shown)') %></span>
         </div>
         <div class="form-group">

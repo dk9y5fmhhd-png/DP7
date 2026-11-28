@@ -14,7 +14,7 @@ router.use(auth.requireSuperAdmin);
 
 async function callerOptions() {
   return db.rows(
-    `SELECT u.id, u.name, u.login_id, u.team, u.daily_target,
+    `SELECT u.id, u.name, u.login_id, u.team, u.daily_target, u.nodep_target, u.dep_target,
             (SELECT COUNT(*)::int FROM customer_board b
               WHERE b.assigned_to = u.id AND b.do_not_contact = FALSE) AS assigned
        FROM users u

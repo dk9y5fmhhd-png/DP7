@@ -16,15 +16,16 @@
 //   remark hi nahi                        → max(last_deposit, first_deposit) + gap
 
 const db = require('../db');
+const D = require('./dates');
 
 const GAPS = { N: 1, A: 5, B: 12, C: 30, D: null };
 
 const TIERS = {
-  N: { key: 'N', label: 'ID created, no deposit', gap: 1, tone: 'warn', hint: 'first call in 1 day' },
+  N: { key: 'N', label: 'ID created, no deposit', gap: 1, tone: 'warn', hint: 'first call next day' },
   A: { key: 'A', label: 'VIP / high value', gap: 5, tone: 'accent', hint: 'every 5 days' },
   B: { key: 'B', label: 'Normal / active', gap: 12, tone: 'info', hint: 'every 12 days' },
   C: { key: 'C', label: 'Old dormant', gap: 30, tone: 'neutral', hint: 'every 30 days' },
-  D: { key: 'D', label: 'Do Not Contact', gap: null, tone: 'danger', hint: 'no touch' },
+  D: { key: 'D', label: 'Do Not Contact', gap: null, tone: 'danger', hint: 'no touch at all' },
 };
 
 const ORDER = ['N', 'A', 'B', 'C', 'D'];
@@ -40,6 +41,7 @@ const TIER_SQL = `
   CASE
     WHEN c.do_not_contact THEN 'D'
     WHEN c.status = 'no_deposit'
+         AND c.deposit_claimed_at IS NULL
          AND COALESCE(CURRENT_DATE - COALESCE(c.reg_date, c.created_at::date), 9999) <= ${NO_DEPOSIT_DAYS}
       THEN 'N'
     WHEN c.vip_category <> 'normal' THEN 'A'
@@ -81,7 +83,9 @@ async function refreshAll() {
                WHEN x.tier = 'D' THEN NULL
                WHEN x.remark_next IS NOT NULL THEN x.remark_next
                WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
-               ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+               -- Naya no-deposit ID: jaise hi assign hua, aaj hi call hona chahiye
+               WHEN x.tier = 'N' THEN CURRENT_DATE
+               ELSE x.anchor + (CASE x.tier WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
              END
       FROM calc x
      WHERE t.id = x.id
@@ -92,7 +96,8 @@ async function refreshAll() {
                 WHEN x.tier = 'D' THEN NULL
                 WHEN x.remark_next IS NOT NULL THEN x.remark_next
                 WHEN x.touched IS NOT NULL THEN x.touched + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
-                ELSE x.anchor + (CASE x.tier WHEN 'N' THEN 1 WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
+                WHEN x.tier = 'N' THEN CURRENT_DATE
+                ELSE x.anchor + (CASE x.tier WHEN 'A' THEN 5 WHEN 'B' THEN 12 ELSE 30 END)
               END)`);
 
   return out.rowCount;
@@ -118,6 +123,8 @@ async function refreshOne(username) {
   if (gap) {
     if (r.remark_next) next = r.remark_next;
     else if (r.touched) next = addDays(r.touched, gap);
+    // Naya no-deposit ID — aaj hi due
+    else if (r.tier === 'N') next = D.todayISO();
     else next = addDays(r.anchor, gap);
   }
 

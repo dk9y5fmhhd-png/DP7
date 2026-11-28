@@ -51,6 +51,8 @@ async function main() {
     ['schema-v4.3.sql', 'schema v4.3 (retention cadence)'],
     ['schema-v4.4.sql', 'schema v4.4 (excel assignment)'],
     ['schema-v4.5.sql', 'schema v4.5 (registered IDs follow-up)'],
+    ['schema-v4.8.sql', 'schema v4.8 (separate no-deposit / deposited targets)'],
+    ['schema-v4.9.sql', 'schema v4.9 (no-deposit pipeline + remark log)'],
     ['schema-v5.0.sql', 'schema v5.0 (TeleCMI + WhatsApp)'],
   ]) {
     const p2 = path.join(__dirname, '..', 'db', file);

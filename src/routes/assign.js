@@ -51,24 +51,30 @@ router.get('/', async (req, res, next) => {
     const from = D.addDays(today, -(days - 1));
     const fresh = await db.rows(
       `SELECT b.id, b.username, b.mobile, b.first_deposit::text AS first_deposit,
+              COALESCE(b.first_deposit, b.reg_date, b.created_at::date)::text AS joined_on,
               b.deposit_count, b.deposit_amount, b.status, b.vip_category,
               b.priority, b.cadence_tier
          FROM customer_board b
         WHERE b.assigned_to IS NULL
           AND b.do_not_contact = FALSE
-          AND b.first_deposit >= $1::date
-        ORDER BY b.first_deposit DESC, b.deposit_amount DESC, b.username
+          -- no-deposit customer ka first_deposit NULL hota hai — uski jagah
+          -- registration date se naapte hain, warna queue me kabhi aate hi nahi
+          AND COALESCE(b.first_deposit, b.reg_date, b.created_at::date) >= $1::date
+        ORDER BY COALESCE(b.first_deposit, b.reg_date, b.created_at::date) DESC,
+                 b.priority, b.deposit_amount DESC, b.username
         LIMIT 500`,
       [from]
     );
 
     // Din-wise count — kaunsa din kitne naye aaye
     const byDay = await db.rows(
-      `SELECT first_deposit::text AS day, COUNT(*)::int AS c
+      `SELECT COALESCE(first_deposit, reg_date, created_at::date)::text AS day,
+              COUNT(*)::int AS c
          FROM customer_board
         WHERE assigned_to IS NULL AND do_not_contact = FALSE
-          AND first_deposit >= $1::date
-        GROUP BY first_deposit ORDER BY first_deposit DESC`,
+          AND COALESCE(first_deposit, reg_date, created_at::date) >= $1::date
+        GROUP BY COALESCE(first_deposit, reg_date, created_at::date)
+        ORDER BY COALESCE(first_deposit, reg_date, created_at::date) DESC`,
       [from]
     );
 
@@ -76,9 +82,11 @@ router.get('/', async (req, res, next) => {
     const totals = await db.row(
       `SELECT COUNT(*) FILTER (WHERE assigned_to IS NULL AND do_not_contact = FALSE)::int AS unassigned,
               COUNT(*) FILTER (WHERE assigned_to IS NULL AND do_not_contact = FALSE
-                                 AND first_deposit >= $1::date)::int AS fresh,
+                                 AND COALESCE(first_deposit, reg_date, created_at::date) >= $1::date)::int AS fresh,
               COUNT(*) FILTER (WHERE assigned_to IS NULL AND do_not_contact = FALSE
-                                 AND first_deposit < $1::date)::int AS older,
+                                 AND COALESCE(first_deposit, reg_date, created_at::date) < $1::date)::int AS older,
+              COUNT(*) FILTER (WHERE assigned_to IS NULL AND do_not_contact = FALSE
+                                 AND status = 'no_deposit')::int AS no_dep,
               COUNT(*) FILTER (WHERE do_not_contact = TRUE)::int AS dnc
          FROM customer_board`,
       [from]

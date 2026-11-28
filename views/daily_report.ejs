@@ -1,0 +1,219 @@
+<%- include('partials/head') %>
+
+<div class="page-head">
+  <div class="titles">
+    <h1><%= _t('Caller Daily') %></h1>
+    <div class="sub">
+      <%= _t('Every caller\'s day in one place — target, calls made, how many deposited, how many marked fake, and what comes back tomorrow.') %>
+    </div>
+  </div>
+  <div class="chips">
+    <form method="get" action="/daily" style="margin:0;display:flex;gap:6px;align-items:center">
+      <input type="date" name="d" value="<%= date %>" style="min-height:28px;font-size:12px">
+      <button class="chip" type="submit"><%- icon('search', 13) %> <%= _t('View') %></button>
+    </form>
+    <a class="chip" href="/calling/due"><%- icon('phone', 13) %> <%= _t('Follow-ups Due') %></a>
+    <a class="chip" href="/users"><%- icon('users', 13) %> <%= _t('Callers') %></a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat">
+    <div class="label"><%= _t('Calls done') %></div>
+    <div class="value"><%= totals.calls.toLocaleString('en-IN') %></div>
+    <div class="hint"><%= _t('of {target} target · {pct}%', { target: totals.target.toLocaleString('en-IN'), pct: totals.target ? Math.round((totals.calls / totals.target) * 100) : 0 }) %></div>
+  </div>
+  <div class="stat ok">
+    <div class="label"><%= _t('Deposited') %></div>
+    <div class="value"><%= totals.deposited %></div>
+    <div class="hint"><%= _t('moved to Deposited · same caller') %></div>
+  </div>
+  <div class="stat <%= totals.fake ? 'bad' : 'ok' %>">
+    <div class="label"><%= _t('Marked fake') %></div>
+    <div class="value"><%= totals.fake %></div>
+    <div class="hint"><%= _t('deleted permanently') %></div>
+  </div>
+  <div class="stat warn">
+    <div class="label"><%= _t('Coming back') %></div>
+    <div class="value"><%= totals.interested + totals.will_dep + totals.not_int %></div>
+    <div class="hint">
+      <%= _t('{a} in 3d · {b} in 5d · {c} in 15d', { a: totals.will_dep, b: totals.interested, c: totals.not_int }) %>
+    </div>
+  </div>
+  <div class="stat <%= totals.overload > 0 ? 'bad' : 'ok' %>">
+    <div class="label"><%= _t('Tomorrow due') %></div>
+    <div class="value"><%= totals.tomorrow_due.toLocaleString('en-IN') %></div>
+    <div class="hint">
+      <%= _t('capacity {n}', { n: totals.capacity }) %> ·
+      <% if (totals.overload > 0) { %><strong><%= _t('{n} over', { n: totals.overload }) %></strong><% } else { %><%= _t('{n} spare', { n: -totals.overload }) %><% } %>
+    </div>
+  </div>
+  <div class="stat">
+    <div class="label"><%= _t('Queue now') %></div>
+    <div class="value"><%= queue.total.toLocaleString('en-IN') %></div>
+    <div class="hint"><%= _t('{a} no-deposit · {b} deposited', { a: queue.nodep, b: queue.dep }) %></div>
+  </div>
+</div>
+
+<% if (totals.overload > 0) { %>
+  <div class="flash flash-error" style="margin-bottom:18px">
+    <span>
+      <%- _th('<strong>Tomorrow the queue is {n} more than capacity.</strong>', { n: totals.overload }) %><br>
+      <span class="muted tiny">
+        <%= _t('{due} customers are due tomorrow but the team can only make {capacity} calls. Either upload fewer new IDs tomorrow, raise the targets, or mark more customers as Fake / Not Interested to clear dead numbers.', { due: totals.tomorrow_due, capacity: totals.capacity }) %>
+      </span>
+    </span>
+  </div>
+<% } %>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('users', 15) %> <%= _t('Caller-wise') %> — <%= helpers.prettyDate(date) %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('one row per caller') %></span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th><%= _t('Caller') %></th>
+          <th><%= _t('Progress') %></th>
+          <th class="right"><%= _t('Done') %></th>
+          <th class="right"><%= _t('Deposited') %></th>
+          <th class="right"><%= _t('Fake') %></th>
+          <th class="right"><%= _t('3d') %></th>
+          <th class="right"><%= _t('5d') %></th>
+          <th class="right"><%= _t('15d') %></th>
+          <th class="right"><%= _t('No answer') %></th>
+          <th class="right"><%= _t('Tomorrow') %></th>
+          <th class="right"><%= _t('Book') %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!perCaller.length) { %>
+          <tr><td colspan="11"><div class="empty">
+            <span class="big">—</span><%= _t('No caller accounts yet.') %>
+          </div></td></tr>
+        <% } %>
+        <% perCaller.forEach(function (c) {
+             const pct = c.target ? Math.min(100, Math.round((c.calls / c.target) * 100)) : 0;
+             const full = c.target > 0 && c.calls >= c.target;
+             const over = c.tomorrow_due > c.target; %>
+          <tr>
+            <td class="who">
+              <strong><%= c.name %></strong>
+              <div class="muted tiny"><%= c.login_id %> · <%= c.team === 'acquisition' ? 'acq' : 'ret' %></div>
+            </td>
+            <td style="min-width:170px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="num" style="font-size:12px;min-width:62px">
+                  <strong><%= c.calls %></strong><span class="muted">/<%= c.target %></span>
+                </span>
+                <div class="progress-track" style="flex:1;height:6px">
+                  <div class="progress-fill <%= full ? 'done' : '' %>" style="width:<%= pct %>%"></div>
+                </div>
+                <span class="tiny muted" style="min-width:30px;text-align:right"><%= pct %>%</span>
+              </div>
+              <div class="muted tiny" style="margin-top:3px">
+                <%= _t('target: {a} no-deposit + {b} deposited', { a: c.nodep_target, b: c.dep_target }) %>
+              </div>
+            </td>
+            <td class="right num"><strong><%= c.calls %></strong></td>
+            <td class="right num">
+              <% if (c.deposited) { %><span class="badge badge-success"><%= c.deposited %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num">
+              <% if (c.fake) { %><span class="badge badge-danger"><%= c.fake %></span><% } else { %><span class="muted">0</span><% } %>
+            </td>
+            <td class="right num muted"><%= c.will_dep %></td>
+            <td class="right num muted"><%= c.interested %></td>
+            <td class="right num muted"><%= c.not_int %></td>
+            <td class="right num muted"><%= c.no_answer %></td>
+            <td class="right num">
+              <% if (over) { %>
+                <span class="badge badge-danger" title="<%= _t('more than capacity') %>"><%= c.tomorrow_due %></span>
+              <% } else { %><%= c.tomorrow_due %><% } %>
+            </td>
+            <td class="right num tiny muted">
+              <%= c.nodep_total.toLocaleString('en-IN') %> / <%= c.dep_total.toLocaleString('en-IN') %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(245,197,66,0.05)">
+          <td><strong><%= _t('Total') %></strong></td>
+          <td class="num tiny"><strong><%= totals.calls %></strong> / <%= totals.target %></td>
+          <td class="right num"><strong><%= totals.calls %></strong></td>
+          <td class="right num"><strong><%= totals.deposited %></strong></td>
+          <td class="right num"><strong><%= totals.fake %></strong></td>
+          <td class="right num"><strong><%= totals.will_dep %></strong></td>
+          <td class="right num"><strong><%= totals.interested %></strong></td>
+          <td class="right num"><strong><%= totals.not_int %></strong></td>
+          <td class="right num"><strong><%= totals.no_answer %></strong></td>
+          <td class="right num"><strong><%= totals.tomorrow_due %></strong></td>
+          <td class="right num tiny"><%= totals.nodep_total %> / <%= totals.dep_total %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('day', 15) %> <%= _t('Last 7 days') %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('remarks logged per day') %></span>
+  </div>
+  <div class="card-body">
+    <%
+      const maxBar = Math.max(1, ...trend.map(function (t) { return t.remarks; }));
+    %>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:120px;margin:6px 0 8px">
+      <% trend.forEach(function (t) { %>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">
+          <div class="num tiny" style="margin-bottom:5px;<%= t.remarks ? '' : 'opacity:0.4' %>"><%= t.remarks %></div>
+          <div style="width:100%;max-width:54px;border-radius:6px 6px 0 0;
+                      height:<%= Math.round((t.remarks / maxBar) * 100) %>%;min-height:3px;
+                      background:linear-gradient(180deg,#f5c542,#b8860b)"></div>
+        </div>
+      <% }); %>
+    </div>
+    <div style="display:flex;gap:8px">
+      <% trend.forEach(function (t) { %>
+        <div class="muted tiny" style="flex:1;text-align:center">
+          <%= t.day.slice(8, 10) %>/<%= t.day.slice(5, 7) %>
+          <div style="font-size:10px;opacity:0.8">
+            <%= t.deposited ? '✓' + t.deposited : '' %><%= t.fake ? ' ✗' + t.fake : '' %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+    <p class="muted tiny" style="margin:12px 0 0">
+      <%= _t('✓ = deposited · ✗ = marked fake. Bar height = total remarks logged.') %>
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('How the remarks drive the queue') %></h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt><%= _t('Deposited') %></dt>
+      <dd><%- _th('Leaves the No deposit tab at once and appears under <strong>Deposited</strong>. The same caller stays assigned. The real deposit amount still comes from the Excel upload.') %></dd>
+      <dt><%= _t('Will Deposit') %></dt>
+      <dd><%- _th('Returns to My Calls after <strong>3 days</strong>.') %></dd>
+      <dt><%= _t('Interested') %></dt>
+      <dd><%- _th('Returns after <strong>5 days</strong>.') %></dd>
+      <dt><%= _t('Not Interested') %></dt>
+      <dd><%- _th('Returns after <strong>15 days</strong> — kept in the backlog, not deleted.') %></dd>
+      <dt><%= _t('Fake') %></dt>
+      <dd><%- _th('Customer is <strong>deleted permanently</strong> with their remarks and calls. The count still shows here because every remark is logged separately.') %></dd>
+      <dt><%= _t('No Answer / Not Reachable') %></dt>
+      <dd><%- _th('Returns the <strong>next day</strong> — this is what builds the retry queue.') %></dd>
+      <dt><%= _t('Tomorrow due') %></dt>
+      <dd><%- _th('Customers whose scheduled date is tomorrow. If this is bigger than the target, the queue is growing faster than the team can clear it.') %></dd>
+    </dl>
+  </div>
+</div>
+
+<%- include('partials/foot') %>
+

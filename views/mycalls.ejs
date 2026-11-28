@@ -18,12 +18,14 @@
   <a class="tab-btn <%= tab === 'nodep' ? 'on' : '' %>" href="/calling/my?tab=nodep<%= showAll ? '&all=1' : '' %>">
     <span class="tab-name"><%= _t('No deposit') %></span>
     <span class="tab-meta">
+      <%- _th('<strong>{done}</strong>/{target} today', { done: (doneFor.nodep), target: (targets.nodep) }) %> ·
       <%- _th('<strong>{nodep_due}</strong> due · {nodep} total', { nodep_due: (tabCounts.nodep_due), nodep: (tabCounts.nodep) }) %> </span>
     <span class="tab-note"><%= _t('ID created, first deposit pending') %></span>
   </a>
   <a class="tab-btn <%= tab === 'dep' ? 'on' : '' %>" href="/calling/my?tab=dep<%= showAll ? '&all=1' : '' %>">
     <span class="tab-name"><%= _t('Deposited') %></span>
     <span class="tab-meta">
+      <%- _th('<strong>{done}</strong>/{target} today', { done: (doneFor.dep), target: (targets.dep) }) %> ·
       <%- _th('<strong>{dep_due}</strong> due · {dep} total', { dep_due: (tabCounts.dep_due), dep: (tabCounts.dep) }) %> </span>
     <span class="tab-note"><%= _t('Follow-up on existing customers') %></span>
   </a>
@@ -33,7 +35,9 @@
   <div class="card-body">
     <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
       <div style="flex:1 1 240px">
-        <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700"> <%= _t('Today\'s target') %> </div>
+        <div class="label" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-muted);font-weight:700">
+          <%= _t('Today\'s target') %> — <%= tab === 'nodep' ? _t('No deposit') : _t('Deposited') %>
+        </div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
           <span style="font-size:34px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;<%= target.complete ? 'color:var(--success)' : '' %>"><%= target.done %></span>
           <span style="font-size:18px;color:var(--fg-muted);font-weight:600">/ <%= target.target %></span>
@@ -155,6 +159,7 @@
             <td class="who">
               <a href="/customers/<%= encodeURIComponent(r.username) %>"><strong><%= r.username %></strong></a>
               <% if (r.status === 'no_deposit') { %><span class="badge badge-warn"><%= _t('ID created · no deposit') %></span><% } %>
+              <% if (r.deposit_claimed_at) { %><span class="badge badge-success"><%= _t('marked Deposited') %></span><% } %>
               <% if (r.calls_today > 0) { %><span class="badge badge-info"><%= _t('{calls_today} call', { calls_today: (r.calls_today) }) %></span><% } %>
             </td>
             <td class="num nowrap"><%= r.mobile_shown %></td>
@@ -248,7 +253,9 @@
         <select name="action_type" id="rm_action" required onchange="guessDate()">
           <option value=""><%= _t('— choose —') %></option>
           <% remarks.forEach(function (r) { %>
-            <option value="<%= r.key %>" data-days="<%= r.days %>"><%= _t(r.key) %></option>
+            <option value="<%= r.key %>" data-days="<%= r.days %>">
+              <%= _t(r.key) %><%= r.days ? ' — ' + (r.days === 1 ? _t('tomorrow') : _t('{d} days', { d: r.days })) : (r.key === 'Deposited' ? ' — ' + _t('moves to Deposited') : (r.key === 'Fake' ? ' — ' + _t('delete') : '')) %>
+            </option>
           <% }); %>
         </select>
         <span class="muted tiny" id="rm_hint"><%= _t('Picking a remark schedules the next follow-up automatically.') %></span>
@@ -271,7 +278,7 @@
       </div>
       <div class="form-group">
         <label><%= _t('Note') %></label>
-        <textarea name="response" rows="3" style="min-height:76px" placeholder="<%= _t('e.g. will deposit in 2 days') %>"></textarea>
+        <textarea name="response" rows="3" style="min-height:76px" placeholder="<%= _t('e.g. will deposit ₹500 in 2 days') %>"></textarea>
       </div>
     </div>
     <div class="dialog-foot">
@@ -320,12 +327,22 @@
     document.getElementById('rm_gap').value = '';
     document.querySelectorAll('#remarkDialog .chip').forEach(function (c) { c.classList.remove('on'); });
 
-    if (key === 'Do Not Contact') {
+    var hint = document.getElementById('rm_hint');
+
+    if (key === 'Deposited') {
       setDateIso('');
-      document.getElementById('rm_hint').textContent = <%- _js('This customer is removed from the list — no follow-up.') %>;
+      hint.textContent = <%- _js('Moves to the Deposited tab straight away — same caller stays. No follow-up needed.') %>;
+    } else if (key === 'Fake') {
+      setDateIso('');
+      hint.textContent = <%- _js('This customer is deleted permanently, along with their remarks and calls.') %>;
+    } else if (key === 'Do Not Contact') {
+      setDateIso('');
+      hint.textContent = <%- _js('This customer is removed from every calling list — no follow-up.') %>;
     } else if (Number.isFinite(days)) {
       setDateIso(addDays(todayISO(), days));
-      document.getElementById('rm_hint').textContent = <%- _js('Next follow-up: {days} days later. You can change it below.') %>.replace('{days}', days);
+      hint.textContent = days <= 1
+        ? <%- _js('Comes back tomorrow in My Calls.') %>
+        : <%- _js('Comes back in {days} days. You can change the date below.') %>.replace('{days}', days);
     }
   }
 </script>

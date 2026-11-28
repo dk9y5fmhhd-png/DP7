@@ -27,7 +27,7 @@ router.use(auth.requireSuperAdmin);
 
 async function listUsers() {
   return db.rows(
-    `SELECT id, name, login_id, role, page_access, daily_target, team, totp_enabled, failed_attempts,
+    `SELECT id, name, login_id, role, page_access, daily_target, nodep_target, dep_target, team, totp_enabled, failed_attempts,
             locked_until, last_login_at, created_at,
             telecmi_agent_id, telecmi_password_enc IS NOT NULL AS has_telecmi_password
        FROM users ORDER BY role DESC, name`
@@ -131,9 +131,13 @@ router.post('/create', async (req, res, next) => {
 
     const hash = await bcrypt.hash(password, 10);
     const created = await db.row(
-      `INSERT INTO users (name, login_id, password_hash, role, page_access, daily_target, team)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [name, loginId, hash, role, access, targetOf(req.body.daily_target, 40), teamOf(req.body.team)]
+      `INSERT INTO users (name, login_id, password_hash, role, page_access,
+                          nodep_target, dep_target, daily_target, team)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+      [name, loginId, hash, role, access,
+        targetOf(req.body.nodep_target, 40), targetOf(req.body.dep_target, 35),
+        targetOf(req.body.nodep_target, 40) + targetOf(req.body.dep_target, 35),
+        teamOf(req.body.team)]
     );
     if (agent?.agentId) await telecmi.saveAgent(created.id, agent.agentId, agent.password);
     await auth.audit(req, 'create_user', `${loginId} (${role})`);
@@ -174,8 +178,15 @@ router.post('/:id/update', async (req, res, next) => {
     }
     if (agent) await telecmi.saveAgent(id, agent.agentId, agent.password);
     await db.query(
-      'UPDATE users SET name = $2, role = $3, page_access = $4, daily_target = $5, team = $6 WHERE id = $1',
-      [id, name, role, access, targetOf(req.body.daily_target, target.daily_target), teamOf(req.body.team, target.team)]
+      `UPDATE users SET name = $2, role = $3, page_access = $4,
+                        nodep_target = $5, dep_target = $6, daily_target = $7, team = $8
+        WHERE id = $1`,
+      [id, name, role, access,
+        targetOf(req.body.nodep_target, target.nodep_target ?? 40),
+        targetOf(req.body.dep_target, target.dep_target ?? 35),
+        targetOf(req.body.nodep_target, target.nodep_target ?? 40)
+          + targetOf(req.body.dep_target, target.dep_target ?? 35),
+        teamOf(req.body.team, target.team)]
     );
 
     if (password) {

@@ -56,7 +56,7 @@
         <tr>
           <th><%= _t('Caller') %></th>
           <th><%= _t('Team') %></th>
-          <th class="right"><%= _t('Target') %></th>
+          <th class="right"><%= _t('Target') %><br><span class="muted tiny" style="font-weight:400"><%= _t('ND / Dep') %></span></th>
           <th><%= _t('Load') %></th>
           <th class="right">P1</th>
           <th class="right">P2</th>
@@ -94,7 +94,11 @@
                 </select>
               </form>
             </td>
-            <td class="right num"><%= c.daily_target %></td>
+            <td class="right num nowrap">
+              <span title="<%= _t('No deposit') %>"><%= c.nodep_target != null ? c.nodep_target : 40 %></span>
+              <span class="muted">/</span>
+              <span title="<%= _t('Deposited') %>"><%= c.dep_target != null ? c.dep_target : 35 %></span>
+            </td>
             <td style="min-width:170px">
               <div style="display:flex;align-items:center;gap:8px">
                 <span class="num" style="font-size:12.5px;min-width:62px">

@@ -22,7 +22,7 @@
   <div class="stat ok">
     <div class="label"><%= _t('Today\'s work') %></div>
     <div class="value"><%= totals.done %> <span style="font-size:15px;color:var(--fg-muted)">/ <%= totals.target %></span></div>
-    <div class="hint"><%= _t('{left} customers left across all callers', { left: (totals.left) }) %></div>
+    <div class="hint"><%= _t('{a} no-deposit + {b} deposited', { a: totals.done_nodep, b: totals.done_dep }) %></div>
   </div>
 </div>
 
@@ -40,20 +40,26 @@
         <% perCaller.forEach(function (c) { %>
           <tr>
             <td><strong><%= c.caller_name %></strong></td>
-            <td style="min-width:150px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span class="num" style="font-size:12.5px;min-width:52px">
-                  <strong><%= c.done_today %></strong> <span class="muted">/<%= c.daily_target %></span>
-                </span>
-                <div class="progress-track" style="flex:1;height:7px">
-                  <div class="progress-fill <%= c.done_today >= c.daily_target ? 'done' : '' %>"
-                       style="width:<%= c.daily_target ? Math.min(100, Math.round((c.done_today / c.daily_target) * 100)) : 0 %>%"></div>
+            <td style="min-width:200px">
+              <%# Do alag target — No deposit aur Deposited %>
+              <% [['No deposit', c.done_nodep, c.nodep_target],
+                  ['Deposited',  c.done_dep,   c.dep_target]].forEach(function (t) {
+                   const label = t[0], done = Number(t[1] || 0), tgt2 = Number(t[2] || 0);
+                   const p2 = tgt2 ? Math.min(100, Math.round((done / tgt2) * 100)) : 0;
+                   const full = tgt2 > 0 && done >= tgt2; %>
+                <div style="display:flex;align-items:center;gap:7px;margin:3px 0">
+                  <span class="tiny muted" style="width:74px"><%= _t(label) %></span>
+                  <span class="num" style="font-size:11.5px;min-width:40px"><strong><%= done %></strong><span class="muted">/<%= tgt2 %></span></span>
+                  <div class="progress-track" style="flex:1;height:5px">
+                    <div class="progress-fill <%= full ? 'done' : '' %>" style="width:<%= p2 %>%"></div>
+                  </div>
+                  <span class="tiny" style="min-width:34px;text-align:right">
+                    <% if (full) { %><span class="badge badge-success" style="font-size:9px"><%= _t('done') %></span>
+                    <% } else if (!tgt2) { %><span class="muted">—</span>
+                    <% } else { %><span class="muted"><%= tgt2 - done %></span><% } %>
+                  </span>
                 </div>
-                <span class="tiny <%= c.done_today >= c.daily_target ? '' : 'muted' %>" style="min-width:44px;text-align:right">
-                  <% if (c.done_today >= c.daily_target) { %><span class="badge badge-success"><%= _t('complete') %></span>
-                  <% } else { %><%= _t('{left_today} left', { left_today: (c.left_today) }) %><% } %>
-                </span>
-              </div>
+              <% }); %>
             </td>
             <td class="right num">
               <% if (c.overdue) { %><span class="badge badge-danger"><%= c.overdue %></span><% } else { %><span class="muted">0</span><% } %>
@@ -68,7 +74,10 @@
       <tfoot>
         <tr style="background:rgba(245,197,66,0.05)">
           <td><strong><%= _t('Total') %></strong></td>
-          <td class="num"><strong><%= totals.done %> / <%= totals.target %></strong></td>
+          <td class="num">
+            <div class="tiny"><strong><%= totals.done_nodep %></strong> / <%= totals.target_nodep %> <span class="muted"><%= _t('No deposit') %></span></div>
+            <div class="tiny"><strong><%= totals.done_dep %></strong> / <%= totals.target_dep %> <span class="muted"><%= _t('Deposited') %></span></div>
+          </td>
           <td class="right num"><strong><%= totals.overdue %></strong></td>
           <td class="right num"><strong><%= totals.due %></strong></td>
           <td class="right num"><strong><%= totals.pending %></strong></td>
@@ -93,7 +102,9 @@
       <tbody>
         <% if (!overdueRows.length) { %>
           <tr><td colspan="8"><div class="empty">
-            <span class="big"><%- icon('check', 26) %></span> <%= _t('No follow-up is overdue. Everything is on time. 🎉') %> </div></td></tr>
+            <span class="big"><%- icon('check', 26) %></span>
+            <%= _t('No follow-up is overdue. Everything is on time. 🎉') %>
+          </div></td></tr>
         <% } %>
         <% overdueRows.forEach(function (r) { %>
           <tr>
@@ -103,7 +114,7 @@
             <td><span class="badge <%= r.priority === 'P1' ? 'badge-danger' : 'badge-neutral' %>"><%= r.priority %></span></td>
             <td class="muted tiny"><%= _t(r.action_type) %></td>
             <td class="nowrap muted tiny"><%= helpers.prettyDate(r.follow_up_on) %></td>
-            <td class="right num"><span class="badge badge-danger"><%= _t('{days_late} days', { days_late: (r.days_late) }) %></span></td>
+            <td class="right num"><span class="badge badge-danger"><%= _t('{days_late} days', { days_late: r.days_late }) %></span></td>
             <td class="right num"><%= r.deposit_count %></td>
           </tr>
         <% }); %>

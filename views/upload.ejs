@@ -73,10 +73,10 @@
     <div class="card-body">
       <dl class="kv">
         <dt><%= _t('Type') %></dt><dd><%= result.kind === 'customers' ? _t('New customers / IDs created (username + mobile + caller)') : _t('Deposit transactions') %></dd>
-        <% if (result.kind === 'customers' && result.autoAssigned) { %>
-          <dt><%= _t('Assigned to caller') %></dt><dd><%- _th('<strong>{autoAssigned}</strong> customers went straight to the caller', { autoAssigned: (result.autoAssigned) }) %></dd>
+        <% if (result.autoAssigned) { %>
+          <dt><%= _t('Assigned to caller') %></dt><dd><%- _th('<strong>{autoAssigned}</strong> customers are assigned to their caller', { autoAssigned: (result.autoAssigned) }) %></dd>
         <% } %>
-        <% if (result.kind === 'customers' && result.badCaller) { %>
+        <% if (result.badCaller) { %>
           <dt><%= _t('Caller not found') %></dt><dd><%- _th('<strong>{badCaller}</strong> rows — the caller login_id was wrong', { badCaller: (result.badCaller) }) %></dd>
         <% } %>
         <dt><%= _t('Valid rows') %></dt><dd><%= result.count %></dd>
@@ -119,7 +119,7 @@
             <% if (result.kind === 'customers') { %>
               <th><%= _t('Username') %></th><th><%= _t('Mobile') %></th><th><%= _t('Reg date') %></th><th></th>
             <% } else { %>
-              <th><%= _t('Username') %></th><th><%= _t('Date') %></th><th class="right"><%= _t('Amount') %></th><th><%= _t('Txn ID') %></th><th><%= _t('Status') %></th><th class="right"><%= _t('Count') %></th>
+              <th><%= _t('Username') %></th><th><%= _t('Date') %></th><th class="right"><%= _t('Amount') %></th><th><%= _t('Txn ID') %></th><th><%= _t('Status') %></th><th class="right"><%= _t('Count') %></th><th><%= _t('Caller') %></th>
             <% } %>
           </tr>
         </thead>
@@ -139,6 +139,7 @@
                 <td class="muted tiny"><%= p.txn || '—' %></td>
                 <td><span class="badge <%= p.status === 'successful' ? 'badge-success' : (p.status === 'failed' ? 'badge-danger' : 'badge-warn') %>"><%= _t(p.status) %></span></td>
                 <td class="right num"><%= p.count || 1 %></td>
+                <td class="tiny"><%= p.caller || '—' %></td>
               <% } %>
             </tr>
           <% }); %>

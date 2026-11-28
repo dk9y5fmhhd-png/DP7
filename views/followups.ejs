@@ -2,65 +2,174 @@
 
 <div class="page-head">
   <div class="titles">
-    <h1><%= _t('Follow-ups') %></h1>
-    <div class="sub"><%= _t('Full call log — who, when, what happened.') %></div>
+    <h1><%= _t('Remarks') %></h1>
+    <div class="sub">
+      <%= _t('Caller-wise: who made how many of each remark. Pick a date range to see one day, one week or a month.') %>
+    </div>
   </div>
   <div class="chips">
-    <button class="chip" type="button" onclick="openFollowup('')"><%- icon('plus', 13) %><%= _t('New follow-up') %></button>
+    <a class="chip <%= from === today && to === today ? 'on' : '' %>"
+       href="/followups?from=<%= today %>&to=<%= today %>"><%= _t('Today') %></a>
+    <a class="chip" href="/followups?from=<%= helpers.addDays(today, -6) %>&to=<%= today %>"><%= _t('Last 7 days') %></a>
+    <a class="chip" href="/followups?from=<%= helpers.addDays(today, -29) %>&to=<%= today %>"><%= _t('Last 30 days') %></a>
+    <a class="chip" href="/daily"><%- icon('day', 13) %> <%= _t('Caller Daily') %></a>
   </div>
 </div>
 
-<div class="stat-grid">
-  <% byType.slice(0, 5).forEach(function (t) { %>
-    <div class="stat">
-      <div class="label"><%= _t(t.action_type) %></div>
-      <div class="value"><%= t.c.toLocaleString('en-IN') %></div>
-      <div class="hint"><%= _t('total logged') %></div>
-    </div>
-  <% }); %>
-  <% if (!byType.length) { %>
-    <div class="stat"><div class="label"><%= _t('Follow-ups') %></div><div class="value">0</div><div class="hint"><%= _t('nobody yet') %></div></div>
-  <% } %>
-</div>
+<!-- ==================== FILTER ==================== -->
+<form method="get" action="/followups" class="filter-bar">
+  <div>
+    <label><%= _t('From') %></label>
+    <input type="date" name="from" value="<%= from %>" style="min-height:32px">
+  </div>
+  <div>
+    <label><%= _t('To') %></label>
+    <input type="date" name="to" value="<%= to %>" style="min-height:32px">
+  </div>
+  <div>
+    <label><%= _t('Caller') %></label>
+    <select name="caller" data-autosubmit>
+      <option value=""><%= _t('All callers') %></option>
+      <% callers.forEach(function (c) { %>
+        <option value="<%= c.id %>" <%= caller === String(c.id) ? 'selected' : '' %>>
+          <%= c.name %> (<%= c.login_id %>)
+        </option>
+      <% }); %>
+    </select>
+  </div>
+  <div>
+    <label><%= _t('Remark') %></label>
+    <select name="action" data-autosubmit>
+      <option value=""><%= _t('All remarks') %></option>
+      <% actionTypes.forEach(function (a) { %>
+        <option value="<%= a %>" <%= action === a ? 'selected' : '' %>><%= _t(a) %></option>
+      <% }); %>
+    </select>
+  </div>
+  <div>
+    <label><%= _t('Search') %></label>
+    <input type="search" name="q" value="<%= q %>" placeholder="<%= _t('username or note…') %>">
+  </div>
+  <div><button class="btn btn-primary" type="submit"><%- icon('search', 15) %> <%= _t('Apply') %></button></div>
+  <div style="margin-left:auto" class="muted tiny align-self-center">
+    <%- _th('<strong>{n}</strong> remarks in range', { n: total.toLocaleString('en-IN') }) %>
+  </div>
+</form>
 
+<!-- ==================== CALLER-WISE SUMMARY ==================== -->
 <div class="card">
-  <form method="get" action="/followups" class="filter-bar">
-    <div style="flex:1 1 240px">
-      <label><%= _t('Search') %></label>
-      <input type="search" name="q" value="<%= q %>" placeholder="<%= _t('username or notes…') %>" style="width:100%">
-    </div>
-    <div>
-      <label><%= _t('Action') %></label>
-      <select name="action" data-autosubmit>
-        <option value=""><%= _t('All actions') %></option>
-        <% actionTypes.forEach(function (a) { %>
-          <option value="<%= a %>" <%= action === a ? 'selected' : '' %>><%= _t(a) %></option>
-        <% }); %>
-      </select>
-    </div>
-    <div><button type="submit" class="btn btn-primary"><%- icon('search', 15) %> <%= _t('Search') %></button></div>
-    <div><a href="/followups" class="btn btn-outline"><%- icon('refresh', 15) %> <%= _t('Reset') %></a></div>
-  </form>
-
+  <div class="card-header">
+    <h3><%- icon('users', 15) %> <%= _t('Caller-wise') %> — <%= helpers.prettyDate(from) %><% if (from !== to) { %> – <%= helpers.prettyDate(to) %><% } %></h3>
+    <span class="muted tiny" style="margin-left:auto"><%= _t('counts per remark') %></span>
+  </div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th><%= _t('Date') %></th><th><%= _t('Username') %></th><th><%= _t('Action') %></th><th><%= _t('Response / Notes') %></th><th><%= _t('Logged by') %></th><th class="right">—</th></tr></thead>
+      <thead>
+        <tr>
+          <th style="min-width:130px"><%= _t('Caller') %></th>
+          <th class="right"><%= _t('Total') %></th>
+          <% COLS.forEach(function (c) { %>
+            <th class="right" style="font-size:10.5px"><%= c === 'Number Not Reachable' ? _t('Not reach.') : _t(c) %></th>
+          <% }); %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!sum.length) { %>
+          <tr><td colspan="<%= COLS.length + 2 %>"><div class="empty"><%= _t('No callers yet.') %></div></td></tr>
+        <% } %>
+        <% sum.forEach(function (r) { %>
+          <tr>
+            <td class="who">
+              <a href="/followups?from=<%= from %>&to=<%= to %>&caller=<%= r.id %>"><strong><%= r.name %></strong></a>
+              <div class="muted tiny"><%= r.login_id %> · <%= r.team === 'acquisition' ? 'acq' : 'ret' %></div>
+            </td>
+            <td class="right num"><strong><%= r.total %></strong></td>
+            <% COLS.forEach(function (c) { %>
+              <td class="right num">
+                <% if (r[c]) { %>
+                  <span class="badge <%= c === 'Deposited' ? 'badge-success' : (c === 'Fake' ? 'badge-danger' : (c === 'No Answer' || c === 'Number Not Reachable' ? 'badge-warn' : 'badge-neutral')) %>"><%= r[c] %></span>
+                <% } else { %><span class="muted">·</span><% } %>
+              </td>
+            <% }); %>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr style="background:rgba(245,197,66,0.06)">
+          <td><strong><%= _t('Total') %></strong></td>
+          <td class="right num"><strong><%= summaryTotals.total %></strong></td>
+          <% COLS.forEach(function (c) { %>
+            <td class="right num"><strong><%= summaryTotals[c] || 0 %></strong></td>
+          <% }); %>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="card-footer muted tiny">
+    <%= _t('Deposited and Fake come from a permanent log, so they are counted even when the customer record was deleted.') %>
+  </div>
+</div>
+
+<!-- ==================== DETAIL LIST ==================== -->
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('list', 15) %> <%= _t('All remarks') %></h3>
+    <span class="muted tiny" style="margin-left:auto">
+      <%= _t('page {page} of {pages} · {total} total', { page: page, pages: pages, total: total.toLocaleString('en-IN') }) %>
+    </span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th><%= _t('Date') %></th>
+          <th><%= _t('Username') %></th>
+          <th><%= _t('Remark') %></th>
+          <th><%= _t('Note') %></th>
+          <th><%= _t('Next touch') %></th>
+          <th><%= _t('Customer status') %></th>
+          <th><%= _t('By') %></th>
+          <th class="right"></th>
+        </tr>
+      </thead>
       <tbody>
         <% if (!rows.length) { %>
-          <tr><td colspan="6"><div class="empty"><span class="big">—</span><%= _t('No follow-up found.') %></div></td></tr>
+          <tr><td colspan="8"><div class="empty">
+            <span class="big">—</span>
+            <%= _t('No remarks in this range.') %>
+            <div class="muted tiny" style="margin-top:8px">
+              <%= _t('Try a wider date range, or clear the caller / remark filter.') %>
+            </div>
+          </div></td></tr>
         <% } %>
-        <% rows.forEach(function (f) { %>
+        <% rows.forEach(function (r) { %>
           <tr>
-            <td class="nowrap"><strong><%= f.action_date %></strong></td>
-            <td class="who"><strong><%= f.username %></strong></td>
-            <td><span class="badge badge-accent"><%= _t(f.action_type) %></span></td>
-            <td><%= f.response || '—' %></td>
-            <td class="muted tiny"><%= f.by_name || '—' %></td>
+            <td class="nowrap tiny muted"><%= helpers.prettyDate(r.action_date) %></td>
+            <td class="who"><strong><%= r.username %></strong></td>
+            <td>
+              <span class="badge <%= r.action_type === 'Deposited' ? 'badge-success' : (r.action_type === 'Fake' ? 'badge-danger' : (r.action_type === 'No Answer' || r.action_type === 'Number Not Reachable' ? 'badge-warn' : 'badge-neutral')) %>">
+                <%= _t(r.action_type) %>
+              </span>
+            </td>
+            <td class="muted tiny"><%= r.response || '—' %></td>
+            <td class="tiny nowrap"><%= r.follow_up_on ? helpers.prettyDate(r.follow_up_on) : '—' %></td>
+            <td class="tiny">
+              <% if (!r.status) { %><span class="badge badge-danger"><%= _t('deleted') %></span>
+              <% } else { %><%= _t(r.status) %><% } %>
+            </td>
+            <td class="tiny"><%= r.by_name || '—' %></td>
             <td class="right">
-              <% if (user.role === 'super_admin') { %>
-                <form method="post" action="/followups/<%= f.id %>/delete" style="margin:0">
+              <% if (r.id) { %>
+                <form method="post" action="/followups/<%= r.id %>/delete" style="margin:0">
                   <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-                  <button class="btn btn-danger btn-sm" data-confirm="<%= _t('Delete this follow-up?') %>" title="<%= _t('Delete') %>"><%- icon('x', 13) %></button>
+                  <button class="btn btn-sm btn-danger btn-icon" type="submit"
+                          data-confirm="<%= _t('Delete this remark?') %>"><%- icon('trash', 12) %></button>
+                </form>
+              <% } else { %>
+                <form method="post" action="/followups/event/<%= r.event_id %>/delete" style="margin:0">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <button class="btn btn-sm btn-icon" type="submit" title="<%= _t('Logged only — customer deleted') %>"
+                          data-confirm="<%= _t('Remove this logged remark from the report?') %>"><%- icon('trash', 12) %></button>
                 </form>
               <% } %>
             </td>
@@ -69,15 +178,33 @@
       </tbody>
     </table>
   </div>
+  <% if (pages > 1) { %>
+    <div class="card-footer" style="display:flex;gap:8px;justify-content:center">
+      <% const qs = (p) => `/followups?from=${from}&to=${to}&caller=${caller}&action=${encodeURIComponent(action)}&q=${encodeURIComponent(q)}&page=${p}`; %>
+      <% if (page > 1) { %><a class="btn btn-sm" href="<%= qs(page - 1) %>">‹ <%= _t('Prev') %></a><% } %>
+      <span class="muted tiny align-self-center"><%= page %> / <%= pages %></span>
+      <% if (page < pages) { %><a class="btn btn-sm" href="<%= qs(page + 1) %>"><%= _t('Next') %> ›</a><% } %>
+    </div>
+  <% } %>
+</div>
 
-  <div class="card-footer pagination">
-    <span class="page-info"><%= _t('Page {page} of {pages} · {total} entries', { page: (page), pages: (pages), total: (total.toLocaleString('en-IN')) }) %></span>
-    <% if (page > 1) { %>
-      <a class="btn btn-sm" href="/followups?q=<%= encodeURIComponent(q) %>&action=<%= encodeURIComponent(action) %>&page=<%= page - 1 %>"><%- icon('left', 14) %> <%= _t('Prev') %></a>
-    <% } %>
-    <% if (page < pages) { %>
-      <a class="btn btn-sm" href="/followups?q=<%= encodeURIComponent(q) %>&action=<%= encodeURIComponent(action) %>&page=<%= page + 1 %>"><%= _t('Next') %> <%- icon('right', 14) %></a>
-    <% } %>
+<div class="card">
+  <div class="card-header"><h3><%- icon('alert', 15) %> <%= _t('What each remark does') %></h3></div>
+  <div class="card-body">
+    <dl class="kv">
+      <dt><%= _t('Deposited') %></dt>
+      <dd><%- _th('Customer leaves No deposit at once and sits under <strong>Deposited</strong>. Same caller. The real amount still comes from the Excel upload.') %></dd>
+      <dt><%= _t('Will Deposit') %></dt>
+      <dd><%- _th('Back in My Calls after <strong>3 days</strong>.') %></dd>
+      <dt><%= _t('Interested') %></dt>
+      <dd><%- _th('Back after <strong>5 days</strong>.') %></dd>
+      <dt><%= _t('Not Interested') %></dt>
+      <dd><%- _th('Back after <strong>15 days</strong>.') %></dd>
+      <dt><%= _t('Fake') %></dt>
+      <dd><%= _t('Customer deleted permanently. Still counted here because every remark is logged separately.') %></dd>
+      <dt><%= _t('No Answer / Not reachable') %></dt>
+      <dd><%- _th('Back <strong>tomorrow</strong>.') %></dd>
+    </dl>
   </div>
 </div>
 
