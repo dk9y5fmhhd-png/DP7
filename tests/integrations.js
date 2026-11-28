@@ -36,7 +36,7 @@ const mock = http.createServer((req, res) => {
 });
 
 /* ---- stand-in WhatsApp socket ---- */
-const wa = { sockets: [], sent: [], n: 0, beforeReturn: null };
+const wa = { sockets: [], sent: [], n: 0, beforeReturn: null, lock: { isActive: false, enforcementType: 'DEFAULT' } };
 async function fakeBaileys() {
   const real = await import('@whiskeysockets/baileys');
   return {
@@ -49,6 +49,7 @@ async function fakeBaileys() {
         ev: new EventEmitter(), auth, user: { id: '919000000000:1@s.whatsapp.net' },
         end() {}, async logout() {}, signalRepository: { lidMapping: { getPNForLID: async () => null } },
         async onWhatsApp(jid) { return [{ jid, exists: true }]; },
+        async fetchAccountReachoutTimelock() { if (wa.lock instanceof Error) throw wa.lock; return wa.lock; },
         async sendMessage(jid, msg) {
           wa.sent.push({ jid, text: msg.text });
           const key = { id: `MSG-${++wa.n}`, fromMe: true, remoteJid: jid };
@@ -314,6 +315,27 @@ function client() {
   }
   check('Super Admin never sees a whole number', !screens.length, screens.join(', '));
   check('masked like Ringline', require('../src/lib/customers').maskMobile('9876500001') === '98******01');
+
+  const press = () => admin.flash(`/whatsapp/numbers/${sid}/connect`, {}, '/whatsapp/numbers');
+  wa.lock = { isActive: true, timeEnforcementEnds: new Date(Date.now() + 3_600_000), enforcementType: 'WEB_COMPANION_ONLY' };
+  let said = await press();
+  let card = await banner();
+  check('a restriction from WhatsApp shows on the number', /status was updated/.test(said) && card.includes('restricting this number from starting new chats until') && card.includes('WEB_COMPANION_ONLY'));
+  wa.lock = new Error('timed out');
+  said = await press();
+  check('an unanswered check keeps the last answer', /did not answer/.test(said) && (await banner()).includes('restricting this number'));
+  wa.lock = { isActive: false, enforcementType: 'DEFAULT' };
+  await press();
+  card = await banner();
+  check('a lifted restriction clears', card.includes('reports no current restriction') && !card.includes('restricting this number'));
+  sock.ev.emit('connection.update', { reachoutTimeLock: { isActive: true, enforcementType: 'DEFAULT' } });
+  await wait(300);
+  check('an announced restriction is recorded', (await db.value('SELECT restriction_active FROM whatsapp_sessions WHERE id = $1', [sid])) === true);
+  wa.lock = { isActive: false, enforcementType: 'DEFAULT' };
+  await sendDirect('refusal triggers a check');
+  sock.ev.emit('messages.update', [{ key: { id: `MSG-${wa.n}`, fromMe: true }, update: refusal }]);
+  await wait(300);
+  check('a 463 refusal asks WhatsApp again', (await db.value('SELECT restriction_active FROM whatsapp_sessions WHERE id = $1', [sid])) === false);
 
   const printed = [];
   const catcher = {};

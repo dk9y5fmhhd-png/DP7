@@ -55,6 +55,12 @@ CREATE TABLE IF NOT EXISTS whatsapp_sessions (
   updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- What WhatsApp itself says about restrictions on a number (its "reach-out time-lock").
+ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS restriction_active BOOLEAN;
+ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS restriction_type TEXT;
+ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS restriction_until TIMESTAMPTZ;
+ALTER TABLE whatsapp_sessions ADD COLUMN IF NOT EXISTS restriction_checked_at TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS whatsapp_session_users (
   session_id INTEGER NOT NULL REFERENCES whatsapp_sessions(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

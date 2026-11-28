@@ -258,6 +258,8 @@ const NUMBERS = '/whatsapp/numbers';
 router.get('/numbers', admin, handle(async (req, res) => {
   const numbers = await db.rows(
     `SELECT s.*, COALESCE(ARRAY_AGG(su.user_id) FILTER (WHERE su.user_id IS NOT NULL), '{}') AS user_ids,
+            (s.restriction_active AND (s.restriction_until IS NULL OR s.restriction_until > NOW())) AS restricted_now,
+            s.restriction_until::text AS until_text, s.restriction_checked_at::text AS checked_text,
             (SELECT COUNT(*)::int FROM whatsapp_messages m WHERE m.session_id = s.id AND m.direction = 'out'
                AND m.message_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC') AS sent_today
        FROM whatsapp_sessions s LEFT JOIN whatsapp_session_users su ON su.session_id = s.id
@@ -323,8 +325,13 @@ router.get('/numbers/:id/state.json', admin, async (req, res) => {
 router.post('/numbers/:id/connect', admin, handle(async (req, res) => {
   const id = idOf(req.params.id);
   try {
-    await wa.connect(id);
+    const state = await wa.connect(id);
     await auth.audit(req, 'whatsapp_connect', `id=${id}`);
+    if (state.status === 'connected') {
+      return state.restrictionChecked
+        ? done(req, res, 'success', 'Connected. The restriction status was updated.', NUMBERS)
+        : done(req, res, 'error', 'Connected, but WhatsApp did not answer the restriction check.', NUMBERS);
+    }
     res.redirect(`${NUMBERS}/${id}/link`);
   } catch (err) {
     done(req, res, 'error', err.message, NUMBERS);

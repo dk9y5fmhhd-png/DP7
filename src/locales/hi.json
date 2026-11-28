@@ -1425,5 +1425,13 @@
  "Can't start chats": "नई बातचीत बंद",
  "Restricted?": "रोक लगी?",
  "{label} is probably restricted by WhatsApp: it refused messages to {n} contacts in the last 24 hours and confirmed none. Pause sending from it and check its phone for a WhatsApp notice.": "{label} पर शायद WhatsApp की रोक है: पिछले 24 घंटे में {n} संपर्कों के संदेश मना हुए और एक भी पक्का नहीं हुआ। इससे भेजना रोकें और फ़ोन पर WhatsApp की सूचना देखें।",
- "{label} cannot start new chats right now: WhatsApp refused messages to {n} contacts in the last 24 hours, although {confirmed} other messages went through. It can probably still answer people who wrote first. Use another number for new contacts.": "{label} अभी नई बातचीत शुरू नहीं कर सकता: पिछले 24 घंटे में {n} संपर्कों के संदेश मना हुए, जबकि {confirmed} दूसरे संदेश पहुँचे। पहले संदेश भेजने वालों को शायद जवाब दिया जा सकता है। नए संपर्कों के लिए दूसरा नंबर लें।"
+ "{label} cannot start new chats right now: WhatsApp refused messages to {n} contacts in the last 24 hours, although {confirmed} other messages went through. It can probably still answer people who wrote first. Use another number for new contacts.": "{label} अभी नई बातचीत शुरू नहीं कर सकता: पिछले 24 घंटे में {n} संपर्कों के संदेश मना हुए, जबकि {confirmed} दूसरे संदेश पहुँचे। पहले संदेश भेजने वालों को शायद जवाब दिया जा सकता है। नए संपर्कों के लिए दूसरा नंबर लें।",
+ "Connected. The restriction status was updated.": "जुड़ा हुआ है। रोक की स्थिति अपडेट हुई।",
+ "Connected, but WhatsApp did not answer the restriction check.": "जुड़ा हुआ है, पर WhatsApp ने रोक की जाँच का जवाब नहीं दिया।",
+ "WhatsApp is restricting this number from starting new chats until {until}.": "WhatsApp ने इस नंबर पर {until} तक नई बातचीत शुरू करने की रोक लगाई है।",
+ "WhatsApp is restricting this number from starting new chats.": "WhatsApp ने इस नंबर पर नई बातचीत शुरू करने की रोक लगाई है।",
+ "Reason given by WhatsApp: {reason}": "WhatsApp का बताया कारण: {reason}",
+ "WhatsApp reports no current restriction. It can still refuse single messages.": "WhatsApp अभी कोई रोक नहीं बता रहा। फिर भी वह किसी संदेश को मना कर सकता है।",
+ "Restriction status not checked yet.": "रोक की स्थिति अभी जाँची नहीं गई।",
+ "Checked {when}": "{when} को जाँचा"
 }

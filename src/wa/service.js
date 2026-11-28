@@ -12,6 +12,7 @@ const { useDbAuthState, deleteSessionAuth } = require('./auth-state');
 
 const MAX_PENDING_SENDS = 5;
 const REMEMBERED_UPDATES = 200;
+const RESTRICTION_TIMEOUT_MS = 8_000;
 const RECONNECT_BASE_MS = 2_000;
 const RECONNECT_MAX_MS = 60_000;
 // 'qr' is left out: a session only showing a QR was never linked.
@@ -117,7 +118,43 @@ class WhatsappService {
   async connect(id) {
     await this.requireSession(id);
     if (!this.live.has(id)) { this.attempts.delete(id); await this.start(id); }
-    return this.state(id);
+    const state = await this.state(id);
+    if (state.status !== 'connected') return state;
+    return { ...state, restrictionChecked: await this.checkRestriction(id) };
+  }
+
+  // Asks WhatsApp whether it is currently limiting this number. False when it
+  // could not be asked; the last answer then stays on record.
+  async checkRestriction(id) {
+    const sock = this.live.get(id)?.sock;
+    if (!sock?.fetchAccountReachoutTimelock) return false;
+    let timer;
+    try {
+      const answer = await Promise.race([
+        sock.fetchAccountReachoutTimelock(),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('no answer')), RESTRICTION_TIMEOUT_MS); }),
+      ]);
+      await this.saveRestriction(id, answer);
+      return true;
+    } catch (err) {
+      console.warn(`[wa] restriction check for session ${id} failed: ${err.message}`);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async saveRestriction(id, state) {
+    const active = Boolean(state?.isActive);
+    const until = active && state.timeEnforcementEnds && !Number.isNaN(state.timeEnforcementEnds.getTime())
+      ? state.timeEnforcementEnds : null;
+    const type = active ? String(state.enforcementType ?? '').slice(0, 64) || null : null;
+    console.log(`[wa] session ${id} restriction: ${active ? `${type} until ${until ? until.toISOString() : 'unknown'}` : 'none reported'}`);
+    await db.query(
+      `UPDATE whatsapp_sessions SET restriction_active = $2, restriction_type = $3, restriction_until = $4,
+              restriction_checked_at = NOW(), updated_at = NOW() WHERE id = $1`,
+      [id, active, type, until]
+    );
   }
 
   async logout(id) {
@@ -163,6 +200,9 @@ class WhatsappService {
 
   async onConnection(id, live, update, b) {
     if (this.live.get(id) !== live) return; // a newer socket took over
+    // WhatsApp also announces a restriction on its own, sometimes just before
+    // it ends the session.
+    if (update.reachoutTimeLock) await this.saveRestriction(id, update.reachoutTimeLock);
     if (update.qr) { live.qr = update.qr; await this.setStatus(id, 'qr'); }
     if (update.connection === 'open') {
       live.qr = null;
@@ -173,6 +213,7 @@ class WhatsappService {
         [id, phone || null]
       );
       console.log(`[wa] session ${id} connected`);
+      this.checkRestriction(id); // not awaited: it never rejects
     }
     if (update.connection !== 'close' || live.closing) return;
 
@@ -280,11 +321,12 @@ class WhatsappService {
     const { status } = update;
     if (status <= 0) {
       const code = String(update.messageStubParameters?.[0] ?? '').slice(0, 64);
-      await db.query(
+      const changed = await db.query(
         `UPDATE whatsapp_messages SET delivery_status = 0, delivery_error = $3, updated_at = NOW()
           WHERE session_id = $1 AND provider_message_id = $2 AND direction = 'out' AND delivery_status = 1`,
         [id, messageId, code || null]
       );
+      if (code === '463' && changed.rowCount) this.checkRestriction(id);
     } else {
       await db.query(
         `UPDATE whatsapp_messages SET delivery_status = $1, delivery_error = NULL, updated_at = NOW()

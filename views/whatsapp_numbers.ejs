@@ -37,6 +37,17 @@
         </div>
         <div class="card-body">
           <div class="muted tiny"><%= n.phone_number && n.status === 'connected' ? '+' + n.phone_number : _t('No phone linked') %></div>
+          <% if (n.restricted_now) { %>
+            <div class="flash flash-error" style="margin:12px 0 0"><span><%= n.until_text
+              ? _t('WhatsApp is restricting this number from starting new chats until {until}.', { until: n.until_text.slice(0, 16) })
+              : _t('WhatsApp is restricting this number from starting new chats.') %>
+              <% if (n.restriction_type && n.restriction_type !== 'DEFAULT') { %><br><span class="tiny"><%= _t('Reason given by WhatsApp: {reason}', { reason: n.restriction_type }) %></span><% } %></span></div>
+          <% } else if (n.checked_text) { %>
+            <div class="tiny soft" style="margin-top:12px"><%= _t('WhatsApp reports no current restriction. It can still refuse single messages.') %></div>
+          <% } else { %>
+            <div class="tiny muted" style="margin-top:12px"><%= _t('Restriction status not checked yet.') %></div>
+          <% } %>
+          <% if (n.checked_text) { %><div class="tiny muted"><%= _t('Checked {when}', { when: n.checked_text.slice(0, 16) }) %></div><% } %>
           <div class="field-meta" style="margin-top:14px"><span class="soft tiny"><%= _t('Sent today') %></span><strong class="tiny"><%= n.sent_today %> / <%= n.daily_cap %></strong></div>
           <div class="meter"><span style="width:<%= Math.min(100, Math.round(n.sent_today / n.daily_cap * 100)) %>%"></span></div>
           <div class="soft tiny"><%= _t('Who may send') %></div>
